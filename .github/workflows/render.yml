@@ -63,10 +63,13 @@ jobs:
           JOB_ID: ${{ inputs.job_id }}
         run: |
           [ -f out/info.json ] || echo '{"ok": false, "error": "Máy dựng bị dừng giữa chừng."}' > out/info.json
+          TAG="job-$JOB_ID"
+          if grep -q '"preview": true' out/info.json; then TAG="prev-$JOB_ID"; fi
           FILE=$(python3 -c "import json;print(json.load(open('out/info.json')).get('file','video.mp4'))")
           ASSETS="out/info.json"
           if [ -f out/video.mp4 ] && grep -q '"ok": true' out/info.json; then
             mv out/video.mp4 "out/$FILE"; ASSETS="$ASSETS out/$FILE"
           fi
-          gh release delete "job-$JOB_ID" --yes --cleanup-tag 2>/dev/null || true
-          gh release create "job-$JOB_ID" $ASSETS --title "job-$JOB_ID" --notes-file out/info.json --prerelease
+          for f in out/c*.jpg; do [ -f "$f" ] && ASSETS="$ASSETS $f"; done
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" $ASSETS --title "$TAG" --notes-file out/info.json --prerelease

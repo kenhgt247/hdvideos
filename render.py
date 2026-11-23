@@ -41,6 +41,9 @@ def main():
             'out_path': os.path.join(out_dir, 'video.mp4')}
     if not job.get('logo', True):
         opts['logo'] = None
+    bg = job.get('bg') or 'trang'
+    opts['bg'] = bg if bg in dict(E.BG_STYLES) else 'trang'
+    opts['subs'] = bool(job.get('subs', False))
     pen = job.get('pen', 1)
     pen = {True: 1.0, False: 0.0}.get(pen, pen)
     try:
@@ -89,6 +92,19 @@ def main():
         opts['voice'] = voice if voice in ('namminh', 'hoaimy', 'none') else 'namminh'
 
     t0 = time.time()
+    if job.get('preview'):
+        try:
+            data = E.preview_scenes(job.get('script', ''), opts, out_dir)
+            info.update(ok=True, preview=True, **data)
+        except E.VideoError as e:
+            info['error'] = str(e)
+        except Exception as e:
+            info['error'] = 'Lỗi khi xem trước: %s' % e
+            traceback.print_exc()
+        with open(os.path.join(out_dir, 'info.json'), 'w', encoding='utf-8') as fh:
+            json.dump(info, fh, ensure_ascii=False)
+        print('preview', info.get('ok'), len(info.get('scenes', [])))
+        return
     try:
         try:
             E.render(job.get('script', ''), opts, log)

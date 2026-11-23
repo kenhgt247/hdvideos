@@ -1,7 +1,7 @@
 name: Don video cu
 on:
   schedule:
-    - cron: "17 20 * * 0"
+    - cron: "17 20 * * *"
   workflow_dispatch:
 
 permissions:
@@ -19,4 +19,8 @@ jobs:
           CUT=$(date -d '60 days ago' +%s)
           gh release list -R "$REPO" -L 1000 --json tagName,createdAt \
             --jq ".[] | select(.tagName|startswith(\"job-\")) | select((.createdAt|fromdateiso8601) < $CUT) | .tagName" |
+          while read t; do gh release delete "$t" -R "$REPO" --yes --cleanup-tag; done
+          CUT2=$(date -d '2 days ago' +%s)
+          gh release list -R "$REPO" -L 1000 --json tagName,createdAt \
+            --jq ".[] | select(.tagName|startswith(\"prev-\")) | select((.createdAt|fromdateiso8601) < $CUT2) | .tagName" |
           while read t; do gh release delete "$t" -R "$REPO" --yes --cleanup-tag; done

@@ -17,6 +17,7 @@ CPS = 0.034          # giây cho mỗi ký tự khi viết
 GAP, ENTER, EXIT = 0.16, 0.35, 0.45
 TOP_AREA = 400       # dưới logo góc trái
 BOTTOM_AREA = 1460   # phía dưới bị caption TikTok/Reels che
+SUB_Y = 1400         # đáy khung phụ đề (khi bật phụ đề, nội dung dồn lên trên)
 ERASE = 0.5          # thời gian lau bảng khi chuyển cảnh
 LCX, LMAXW = W / 2, 960   # cột nội dung (đổi khi có nhân vật đứng bên trái)
 
@@ -118,10 +119,36 @@ def with_alpha(im, a):
     return im
 
 
-def make_paper():
+BG_STYLES = [('trang', 'Bảng trắng'), ('o_vuong', 'Giấy kẻ ô'), ('ke_dong', 'Giấy vở kẻ dòng'),
+             ('cham_bi', 'Giấy chấm bi'), ('giay_vang', 'Giấy vàng ấm'), ('khung_bang', 'Bảng trắng có khung'),
+             ('xanh_nhat', 'Nền xanh dịu')]
+
+
+def make_paper(style='trang'):
     rng = np.random.default_rng(3)
+    base = {'giay_vang': (250, 243, 222), 'xanh_nhat': (236, 245, 252)}.get(style, PAPER)
     n = rng.normal(0, 2.2, (H, W, 1))
-    return Image.fromarray(np.clip(np.array(PAPER)[None, None, :] + n, 0, 255).astype(np.uint8))
+    im = Image.fromarray(np.clip(np.array(base)[None, None, :] + n, 0, 255).astype(np.uint8))
+    d = ImageDraw.Draw(im)
+    if style == 'o_vuong':
+        for x in range(0, W, 54):
+            d.line((x, 0, x, H), fill=(214, 226, 242), width=2)
+        for y in range(18, H, 54):
+            d.line((0, y, W, y), fill=(214, 226, 242), width=2)
+    elif style == 'ke_dong':
+        for y in range(330, H, 66):
+            d.line((0, y, W, y), fill=(200, 218, 240), width=3)
+        d.line((92, 0, 92, H), fill=(240, 170, 170), width=3)
+        d.line((100, 0, 100, H), fill=(240, 170, 170), width=2)
+    elif style == 'cham_bi':
+        for y in range(30, H, 48):
+            for x in range(30 if (y // 48) % 2 == 0 else 54, W, 48):
+                d.ellipse((x - 4, y - 4, x + 4, y + 4), fill=(192, 201, 218))
+    elif style == 'khung_bang':
+        for i, c in enumerate([(150, 156, 168), (200, 205, 214), (175, 181, 192)]):
+            d.rectangle((i * 7, i * 7, W - 1 - i * 7, H - 1 - i * 7), outline=c, width=7)
+        d.rounded_rectangle((W / 2 - 170, H - 62, W / 2 + 170, H - 30), 8, fill=(190, 195, 205))
+    return im
 
 
 # ------------------------------------------------------------------ nét vẽ
@@ -978,6 +1005,7 @@ def parse_simple(text):
         if not line:
             continue
         tags = [norm(t) for t in TAG.findall(line)]
+        noicon = any(t in ('khong hinh', 've: khong', 've:khong', 've: -') for t in tags)
         body = TAG.sub('', line).strip()
         icon_tags = [t for t in tags if t.startswith('ve:') or t.startswith('ve :')]
         tags = [t for t in tags if t not in icon_tags]
@@ -986,10 +1014,12 @@ def parse_simple(text):
             item = body[2:].strip()
             scenes[-1]['lines'].append(('- ' + item, tags))
             scenes[-1]['say'].append(item + ',')
+            scenes[-1]['src'].append(line)
             continue
         if not body and tags:
             if scenes:
                 scenes[-1]['lines'].append(('', tags))
+                scenes[-1]['src'].append(line)
             continue
         if '||' in body:
             show, say = [x.strip() for x in body.split('||', 1)]
@@ -997,7 +1027,7 @@ def parse_simple(text):
         else:
             say = body
             shown = split_display(body)
-        sc = {'title': '', 'lines': [('', [t]) for t in icon_tags], 'say': [say]}
+        sc = {'title': '', 'lines': [('', [t]) for t in icon_tags], 'say': [say], 'src': [line], 'noicon': noicon}
         for i, t in enumerate(shown):
             sc['lines'].append((t, tags if i == len(shown) - 1 else []))
         scenes.append(sc)
@@ -1195,7 +1225,7 @@ def auto_style(scenes):
             if key_spans(lines[best][0]) and len(lines[best][0]) <= 32:
                 lines[best] = (lines[best][0], lines[best][1] + ['gach'])
         # hình vẽ minh họa theo ngữ cảnh (vẽ trước, chữ sau)
-        if not has_icon and len(text_idx) <= 4 and not (si == n - 1 and n > 1):
+        if not has_icon and not sc.get('noicon') and len(text_idx) <= 4 and not (si == n - 1 and n > 1):
             screen = ' '.join(t for t, _ in lines)
             icon = pick_icon(screen, ' '.join(sc['say']), avoid=(last_icon,) if last_icon else ())
             if icon:
@@ -1570,7 +1600,7 @@ def mix_into_wav(path, track):
 
 # ------------------------------------------------------------------ dựng
 class Renderer:
-    def __init__(self, logo_path=None, label=None):
+    def __init__(self, logo_path=None, label=None, bg='trang', subs=False):
         hj = json.load(open(os.path.join(ASSETS, 'hand.json')))
         self.hand = Image.open(os.path.join(ASSETS, 'hand.png')).convert('RGBA')
         self.tip = hj['tip']
@@ -1581,7 +1611,9 @@ class Renderer:
         self.logo_big = scaled(lg, 440)
         if self.logo_big.height > 460:
             self.logo_big = lg.resize((int(lg.width * 460 / lg.height), 460), Image.LANCZOS)
-        self.paper = make_paper()
+        self.paper = make_paper(bg or 'trang')
+        self.subs = bool(subs)
+        self.sub_font = font(52)
         self.label = None
         if label and label.strip():
             t = Txt(label.strip().upper(), 40, (255, 255, 255), 0, cx=0)
@@ -1623,9 +1655,66 @@ class Renderer:
             er = self.eraser.rotate(8 if ltr else -8, expand=True, resample=Image.BICUBIC)
             f.paste(er, (int(cx - er.width / 2), int(cy - er.height / 2)), er)
 
+    def _wrap_sub(self, text, maxw=920):
+        words, lines, cur = text.split(), [], ''
+        for w_ in words:
+            t = (cur + ' ' + w_).strip()
+            if self.sub_font.getlength(t) <= maxw or not cur:
+                cur = t
+            else:
+                lines.append(cur); cur = w_
+        if cur:
+            lines.append(cur)
+        return lines
+
+    def make_subs(self, say, start, dur):
+        """Chia lời đọc thành từng cụm ngắn (tối đa 2 dòng) và chia thời gian theo độ dài chữ."""
+        say = re.sub(r'\s+', ' ', (say or '').replace('*', '')).strip()
+        if not say or not dur:
+            return []
+        parts = [p.strip() for p in re.split(r'(?<=[.!?…;:,])\s+', say) if p.strip()]
+        chunks = []
+        for p_ in parts:
+            ls = self._wrap_sub(p_)
+            for i in range(0, len(ls), 2):
+                chunks.append(' '.join(ls[i:i + 2]))
+        merged = []
+        for c in chunks:              # gộp cụm quá ngắn vào cụm trước nếu vẫn vừa 2 dòng
+            if merged and len(c) < 14 and len(self._wrap_sub(merged[-1] + ' ' + c)) <= 2:
+                merged[-1] += ' ' + c
+            else:
+                merged.append(c)
+        total = sum(len(c) + 6 for c in merged)
+        out, t = [], start
+        for c in merged:
+            d = dur * (len(c) + 6) / total
+            out.append((t, t + d, self._wrap_sub(c)))
+            t += d
+        return out
+
+    def draw_sub(self, f, pl, t):
+        for a, b, lines in pl.get('subs') or []:
+            if a <= t < b:
+                lh = 64
+                h = lh * len(lines) + 26
+                y1 = SUB_Y + 52
+                y0 = y1 - h
+                wmax = max(self.sub_font.getlength(l) for l in lines)
+                ov = Image.new('RGBA', (int(wmax + 56), int(h)), (0, 0, 0, 0))
+                od = ImageDraw.Draw(ov)
+                od.rounded_rectangle((0, 0, ov.width - 1, ov.height - 1), 22, fill=(30, 32, 44, 236))
+                for i, l in enumerate(lines):
+                    lw = self.sub_font.getlength(l)
+                    od.text(((ov.width - lw) / 2, 13 + i * lh), l, font=self.sub_font, fill=(255, 255, 255))
+                f.paste(ov, (int(W / 2 - ov.width / 2), int(y0)), ov)
+                return
+
     def plan(self, scenes, audio_durs, gender=None):
-        global LCX, LMAXW
+        global LCX, LMAXW, BOTTOM_AREA
         plans = []
+        old_bottom = BOTTOM_AREA
+        if self.subs:
+            BOTTOM_AREA = SUB_Y - 140 if any(audio_durs or []) else BOTTOM_AREA
         n = len(scenes)
         poses = [None] * n
         if gender and char_path(gender, 'chao'):
@@ -1671,8 +1760,10 @@ class Renderer:
             if not last:
                 dur += ERASE
             nfr = int(math.ceil(dur * FPS))
+            subs = self.make_subs(' '.join(sc.get('say') or []), 0.12, A) if (self.subs and A) else []
             plans.append({'sch': sch, 'ed': ed, 'n': nfr, 'dur': nfr / FPS, 'logo_end': logo_end, 'last': last,
-                          'lcx': lcx})
+                          'lcx': lcx, 'subs': subs})
+        BOTTOM_AREA = old_bottom
         return plans
 
     def hand_pos(self, pl, t):
@@ -1718,6 +1809,8 @@ class Renderer:
         hp = self.hand_pos(pl, t)
         if hp:
             f.paste(self.hand, (int(hp[0] - self.tip[0]), int(hp[1] - self.tip[1])), self.hand)
+        if self.subs:
+            self.draw_sub(f, pl, t)
         if not pl['last'] and t > pl['dur'] - ERASE:
             self.erase(f, (t - (pl['dur'] - ERASE)) / ERASE)
         return f
@@ -1745,6 +1838,32 @@ def preview(script_text, logo_path, out_png, auto=True, label=None, hotline=None
         sheet.paste(th, (10 + (i % cols) * 370, 10 + (i // cols) * 650))
     sheet.save(out_png)
     return out_png
+
+
+def preview_scenes(script_text, opts, out_dir):
+    """Ảnh xem trước từng cảnh (khung hình cuối cảnh) + thông tin để sửa cảnh trên web."""
+    os.makedirs(out_dir, exist_ok=True)
+    simple = is_simple(script_text)
+    scenes = parse_script(script_text)
+    if opts.get('auto', True):
+        auto_style(scenes)
+    add_hotline(scenes, opts.get('hotline'))
+    r = Renderer(opts.get('logo'), opts.get('label'), opts.get('bg', 'trang'), opts.get('subs', False))
+    est = [max(1.5, len(' '.join(sc.get('say') or [])) * 0.075) for sc in scenes]
+    plans = r.plan(scenes, est if opts.get('subs') else None, resolve_gender(opts))
+    info = []
+    for i, (sc, pl) in enumerate(zip(scenes, plans)):
+        t = pl['ed'] + EXIT + 0.05
+        if pl.get('subs'):
+            t_sub = pl['subs'][0][0] + 0.01
+            fr = r.frame(pl, max(t, 0), i == 0)
+            r.draw_sub(fr, pl, t_sub)
+        else:
+            fr = r.frame(pl, t, i == 0)
+        fr.convert('RGB').resize((432, 768), Image.LANCZOS).save(os.path.join(out_dir, 'c%02d.jpg' % i), quality=82)
+        icon = next((tag_icon(tg) for _, tg in sc['lines'] if tag_icon(tg)), None)
+        info.append({'i': i, 'src': sc.get('src') or [], 'icon': icon or '', 'say': ' '.join(sc.get('say') or [])})
+    return {'simple': simple, 'scenes': info}
 
 
 def render(script_text, opts, progress=lambda msg, frac: None):
@@ -1799,7 +1918,7 @@ def render(script_text, opts, progress=lambda msg, frac: None):
             durs.append(wav_dur(wv)); wavs.append(wv)
 
         progress('Đang dàn trang...', 0.28)
-        r = Renderer(opts.get('logo'), opts.get('label'))
+        r = Renderer(opts.get('logo'), opts.get('label'), opts.get('bg', 'trang'), opts.get('subs', False))
         plans = r.plan(scenes, durs, resolve_gender(opts))
         total_frames = sum(p['n'] for p in plans)
         done = 0

@@ -127,6 +127,13 @@ const STEP_VI = {
 };
 
 async function jobStatus(env, id) {
+  const prev = await ghJson(env, `/releases/tags/prev-${id}`);
+  if (prev) {
+    const info = parseInfo(prev.body);
+    if (!info.ok) return { state: 'error', error: info.error || 'Không xem trước được.', info: strip(info) };
+    const imgs = (prev.assets || []).map(a => a.name).filter(n => /^c\d+\.jpg$/.test(n)).sort();
+    return { state: 'done', preview: true, info: strip(info), imgs };
+  }
   const rel = await ghJson(env, `/releases/tags/job-${id}`);
   if (rel) {
     const info = parseInfo(rel.body);
@@ -264,6 +271,9 @@ export default {
           by: (b.by || '').slice(0, 40),
           who: slug(b.by || ''),
           pen: Math.max(0, Math.min(3, Number(b.pen ?? 1) || 0)),
+          bg: /^[a-z_]{2,20}$/.test(b.bg || '') ? b.bg : 'trang',
+          subs: !!b.subs,
+          preview: !!b.preview,
           music: /^[a-z0-9_]+\.(mp3|m4a|aac|wav|ogg)$/.test(b.music || '') ? b.music : '',
           music_vol: Math.max(0, Math.min(40, parseInt(b.music_vol || 12, 10) || 12)),
           clone: /^[a-z0-9_]+\.(mp3|m4a|aac|wav|ogg|webm|mp4)$/.test(b.clone || '') ? b.clone : '',
@@ -279,6 +289,16 @@ export default {
       if (p === '/api/list') return json(await listVideos(env));
       m = p.match(/^\/video\/([a-z0-9]+)$/);
       if (m) return videoProxy(req, env, m[1], url.searchParams.get('dl') === '1');
+      m = p.match(/^\/prev\/([a-z0-9]+)\/(c\d+\.jpg)$/);
+      if (m) {
+        const rel = await ghJson(env, `/releases/tags/prev-${m[1]}`);
+        const a = rel && (rel.assets || []).find(x => x.name === m[2]);
+        if (!a) return new Response('Không có', { status: 404 });
+        const r = await gh(env, `/releases/assets/${a.id}`, { headers: { accept: 'application/octet-stream' } });
+        return new Response(r.body, { headers: { 'content-type': 'image/jpeg', 'cache-control': 'private, max-age=86400' } });
+      }
+      m = p.match(/^\/img\/nen\/([a-z_]+)\.jpg$/);
+      if (m) return rawFile(env, `engine/assets/nen/${m[1]}.jpg`, 'image/jpeg');
       m = p.match(/^\/api\/jobs\/([a-z0-9]+)\/delete$/);
       if (m && req.method === 'POST') {
         const rel = await ghJson(env, `/releases/tags/job-${m[1]}`);

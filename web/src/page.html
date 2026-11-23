@@ -107,6 +107,18 @@ video{width:100%;max-height:62vh;border-radius:12px;background:#000;margin-top:1
 .posts .tabs button.on{background:#fff;color:var(--blue);box-shadow:inset 0 -2px 0 var(--blue)}
 .posts textarea{border:0;border-radius:0;min-height:190px;font-size:14px}
 .posts .pb{display:flex;gap:8px;padding:8px;border-top:1px solid var(--line)}
+.bgs{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 8px;scroll-snap-type:x mandatory}
+.bgs .b{flex:none;width:86px;text-align:center;font-size:12px;color:var(--mut);scroll-snap-align:start;cursor:pointer}
+.bgs .b img{width:86px;height:153px;object-fit:cover;border-radius:10px;border:3px solid transparent;display:block;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.bgs .b.on img{border-color:var(--blue)}
+.bgs .b.on{color:var(--blue);font-weight:700}
+.pv{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.pv img{width:116px;height:206px;object-fit:cover;border-radius:10px;flex:none;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.pv .ed{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.pv .ed textarea{min-height:110px;font-size:14px;padding:8px}
+.pv .no{font-weight:700;font-size:13px;color:var(--mut)}
+.pvfoot{margin-top:12px;align-items:stretch}
+.pvfoot .btn{flex:1}
 .maddt{font-size:13px;font-weight:700;color:var(--mut);margin-bottom:6px}
 .mfoot{display:flex;gap:8px;flex-wrap:wrap;padding:8px 4px 4px;border-top:1px solid var(--line);margin-top:4px}
 .au .x{border:0;background:#fde8ea;color:var(--red);border-radius:10px;padding:6px 10px;font-weight:600}
@@ -130,6 +142,21 @@ pre.fmt{white-space:pre-wrap;font-size:13px;background:#fafbfe;border:1px solid 
 <!-- ===== TẠO VIDEO ===== -->
 <section id="tab-tao">
   <div id="jobs"></div>
+  <div class="card hide" id="pvCard">
+    <div class="hd"><h2>Xem trước từng cảnh</h2><button class="btn sm red" id="pvClose">Đóng</button></div>
+    <div class="hint" id="pvHint"></div>
+    <div id="pvList"></div>
+    <div class="row pvfoot hide" id="pvFoot">
+      <button class="btn" id="pvAgain">↻ Áp dụng & xem lại</button>
+      <button class="btn main" id="pvMake" style="margin-top:0">TẠO VIDEO</button>
+    </div>
+  </div>
+  <div class="card hide" id="kpCard" style="position:fixed;inset:auto 0 0 0;z-index:8;max-height:75vh;overflow:auto;border-radius:18px 18px 0 0;margin:0;box-shadow:0 -6px 30px rgba(0,0,0,.25)">
+    <div class="hd"><h2>Chọn hình cho cảnh</h2><button class="btn sm red" onclick="$('kpCard').classList.add('hide')">Đóng</button></div>
+    <div class="row" style="margin:10px 0"><button class="btn sm" onclick="setIcon('auto')">🤖 Máy tự chọn</button><button class="btn sm red" onclick="setIcon('none')">🚫 Không hình</button></div>
+    <input type="text" id="kpQ" placeholder="Tìm hình: visa, tiền, ký túc xá...">
+    <div class="grid" id="kpGrid" style="margin-top:10px"></div>
+  </div>
   <div class="card">
     <h2>Kịch bản</h2>
     <div class="tools">
@@ -192,13 +219,18 @@ Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi c
     </div>
     <label class="f" for="music_vol">Âm lượng nhạc</label>
     <select id="music_vol"><option value="7">Rất nhỏ</option><option value="12" selected>Nhỏ</option><option value="18">Vừa</option><option value="26">To</option></select>
+    <label class="f">Kiểu nền</label>
+    <input type="hidden" id="bg">
+    <div class="bgs" id="bgs"></div>
+    <label class="chk"><input type="checkbox" id="subs"> Hiện phụ đề chạy theo giọng đọc</label>
     <label class="f" for="pen">Tiếng bút vẽ</label>
     <select id="pen"><option value="0">Tắt</option><option value="1" selected>Nhỏ</option><option value="1.8">Vừa</option></select>
     <label class="chk"><input type="checkbox" id="auto" checked> Tự trang trí (tô màu, gạch chân, hình minh hoạ)</label>
     <label class="chk"><input type="checkbox" id="logo" checked> Hiện logo</label>
     <label class="f" for="by">Người tạo</label>
     <input type="text" id="by" placeholder="Tên của bạn">
-    <button class="btn main" id="bGo">TẠO VIDEO</button>
+    <button class="btn" id="bPrev" style="width:100%;margin-top:16px;padding:14px;font-size:16px">👁 Xem trước & sửa từng cảnh</button>
+    <button class="btn main" id="bGo" style="margin-top:10px">TẠO VIDEO</button>
     <div class="hint" style="text-align:center">Mỗi video mất khoảng 4–8 phút. Có thể tắt máy, lát quay lại mục <b>Video</b> để tải.</div>
   </div>
 </section>
@@ -323,7 +355,14 @@ function showTab(t) {
 }
 
 // ---------- form
-const FIELDS = ['name', 'voice', 'rate', 'character', 'label', 'hotline', 'by', 'music', 'music_vol', 'pen'];
+const FIELDS = ['name', 'voice', 'rate', 'character', 'label', 'hotline', 'by', 'music', 'music_vol', 'pen', 'bg'];
+const BGS = [['trang', 'Bảng trắng'], ['o_vuong', 'Kẻ ô'], ['ke_dong', 'Vở kẻ dòng'], ['cham_bi', 'Chấm bi'],
+             ['giay_vang', 'Giấy vàng'], ['khung_bang', 'Có khung'], ['xanh_nhat', 'Xanh dịu']];
+function drawBgs() {
+  const cur = $('bg').value || 'trang';
+  $('bgs').innerHTML = BGS.map(([k, t]) => `<div class="b ${k === cur ? 'on' : ''}" onclick="pickBg('${k}')"><img loading="lazy" src="/img/nen/${k}.jpg" alt=""><div>${t}</div></div>`).join('');
+}
+function pickBg(k) { $('bg').value = k; store.set('bg', k); drawBgs(); }
 const VOICES_BASE = [
   ['vieneu_nam', 'VieNeu – giọng nam (tự chọn)'],
   ['vieneu_nu', 'VieNeu – giọng nữ (tự chọn)'],
@@ -352,6 +391,10 @@ function fillVoices(list) {
 fillVoices(store.get('voices', []));
 FIELDS.forEach(k => { if (k !== 'voice' && k !== 'name') { const v = store.get(k, null); if (v != null) $(k).value = v; } });
 ['auto', 'logo'].forEach(k => { $(k).checked = store.get(k, true); });
+$('subs').checked = store.get('subs', false);
+$('subs').onchange = () => store.set('subs', $('subs').checked);
+if (!$('bg').value) $('bg').value = 'trang';
+drawBgs();
 $('script').value = store.get('draft', '');
 function countScenes() {
   const n = $('script').value.split('\n').filter(l => l.trim() && !/^\s*-\s/.test(l)).length;
@@ -393,19 +436,28 @@ async function copyFile(f, msg) {
   } catch { toast('Không tải được câu lệnh'); }
 }
 
-$('bGo').onclick = async () => {
+function jobBody(preview) {
   const script = $('script').value.trim();
-  if (!script) { toast('Hãy dán kịch bản trước'); return; }
   FIELDS.forEach(k => k !== 'name' && store.set(k, $(k).value));
   store.set('auto', $('auto').checked); store.set('logo', $('logo').checked);
-  let voice = $('voice').value, vieneu_voice = '';
-  let clone = '';
+  let voice = $('voice').value, vieneu_voice = '', clone = '';
   if (voice.startsWith('vn:')) { vieneu_voice = voice.slice(3); voice = 'vieneu'; }
   if (voice.startsWith('clone:')) { clone = voice.slice(6); voice = 'clone'; }
   const name = $('name').value.trim() || script.split('\n')[0].split(/\s\/\s|\|\|/)[0].replace(/\[.*?\]/g, '').trim().slice(0, 50);
-  const body = { script, name, voice, vieneu_voice, rate: $('rate').value, character: $('character').value, label: $('label').value,
+  return { script, name, voice, vieneu_voice, rate: $('rate').value, character: $('character').value, label: $('label').value,
     hotline: $('hotline').value, auto: $('auto').checked, logo: $('logo').checked, by: $('by').value,
-    clone, music: $('music').value, music_vol: $('music_vol').value, pen: $('pen').value };
+    clone, music: $('music').value, music_vol: $('music_vol').value, pen: $('pen').value,
+    bg: $('bg').value || 'trang', subs: $('subs').checked, preview: !!preview };
+}
+$('bGo').onclick = async () => {
+  const script = $('script').value.trim();
+  if (!script) { toast('Hãy dán kịch bản trước'); return; }
+  return makeVideo();
+};
+async function makeVideo() {
+  const script = $('script').value.trim();
+  if (!script) { toast('Hãy dán kịch bản trước'); return; }
+  const body = jobBody(false), name = body.name;
   $('bGo').disabled = true; $('bGo').textContent = 'Đang gửi...';
   try {
     const d = await api('/api/jobs', body);
@@ -414,7 +466,69 @@ $('bGo').onclick = async () => {
     renderJobs(); pollJobs(); window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) { toast(e.message, 5000); }
   $('bGo').disabled = false; $('bGo').textContent = 'TẠO VIDEO';
-};
+}
+
+// ----- xem trước & sửa từng cảnh
+let PV = null, pvTimer = null, kpTarget = -1, KHO = [];
+$('bPrev').onclick = () => startPreview();
+$('pvClose').onclick = () => { $('pvCard').classList.add('hide'); clearTimeout(pvTimer); };
+$('pvAgain').onclick = () => { applyEdits(); startPreview(); };
+$('pvMake').onclick = () => { applyEdits(); $('pvCard').classList.add('hide'); makeVideo(); };
+async function startPreview() {
+  if (!$('script').value.trim()) { toast('Hãy dán kịch bản trước'); return; }
+  $('pvCard').classList.remove('hide'); $('pvFoot').classList.add('hide');
+  $('pvList').innerHTML = '<div class="bar"><i></i></div>';
+  $('pvHint').textContent = 'Đang vẽ ảnh xem trước (khoảng 30–60 giây)...';
+  $('pvCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  clearTimeout(pvTimer);
+  try { const d = await api('/api/jobs', jobBody(true)); pollPreview(d.id, Date.now()); }
+  catch (e) { $('pvHint').textContent = e.message; $('pvList').innerHTML = ''; }
+}
+async function pollPreview(id, t0) {
+  try {
+    const s = await api('/api/jobs/' + id);
+    if (s.state === 'done' && s.preview) return showPreview(id, s);
+    if (s.state === 'error') { $('pvHint').textContent = s.error; $('pvList').innerHTML = ''; return; }
+    $('pvHint').textContent = (s.step || 'Đang chuẩn bị') + ' · ' + Math.round((Date.now() - t0) / 1000) + ' giây';
+  } catch {}
+  pvTimer = setTimeout(() => pollPreview(id, t0), 4000);
+}
+function showPreview(id, s) {
+  PV = { id, simple: s.info.simple, scenes: s.info.scenes.map(x => ({ ...x, text: x.src.join('\n') })) };
+  $('pvHint').innerHTML = PV.simple ? 'Sửa chữ ngay trong ô bên cạnh mỗi cảnh, bấm <b>Đổi hình</b> để chọn hình khác. Xong bấm <b>Áp dụng & xem lại</b> hoặc <b>TẠO VIDEO</b>.'
+    : 'Kịch bản kiểu nâng cao: chỉ xem được, muốn sửa hãy sửa trong ô kịch bản.';
+  $('pvList').innerHTML = PV.scenes.map((x, i) => `<div class="pv"><img src="/prev/${id}/${'c' + String(x.i).padStart(2, '0')}.jpg" alt="">
+    <div class="ed"><div class="no">Cảnh ${i + 1}${x.icon ? ' · hình: ' + esc(x.icon) : ''}</div>
+    ${PV.simple && x.src.length ? `<textarea id="pvT${i}" oninput="PV.scenes[${i}].text=this.value">${esc(x.text)}</textarea>
+      <button type="button" class="btn sm" onclick="openKho(${i})">🖼 Đổi hình</button>` : `<div class="hint">${esc(x.say)}</div>`}</div></div>`).join('');
+  $('pvFoot').classList.remove('hide');
+}
+function applyEdits() {
+  if (!PV || !PV.simple) return;
+  const txt = PV.scenes.filter(x => x.src.length).map(x => x.text.trim()).filter(Boolean).join('\n');
+  $('script').value = txt; store.set('draft', txt); countScenes();
+}
+async function openKho(i) {
+  kpTarget = i; $('kpCard').classList.remove('hide'); $('kpQ').value = '';
+  if (!KHO.length) { try { KHO = (await api('/api/kho')).items; } catch {} }
+  drawKp();
+}
+function drawKp() {
+  const q = slugJs($('kpQ').value).replace(/_/g, ' ');
+  $('kpGrid').innerHTML = KHO.filter(it => !q || it.name.includes(q)).map(it =>
+    `<div class="it" onclick="setIcon(${esc(JSON.stringify(it.name))})"><img loading="lazy" src="/img/kho/${it.file}"><div>${esc(it.name)}</div></div>`).join('') || '<div class="empty">Không có hình</div>';
+}
+$('kpQ').oninput = drawKp;
+function setIcon(name) {
+  const sc = PV && PV.scenes[kpTarget]; if (!sc) return;
+  const lines = sc.text.split('\n');
+  lines[0] = lines[0].replace(/\s*\[(vẽ|ve)\s*:[^\]]*\]/gi, '').replace(/\s*\[không hình\]/gi, '').trimEnd();
+  if (name === 'none') lines[0] += ' [không hình]';
+  else if (name !== 'auto') lines[0] += ' [vẽ: ' + name + ']';
+  sc.text = lines.join('\n'); const ta = $('pvT' + kpTarget); if (ta) ta.value = sc.text;
+  $('kpCard').classList.add('hide');
+  toast(name === 'none' ? 'Cảnh này sẽ không có hình' : name === 'auto' ? 'Máy sẽ tự chọn hình' : 'Đã chọn hình: ' + name + '. Bấm "Áp dụng & xem lại" để xem.', 3500);
+}
 
 // ---------- jobs đang dựng
 const jobState = {};
