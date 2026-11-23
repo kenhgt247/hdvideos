@@ -164,7 +164,7 @@ async function listVideos(env) {
     items.push({
       id: r.tag_name.slice(4), name: info.name || r.tag_name, created: info.created || Date.parse(r.created_at) / 1000,
       ok: !!info.ok && (r.assets || []).some(a => a.name.endsWith('.mp4')), error: info.error || '',
-      voice: info.voice || '', by: info.by || '', fallback: info.fallback || '', script: info.script || '',
+      voice: info.voice || '', by: info.by || '', fallback: info.fallback || '', script: info.script || '', credit: info.credit || '',
     });
   }
   return { items, voices: voices || [] };
@@ -323,7 +323,7 @@ export default {
       }
       if (p === '/api/timnhac') {
         const q = (url.searchParams.get('q') || 'background').slice(0, 60);
-        const lic = url.searchParams.get('by') === '1' ? 'cc0,pdm,by' : 'cc0,pdm';
+        const lic = 'cc0,pdm,by';
         const api = `https://api.openverse.org/v1/audio/?q=${encodeURIComponent(q)}&license=${lic}&category=music&page_size=20&mature=false`;
         const r = await fetch(api, { headers: { 'user-agent': 'hdvideos/1.0 (Du Hoc Hai Duong)', accept: 'application/json' } });
         if (!r.ok) return err(`Kho nhạc Openverse đang bận (lỗi ${r.status}), thử lại sau`, 502);

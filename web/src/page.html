@@ -159,10 +159,10 @@ Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi c
     <div class="mpanel hide" id="mPanel">
       <div id="mRows"></div>
       <div class="mfoot" style="display:block">
-        <div class="maddt">🔍 Tìm nhạc miễn phí (không cần ghi nguồn)</div>
+        <div class="maddt">🔍 Tìm nhạc miễn phí</div>
         <div class="row"><input type="text" id="tnQ" placeholder="Ví dụ: piano, happy, inspiring"><button type="button" class="btn" id="tnGo" style="flex:none">Tìm</button></div>
         <div class="chips" id="tnChips"></div>
-        <label class="chk" style="font-size:13px;margin-top:6px"><input type="checkbox" id="tnBy"> Gồm cả nhạc cần ghi tên tác giả (nhiều bài hơn)</label>
+        <div class="hint">Nhạc từ Jamendo/Openverse, dùng miễn phí cho quảng cáo, chỉ cần <b>ghi tên tác giả</b> trong mô tả video. Máy sẽ tự soạn sẵn dòng ghi nguồn để bạn copy.</div>
         <div id="tnRes"></div>
       </div>
       <div class="mfoot" style="display:block">
@@ -411,6 +411,7 @@ function renderJobs() {
       return `<div class="card job done"><div class="t">✓ ${esc(j.name)}</div>
         <div class="s">Xong · ${esc(s.info && s.info.voice || '')}</div>
         ${s.info && s.info.fallback ? `<span class="tag">Đã dùng giọng dự phòng</span>` : ''}
+        ${s.info && s.info.credit ? `<div class="hint" style="margin-top:6px">Dán vào mô tả video: <b>${esc(s.info.credit)}</b> <a href="#" onclick="event.preventDefault();copyText(${esc(JSON.stringify(s.info.credit))}).then(()=>toast('Đã copy'))">Copy</a></div>` : ''}
         <video src="/video/${j.id}" controls playsinline preload="metadata"></video>
         <div class="row" style="margin-top:10px"><a class="btn" href="/video/${j.id}" download style="text-align:center;text-decoration:none">Tải video</a>
         <button class="btn red" onclick="dismiss('${j.id}')">Đóng</button></div></div>`;
@@ -458,6 +459,7 @@ async function loadList() {
       <div class="d">${when(v.created)}${v.by ? ' · ' + esc(v.by) : ''}${v.voice ? ' · ' + esc(v.voice) : ''}</div>
       ${v.ok ? '' : `<span class="tag e">${esc(v.error || 'Lỗi')}</span>`}
       ${v.fallback ? '<span class="tag">Giọng dự phòng</span>' : ''}
+      ${v.credit ? `<div class="hint">Ghi nguồn nhạc: ${esc(v.credit)} <a href="#" onclick="event.preventDefault();copyText(${esc(JSON.stringify(v.credit))}).then(()=>toast('Đã copy'))">Copy</a></div>` : ''}
       <div class="acts">
         ${v.ok ? `<button class="btn sm" onclick="play(this,'${v.id}')">Xem</button><a class="btn sm" href="/video/${v.id}" download style="text-decoration:none">Tải</a>` : ''}
         <button class="btn sm" onclick="reuse(${i})">Dùng lại kịch bản</button>
@@ -683,9 +685,9 @@ async function tnSearch(q) {
   q = (q || $('tnQ').value || '').trim() || 'background';
   $('tnQ').value = q; $('tnRes').innerHTML = '<div class="hint">Đang tìm...</div>';
   try {
-    const d = await api('/api/timnhac?q=' + encodeURIComponent(q) + ($('tnBy').checked ? '&by=1' : ''));
+    const d = await api('/api/timnhac?q=' + encodeURIComponent(q));
     TN = d.items;
-    if (!TN.length) { $('tnRes').innerHTML = '<div class="hint">Không thấy bài nào. Thử từ khoá tiếng Anh khác (piano, guitar, happy...) hoặc tích ô "gồm cả nhạc cần ghi tên".</div>'; return; }
+    if (!TN.length) { $('tnRes').innerHTML = '<div class="hint">Không thấy bài nào. Thử từ khoá tiếng Anh khác: piano, guitar, happy, inspiring, corporate...</div>'; return; }
     tnDraw();
   } catch (e) { $('tnRes').innerHTML = `<div class="hint">${esc(e.message)}</div>`; }
 }
@@ -703,7 +705,7 @@ function tnPlay(i) {
 }
 async function tnAdd(i) {
   const x = TN[i], b = $('tnAdd' + i); b.disabled = true; b.textContent = 'Đang thêm...';
-  const credit = x.license.startsWith('BY') ? ('Nhạc: ' + x.title + ' – ' + x.creator + ' (' + x.license + ')') : '';
+  const credit = x.license.startsWith('BY') ? ('Nhạc: "' + x.title + '" – ' + x.creator + ' (CC ' + x.license + ', ' + (x.source || 'jamendo') + ')') : '';
   try {
     const d = await api('/api/nhac/link', { name: x.title, url: x.url, who: whoName(), credit });
     toast(credit ? 'Đã thêm. Nhớ ghi tên tác giả trong mô tả video!' : 'Đã thêm vào kho nhạc!', 4500);

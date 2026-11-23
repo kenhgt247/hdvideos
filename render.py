@@ -54,6 +54,12 @@ def main():
         opts['music'] = os.path.join(HERE, 'engine', 'assets', 'nhac', music)
         opts['music_vol'] = max(0, min(40, int(job.get('music_vol') or 12)))
         info['music'] = music
+        try:
+            meta = json.load(open(os.path.join(HERE, 'engine', 'assets', 'nhac', '_danh_sach.json'), encoding='utf-8')).get(music, {})
+            if str(meta.get('mo_ta', '')).startswith('Nhạc:'):
+                info['credit'] = meta['mo_ta']
+        except Exception:
+            pass
     clone = os.path.basename(job.get('clone') or '')
     clone_src = os.path.join(HERE, 'engine', 'assets', 'giong', clone) if clone else ''
 
