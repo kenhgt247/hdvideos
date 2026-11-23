@@ -48,6 +48,12 @@ def pick_auto(tts, gender):
         items = list(tts.list_preset_voices())
     except Exception:
         return None
+    prefer = {'nam': ['Hải Đăng', 'Quốc Tuấn', 'Thiện Minh'], 'nu': ['Ngọc Huyền', 'Trúc Ly', 'Đoan Trang']}.get(gender, [])
+    labels = [str(it[0] if isinstance(it, (list, tuple)) else it) for it in items]
+    for want in prefer:
+        for label in labels:
+            if want in label:
+                return label
     best, score = None, -1
     for it in items:
         label = str(it[0] if isinstance(it, (list, tuple)) else it)
@@ -58,7 +64,7 @@ def pick_auto(tts, gender):
         is_nam = first == 'nam'
         if (gender == 'nu' and not is_nu) or (gender == 'nam' and not is_nam):
             continue
-        sc = (2 if 'bắc' in words else 0) + (1 if '⭐' in label else 0)
+        sc = (2 if 'bắc' in words else 0) + (1 if '⭐' in label else 0) - (5 if 'bựa' in label.lower() else 0)
         if sc > score:
             best, score = label, sc
     return best
