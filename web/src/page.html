@@ -71,6 +71,22 @@ video{width:100%;max-height:62vh;border-radius:12px;background:#000;margin-top:1
 .nv .tg{font-size:11px;color:var(--mut)}
 .au{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px}
 .au audio{flex:1;min-width:0;height:36px}
+.recon{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:#fde8ea;color:var(--red);font-weight:700;font-size:18px}
+.recon .dot{width:14px;height:14px;border-radius:50%;background:var(--red);animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.2}}
+.btn.stop{background:var(--red);color:#fff;font-size:17px}
+.btn.ok{background:var(--ok);color:#fff}
+.mcur{width:100%;display:flex;justify-content:space-between;align-items:center;border:1.5px solid var(--line);border-radius:12px;padding:12px;background:#fff;font:inherit;font-size:16px;color:var(--ink);text-align:left}
+.mcur .chev{color:var(--blue);font-weight:600;font-size:14px;flex:none}
+.mpanel{border:1.5px solid var(--line);border-radius:12px;margin-top:6px;padding:6px;background:#fafbfe;max-height:420px;overflow:auto}
+.mrow{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;cursor:pointer}
+.mrow.on{background:var(--blue2)}
+.mrow .pl{flex:none;width:38px;height:38px;border-radius:50%;border:0;background:#fff;color:var(--blue);font-size:15px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.mrow .tx{flex:1;min-width:0}
+.mrow .tx b{display:block;font-size:15px}
+.mrow .tx small{color:var(--mut);font-size:12px}
+.mrow .ck{flex:none;color:var(--blue);font-weight:700}
+.mfoot{display:flex;gap:8px;flex-wrap:wrap;padding:8px 4px 4px;border-top:1px solid var(--line);margin-top:4px}
 .au .x{border:0;background:#fde8ea;color:var(--red);border-radius:10px;padding:6px 10px;font-weight:600}
 .empty{color:var(--mut);text-align:center;padding:24px 8px;font-size:14px}
 #toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#1d2433;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:9;opacity:0;transition:.25s;pointer-events:none;max-width:90vw;text-align:center}
@@ -131,11 +147,23 @@ Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi c
       <div><label class="f" for="label">Nhãn góc phải</label><input type="text" id="label" placeholder="Du học Hàn"></div>
       <div><label class="f" for="hotline">Hotline cuối video</label><input type="tel" id="hotline" placeholder="09xx xxx xxx"></div>
     </div>
-    <div class="row">
-      <div><label class="f" for="music">Nhạc nền</label><select id="music"><option value="">Không có nhạc</option></select></div>
-      <div><label class="f" for="music_vol">Âm lượng nhạc</label>
-        <select id="music_vol"><option value="7">Rất nhỏ</option><option value="12" selected>Nhỏ</option><option value="18">Vừa</option><option value="26">To</option></select></div>
+    <label class="f">Nhạc nền</label>
+    <input type="hidden" id="music">
+    <button type="button" class="mcur" id="mCur"><span id="mCurTxt">🎵 Không có nhạc</span><span class="chev">Chọn ▾</span></button>
+    <div class="mpanel hide" id="mPanel">
+      <div id="mRows"></div>
+      <div class="mfoot">
+        <button type="button" class="btn sm" id="mUp">⬆ Tải mp3 từ máy</button>
+        <button type="button" class="btn sm" id="mLinkBtn">🔗 Dán link nhạc</button>
+      </div>
+      <div class="hide" id="mLinkBox" style="margin-top:8px">
+        <input type="text" id="mLinkName" placeholder="Tên bài, ví dụ: Vui tươi">
+        <div class="row" style="margin-top:6px"><input type="text" id="mLinkUrl" placeholder="Link file .mp3"><button type="button" class="btn" id="mLinkGo" style="flex:none">Thêm</button></div>
+      </div>
+      <input type="file" id="mUpFile" accept="audio/*" class="hide">
     </div>
+    <label class="f" for="music_vol">Âm lượng nhạc</label>
+    <select id="music_vol"><option value="7">Rất nhỏ</option><option value="12" selected>Nhỏ</option><option value="18">Vừa</option><option value="26">To</option></select>
     <label class="f" for="pen">Tiếng bút vẽ</label>
     <select id="pen"><option value="0">Tắt</option><option value="1" selected>Nhỏ</option><option value="1.8">Vừa</option></select>
     <label class="chk"><input type="checkbox" id="auto" checked> Tự trang trí (tô màu, gạch chân, hình minh hoạ)</label>
@@ -192,13 +220,9 @@ Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi c
     <h2>Giọng nhân bản</h2>
     <div class="hint">Ghi âm khoảng 10–15 giây đọc rõ ràng, nơi yên tĩnh. Máy sẽ bắt chước giọng này để đọc video (dùng VieNeu). Đặt tên có chữ "chi" hoặc "nu" nếu là giọng nữ, ví dụ "chi Lan".</div>
     <pre class="fmt" style="margin-top:10px">Đọc thử đoạn này: "Xin chào các bạn, mình là tư vấn viên của Du Học Hải Dương. Hôm nay mình sẽ chia sẻ những điều cần biết khi đi du học Hàn Quốc và Đài Loan, để bạn chuẩn bị thật tốt cho tương lai."</pre>
-    <input type="text" id="gName" placeholder="Tên giọng, ví dụ: anh Bắc" style="margin-top:10px">
-    <div class="tools" style="margin-top:10px">
-      <button class="btn" id="bRec">● Ghi âm</button>
-      <button class="btn sm" id="bGFile">Tải file ghi âm</button>
-    </div>
+    <input type="text" id="gName" placeholder="Bước 1: Tên giọng, ví dụ: anh Bắc" style="margin-top:10px">
+    <div id="recUI" style="margin-top:10px"></div>
     <input type="file" id="gFile" accept="audio/*,video/mp4" class="hide">
-    <div id="recBox" class="hint"></div>
     <div id="gList" style="margin-top:8px"></div>
   </div>
   <div class="card">
@@ -543,6 +567,9 @@ $('bRestore').onclick = async () => {
 };
 
 // ---------- giọng nhân bản + nhạc nền
+function slugJs(s) {
+  return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60);
+}
 function toB64(blob) {
   return new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = bad; r.readAsDataURL(blob); });
 }
@@ -558,27 +585,27 @@ async function uploadAudio(kind, name, blob) {
   if (!name.trim()) { toast('Hãy đặt tên trước'); return false; }
   if (blob.size > 14e6) { toast('File quá lớn (tối đa 14MB)'); return false; }
   toast('Đang tải lên...');
-  try { await api('/api/' + kind, { name, ext: extOf(blob), data: await toB64(blob) }); toast('Đã tải lên!'); loadMedia(); return true; }
+  try { await api('/api/' + kind, { name, ext: extOf(blob), data: await toB64(blob), who: whoName() }); toast('Đã lưu!'); loadMedia(); return true; }
   catch (e) { toast(e.message, 5000); return false; }
 }
 async function loadMedia() {
   try {
     const d = await api('/api/media');
     CLONES = d.giong; store.set('clones', CLONES); fillVoices(store.get('voices', []));
-    const ms = $('music'), cur = ms.value || store.get('music', '');
-    ms.innerHTML = '<option value="">Không có nhạc</option>' + d.nhac.map(x => `<option value="${x.file}">${esc(x.name)}</option>`).join('');
-    ms.value = d.nhac.some(x => x.file === cur) ? cur : '';
+    MUSIC = d.nhac; store.set('music_list', MUSIC);
+    const cur = $('music').value || store.get('music', '');
+    setMusic(MUSIC.some(x => x.file === cur) ? cur : '');
+    if (!$('mPanel').classList.contains('hide')) drawMusic();
     const row = (kind, x) => `<div class="au"><span style="flex:none;max-width:35%">${esc(x.name)}</span><audio controls preload="none" src="/media/${kind}/${x.file}"></audio>
-      <button class="x adm" onclick="delMedia('${kind}','${x.file}')">Xoá</button></div>`;
+      ${isAdm() || (x.who && x.who === slugJs(whoName())) ? `<button class="x" onclick="delMedia('${kind}','${x.file}')">Xoá</button>` : ''}</div>`;
     $('gList').innerHTML = d.giong.map(x => row('giong', x)).join('') || '<div class="hint">Chưa có giọng nhân bản.</div>';
     $('mList').innerHTML = d.nhac.map(x => row('nhac', x)).join('') || '<div class="hint">Chưa có nhạc nền.</div>';
   } catch {}
 }
 async function delMedia(kind, f) {
   if (!confirm('Xoá "' + f + '"?')) return;
-  try { await api('/api/' + kind + '/' + f + '/delete', {}); toast('Đã xoá'); loadMedia(); } catch (e) { toast(e.message); }
+  try { await api('/api/' + kind + '/' + f + '/delete', { who: whoName() }); toast('Đã xoá'); loadMedia(); } catch (e) { toast(e.message, 5000); }
 }
-$('bGFile').onclick = () => $('gFile').click();
 $('gFile').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (f) await uploadAudio('giong', $('gName').value, f); };
 $('bMFile').onclick = () => { if (!$('mName').value.trim()) { toast('Hãy đặt tên nhạc trước'); $('mName').focus(); return; } $('mFile').click(); };
 $('mFile').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (f) await uploadAudio('nhac', $('mName').value, f); };
@@ -587,36 +614,106 @@ $('bMUrl').onclick = async () => {
   if (!name) { toast('Hãy đặt tên nhạc trước'); $('mName').focus(); return; }
   if (!url) { toast('Hãy dán link mp3'); return; }
   $('bMUrl').disabled = true; toast('Đang tải nhạc từ link...');
-  try { await api('/api/nhac/link', { name, url }); toast('Đã thêm nhạc!'); $('mUrl').value = ''; $('mName').value = ''; loadMedia(); }
+  try { await api('/api/nhac/link', { name, url, who: whoName() }); toast('Đã thêm nhạc!'); $('mUrl').value = ''; $('mName').value = ''; loadMedia(); }
   catch (e) { toast(e.message, 6000); }
   $('bMUrl').disabled = false;
 };
-let rec = null, recChunks = [], recTimer = null;
-$('bRec').onclick = async () => {
-  if (rec && rec.state === 'recording') { rec.stop(); return; }
-  if (!$('gName').value.trim()) { toast('Hãy đặt tên giọng trước'); $('gName').focus(); return; }
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    rec = new MediaRecorder(stream); recChunks = [];
-    rec.ondataavailable = e => e.data.size && recChunks.push(e.data);
-    rec.onstop = async () => {
-      clearInterval(recTimer); stream.getTracks().forEach(t => t.stop());
-      $('bRec').textContent = '● Ghi âm';
-      const blob = new Blob(recChunks, { type: rec.mimeType || 'audio/mp4' });
-      const url = URL.createObjectURL(blob);
-      $('recBox').innerHTML = `<div class="au"><audio controls src="${url}"></audio></div>
-        <div class="row" style="margin-top:8px"><button class="btn" id="bRecOk">Dùng bản ghi này</button><button class="btn red" id="bRecNo">Ghi lại</button></div>`;
-      $('bRecOk').onclick = async () => { if (await uploadAudio('giong', $('gName').value, blob)) $('recBox').innerHTML = ''; };
-      $('bRecNo').onclick = () => { $('recBox').innerHTML = ''; };
-    };
-    rec.start(); let sec = 0;
-    $('bRec').textContent = '■ Dừng (0s)';
-    recTimer = setInterval(() => { sec++; $('bRec').textContent = '■ Dừng (' + sec + 's)'; if (sec >= 25) rec.stop(); }, 1000);
-  } catch (e) { toast('Không mở được micro. Hãy cho phép trình duyệt dùng micro.', 5000); }
+let MUSIC = store.get('music_list', []);
+const player = new Audio(); let playing = '';
+player.onended = () => { playing = ''; drawMusic(); };
+function setMusic(f) {
+  $('music').value = f || ''; store.set('music', f || '');
+  const m = MUSIC.find(x => x.file === f);
+  $('mCurTxt').textContent = m ? '🎵 ' + m.name : '🎵 Không có nhạc';
+}
+function drawMusic() {
+  const cur = $('music').value;
+  const row = (f, name, desc) => `<div class="mrow ${cur === f ? 'on' : ''}" onclick="pickMusic('${f}')">
+    ${f ? `<button type="button" class="pl" onclick="event.stopPropagation();prevMusic('${f}')">${playing === f ? '❚❚' : '▶'}</button>` : '<span class="pl" style="display:grid;place-items:center">✕</span>'}
+    <div class="tx"><b>${esc(name)}</b>${desc ? `<small>${esc(desc)}</small>` : ''}</div>${cur === f ? '<span class="ck">✓</span>' : ''}</div>`;
+  $('mRows').innerHTML = row('', 'Không có nhạc', 'Thêm nhạc sau trong TikTok/Facebook') + MUSIC.map(x => row(x.file, x.name, x.desc || (x.builtin ? '' : 'Nhạc tải lên'))).join('');
+}
+function pickMusic(f) { setMusic(f); drawMusic(); }
+function prevMusic(f) {
+  if (playing === f) { player.pause(); playing = ''; }
+  else { player.src = '/media/nhac/' + f; player.play().catch(() => toast('Không phát được bài này')); playing = f; }
+  drawMusic();
+}
+$('mCur').onclick = () => {
+  const open = $('mPanel').classList.toggle('hide');
+  if (!open) drawMusic(); else { player.pause(); playing = ''; }
 };
+$('mUp').onclick = () => $('mUpFile').click();
+$('mUpFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  const name = (f.name || 'nhac').replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim().slice(0, 50) || 'nhac';
+  if (await uploadAudio('nhac', name, f)) toast('Đã thêm "' + name + '". Đang cập nhật danh sách...');
+};
+$('mLinkBtn').onclick = () => $('mLinkBox').classList.toggle('hide');
+$('mLinkGo').onclick = async () => {
+  const name = $('mLinkName').value.trim(), url = $('mLinkUrl').value.trim();
+  if (!name || !url) { toast('Nhập tên bài và link'); return; }
+  $('mLinkGo').disabled = true; toast('Đang tải nhạc từ link...');
+  try { const d = await api('/api/nhac/link', { name, url, who: whoName() }); toast('Đã thêm nhạc!'); $('mLinkUrl').value = ''; $('mLinkName').value = '';
+    await loadMedia(); pickMusic(d.file); } catch (er) { toast(er.message, 6000); }
+  $('mLinkGo').disabled = false;
+};
+setMusic(store.get('music', ''));
+// ----- ghi âm: idle -> recording -> review
+let rec = null, recStream = null, recChunks = [], recTimer = null, recSec = 0, recBlob = null, recState = 'idle';
+function recDraw() {
+  const ui = $('recUI');
+  if (recState === 'idle') {
+    ui.innerHTML = `<div class="row"><button type="button" class="btn" id="rStart">● Bắt đầu ghi âm</button>
+      <button type="button" class="btn sm" id="rFile" style="flex:none">Tải file có sẵn</button></div>`;
+    $('rStart').onclick = recStart; $('rFile').onclick = () => { if (needName()) $('gFile').click(); };
+  } else if (recState === 'recording') {
+    ui.innerHTML = `<div class="recon"><span class="dot"></span>Đang ghi âm… <span id="rSec">${recSec}</span>s / 25s</div>
+      <div class="row" style="margin-top:8px"><button type="button" class="btn stop" id="rStop">■ Dừng</button>
+      <button type="button" class="btn red" id="rCancel" style="flex:none">✕ Huỷ</button></div>`;
+    $('rStop').onclick = () => recStop(false); $('rCancel').onclick = () => recStop(true);
+  } else if (recState === 'review') {
+    const url = URL.createObjectURL(recBlob);
+    ui.innerHTML = `<div class="hint">Bước 3: Nghe lại. Đọc sai thì bấm <b>Ghi lại</b>.</div>
+      <audio controls src="${url}" style="width:100%;margin-top:6px"></audio>
+      <div class="row" style="margin-top:8px"><button type="button" class="btn ok" id="rUse">✓ Dùng bản này</button>
+      <button type="button" class="btn red" id="rAgain" style="flex:none">↺ Ghi lại</button></div>`;
+    $('rUse').onclick = async () => { $('rUse').disabled = true; if (await uploadAudio('giong', $('gName').value, recBlob)) { recBlob = null; recState = 'idle'; recDraw(); } else $('rUse').disabled = false; };
+    $('rAgain').onclick = () => { recBlob = null; recState = 'idle'; recDraw(); };
+  }
+}
+function needName() {
+  if ($('gName').value.trim()) return true;
+  toast('Bước 1: hãy đặt tên giọng trước'); $('gName').focus(); return false;
+}
+async function recStart() {
+  if (!needName()) return;
+  if (!window.MediaRecorder || !navigator.mediaDevices) { toast('Trình duyệt này không ghi âm được. Hãy dùng Safari/Chrome mới, hoặc bấm "Tải file có sẵn".', 6000); return; }
+  try { recStream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch { toast('Không mở được micro. Hãy cho phép trang web dùng micro (Cài đặt > Safari > Micro).', 6000); return; }
+  const type = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'].find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
+  rec = new MediaRecorder(recStream, type ? { mimeType: type } : undefined);
+  recChunks = []; recSec = 0; rec._cancel = false;
+  rec.ondataavailable = e => { if (e.data && e.data.size) recChunks.push(e.data); };
+  rec.onstop = () => {
+    clearInterval(recTimer); recStream.getTracks().forEach(t => t.stop());
+    if (rec._cancel || !recChunks.length) { recState = 'idle'; recDraw(); if (!rec._cancel) toast('Không ghi được âm thanh, hãy thử lại'); return; }
+    recBlob = new Blob(recChunks, { type: rec.mimeType || type || 'audio/mp4' });
+    recState = 'review'; recDraw();
+  };
+  rec.start(500);                    // lấy dữ liệu mỗi 0,5 giây để iPhone luôn có bản ghi
+  recState = 'recording'; recDraw();
+  recTimer = setInterval(() => { recSec++; const el = $('rSec'); if (el) el.textContent = recSec; if (recSec >= 25) recStop(false); }, 1000);
+}
+function recStop(cancel) {
+  clearInterval(recTimer);
+  if (rec && rec.state !== 'inactive') { rec._cancel = cancel; try { rec.requestData(); } catch {} rec.stop(); }
+  else { recState = 'idle'; recDraw(); }
+}
+recDraw();
 loadMedia();
 function goCard(id) { showTab('cai'); setTimeout(() => $(id).closest('.card').scrollIntoView({ behavior: 'smooth', block: 'start' }), 150); }
-$('goRec').onclick = e => { e.preventDefault(); goCard('bRec'); };
+$('goRec').onclick = e => { e.preventDefault(); goCard('recUI'); };
 $('goMusic').onclick = e => { e.preventDefault(); goCard('bMFile'); };
 $('bLogo').onclick = () => $('logoFile').click();
 $('logoFile').onchange = async e => {

@@ -75,6 +75,29 @@ async function putFile(env, path, b64, message) {
   if (!r.ok) throw new Error(`Không lưu được ảnh (GitHub ${r.status}): ${(await r.text()).slice(0, 200)}`);
 }
 
+async function readNames(env, folder) {
+  const r = await gh(env, `/contents/engine/assets/${folder}/_danh_sach.json`);
+  if (!r.ok) return { data: {}, sha: null };
+  const j = await r.json();
+  try {
+    const txt = new TextDecoder().decode(Uint8Array.from(atob(j.content.replace(/\n/g, '')), c => c.charCodeAt(0)));
+    return { data: JSON.parse(txt), sha: j.sha };
+  } catch { return { data: {}, sha: j.sha }; }
+}
+
+async function saveName(env, folder, file, ten, who) {
+  for (let i = 0; i < 3; i++) {
+    const { data, sha } = await readNames(env, folder);
+    if (ten === null) delete data[file]; else data[file] = { ...(data[file] || {}), ten, ...(who ? { who } : {}) };
+    const bytes = new TextEncoder().encode(JSON.stringify(data, null, 1));
+    let bin = ''; bytes.forEach(b => { bin += String.fromCharCode(b); });
+    const body = { message: `Cập nhật tên ${folder}`, content: btoa(bin), branch: 'main' };
+    if (sha) body.sha = sha;
+    const r = await gh(env, `/contents/engine/assets/${folder}/_danh_sach.json`, { method: 'PUT', body: JSON.stringify(body) });
+    if (r.ok) return;
+  }
+}
+
 async function rawFile(env, path, type) {
   const r = await gh(env, `/contents/${path}`, { headers: { accept: 'application/vnd.github.raw' } });
   if (!r.ok) return new Response('Không tìm thấy', { status: 404 });
@@ -199,7 +222,7 @@ export default {
       }
       const admin = await isAdmin(req, env);
       if (p === '/api/me') return json({ admin });
-      const needAdmin = /^\/api\/(jobs\/[a-z0-9]+\/delete|(kho|nhac|giong)\/[^/]+\/delete|logo)$/.test(p) && req.method === 'POST';
+      const needAdmin = /^\/api\/(jobs\/[a-z0-9]+\/delete|kho\/[^/]+\/delete|logo)$/.test(p) && req.method === 'POST';
       if (needAdmin && !admin) return err(ADMIN_ONLY, 403);
 
       // ---- tạo video
@@ -268,9 +291,13 @@ export default {
 
       // ---- nhạc nền, giọng mẫu (nhân bản)
       if (p === '/api/media' && req.method === 'GET') {
-        const [nhac, giong] = await Promise.all([listDir(env, 'engine/assets/nhac'), listDir(env, 'engine/assets/giong')]);
-        const pick = arr => arr.filter(f => !f.name.startsWith('.')).map(f => ({ file: f.name, name: f.name.replace(/\.[^.]+$/, '').replace(/_/g, ' '), size: f.size }));
-        return json({ nhac: pick(nhac), giong: pick(giong) });
+        const [nhac, giong, nn, gn] = await Promise.all([listDir(env, 'engine/assets/nhac'), listDir(env, 'engine/assets/giong'),
+          readNames(env, 'nhac'), readNames(env, 'giong')]);
+        const pick = (arr, names) => arr.filter(f => !/^[._]/.test(f.name)).map(f => {
+          const m = names[f.name] || {};
+          return { file: f.name, name: m.ten || f.name.replace(/\.[^.]+$/, '').replace(/_/g, ' '), desc: m.mo_ta || '', builtin: !!m.san, who: m.who || '', size: f.size };
+        }).sort((a, b) => (b.builtin - a.builtin) || a.name.localeCompare(b.name, 'vi'));
+        return json({ nhac: pick(nhac, nn.data), giong: pick(giong, gn.data) });
       }
       m = p.match(/^\/api\/(nhac|giong)$/);
       if (m && req.method === 'POST') {
@@ -281,6 +308,7 @@ export default {
         if (!['mp3', 'm4a', 'aac', 'wav', 'ogg', 'webm', 'mp4'].includes(ext)) return err('Định dạng âm thanh không hỗ trợ');
         if (!b.data || b.data.length > 20e6) return err('File trống hoặc quá lớn (tối đa khoảng 14MB)');
         await putFile(env, `engine/assets/${m[1]}/${name}.${ext}`, b.data, `${m[1] === 'nhac' ? 'Nhạc nền' : 'Giọng mẫu'}: thêm ${name}`);
+        await saveName(env, m[1], `${name}.${ext}`, String(b.name).trim().slice(0, 60), slug(b.who || ''));
         return json({ ok: true, file: `${name}.${ext}` });
       }
       if (p === '/api/nhac/link' && req.method === 'POST') {
@@ -302,13 +330,18 @@ export default {
         let bin = '';
         for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
         await putFile(env, `engine/assets/nhac/${name}.${ext}`, btoa(bin), `Nhạc nền: thêm ${name} từ link`);
+        await saveName(env, 'nhac', `${name}.${ext}`, String(b.name).trim().slice(0, 60), slug(b.who || ''));
         return json({ ok: true, file: `${name}.${ext}` });
       }
       m = p.match(/^\/api\/(nhac|giong)\/([a-z0-9_]+\.[a-z0-9]+)\/delete$/);
       if (m && req.method === 'POST') {
         const path = `engine/assets/${m[1]}/${m[2]}`;
+        const bb = await req.json().catch(() => ({}));
+        const owner = ((await readNames(env, m[1])).data[m[2]] || {}).who || '';
+        if (!admin && !(owner && owner === slug(bb.who || ''))) return err('Bạn chỉ xoá được giọng/nhạc do chính bạn tải lên. Muốn xoá cái khác hãy nhờ quản lý.', 403);
         const cur = await ghJson(env, `/contents/${path}`);
         if (cur) await gh(env, `/contents/${path}`, { method: 'DELETE', body: JSON.stringify({ message: `Xoá ${m[2]}`, sha: cur.sha, branch: 'main' }) });
+        await saveName(env, m[1], m[2], null);
         return json({ ok: true });
       }
       m = p.match(/^\/media\/(nhac|giong)\/([a-z0-9_]+)\.([a-z0-9]+)$/);
