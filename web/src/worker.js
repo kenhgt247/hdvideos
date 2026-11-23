@@ -266,6 +266,15 @@ export default {
       if (p === '/api/text') {
         const f = { chatgpt: 'engine/LENH_CHATGPT.txt', anh: 'engine/KHO_HINH_CAU_LENH.txt', luoi: 'engine/KHO_HINH_LUOI.txt' }[url.searchParams.get('f')];
         if (!f) return err('Không có');
+        if (url.searchParams.get('f') === 'chatgpt') {
+          const [txt, kho] = await Promise.all([
+            gh(env, `/contents/${f}`, { headers: { accept: 'application/vnd.github.raw' } }).then(r => r.text()),
+            listDir(env, 'engine/assets/kho'),
+          ]);
+          const names = kho.filter(x => x.name.endsWith('.png') && !x.name.startsWith('_')).map(x => x.name.slice(0, -4).replace(/_/g, ' '));
+          const extra = names.length ? `\n\nẢNH TRONG KHO (ưu tiên dùng, viết có dấu cũng được, ví dụ [vẽ: hồ sơ du học]):\n${names.join(', ')}\n` : '';
+          return new Response(txt.replace(/^\uFEFF/, '') + extra, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } });
+        }
         return rawFile(env, f, 'text/plain; charset=utf-8');
       }
       return new Response('Không tìm thấy', { status: 404 });

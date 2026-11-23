@@ -290,7 +290,7 @@ $('bPromptLuoi').onclick = () => copyFile('luoi', 'Đã copy câu lệnh lưới
 const textCache = {};
 async function copyFile(f, msg) {
   try {
-    if (!textCache[f]) { const r = await fetch('/api/text?f=' + f); if (!r.ok) throw 0; textCache[f] = await r.text(); }
+    if (!textCache[f] || f === "chatgpt") { const r = await fetch('/api/text?f=' + f); if (!r.ok) throw 0; textCache[f] = await r.text(); }
     toast(await copyText(textCache[f]) ? msg : 'Không copy được, hãy thử lại');
   } catch { toast('Không tải được câu lệnh'); }
 }
