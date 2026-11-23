@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1f46aa">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Video Vẽ Tay">
+<link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
 <title>Video Vẽ Tay – Du Học Hải Dương</title>
 <link rel="icon" href="/img/logo">
 <link rel="apple-touch-icon" href="/img/logo">
@@ -33,9 +38,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
 .hd .btn{flex:none}
 .grid .empty{grid-column:1/-1}
 .vid .d,.vid .n{overflow-wrap:anywhere}
-.btn{border:0;border-radius:12px;padding:11px 14px;font:inherit;font-size:15px;font-weight:600;background:var(--blue2);color:var(--blue);cursor:pointer;white-space:nowrap}
+.btn,button,a,select,.mrow,.it{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.btn:active,.mrow:active,nav button:active{transform:scale(.96);filter:brightness(.93)}
+.btn{transition:transform .08s,filter .08s;border:0;border-radius:12px;padding:11px 14px;font:inherit;font-size:15px;font-weight:600;background:var(--blue2);color:var(--blue);cursor:pointer;white-space:nowrap}
 .btn.sm{padding:8px 11px;font-size:14px}
 .btn.red{background:#fde8ea;color:var(--red)}
+.btn.save{width:100%;background:var(--ok);color:#fff;font-size:17px;padding:14px;position:relative;overflow:hidden}
+.btn.save .pg{position:absolute;left:0;top:0;bottom:0;background:rgba(255,255,255,.25);width:0;transition:width .2s}
+.btn.save span{position:relative}
 .btn.main{width:100%;background:var(--red);color:#fff;font-size:18px;padding:15px;margin-top:16px;box-shadow:0 4px 14px rgba(214,38,50,.25)}
 .btn:disabled{opacity:.5}
 .tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
@@ -430,8 +440,8 @@ function jobCard(j) {
         ${s.info && s.info.credit ? `<div class="hint" style="margin-top:6px">Dán vào mô tả video: <b>${esc(s.info.credit)}</b> <a href="#" onclick="event.preventDefault();copyText(${esc(JSON.stringify(s.info.credit))}).then(()=>toast('Đã copy'))">Copy</a></div>` : ''}
         <video src="/video/${j.id}" controls playsinline preload="metadata"></video>
         ${postsBox(s.info && s.info.posts)}
-        <div class="row" style="margin-top:10px"><a class="btn" href="/video/${j.id}" download style="text-align:center;text-decoration:none">Tải video</a>
-        <button class="btn red" onclick="dismiss('${j.id}')">Đóng</button></div></div>`;
+        <button type="button" class="btn save" style="margin-top:10px" onclick="saveVideo(this,'${j.id}',${esc(JSON.stringify(j.name))})"><i class="pg"></i><span>💾 Lưu video vào máy</span></button>
+        <div class="row" style="margin-top:8px"><button class="btn red" onclick="dismiss('${j.id}')">Đóng</button></div></div>`;
     }
     if (s.state === 'error') {
       return `<div class="card job error"><div class="t">✗ ${esc(j.name)}</div><div class="s" style="white-space:pre-wrap">${esc(s.error)}</div>
@@ -462,6 +472,50 @@ function postTab(k, which, btn) {
   else t.hidden = true;
 }
 function copyPost(k) { copyText($(k + '_x').value).then(ok => toast(ok ? 'Đã copy! Mở app và dán vào bài đăng.' : 'Không copy được, hãy giữ tay vào ô chữ để chọn')); }
+// ----- lưu video: tải về trong web -> chia sẻ (iPhone: "Lưu video" vào Ảnh) / tải thẳng (Android, máy tính)
+const VBLOB = {};
+function setBtn(btn, txt, pct) {
+  const sp = btn.querySelector('span'); if (sp) sp.textContent = txt; else btn.textContent = txt;
+  const pg = btn.querySelector('.pg'); if (pg) pg.style.width = (pct || 0) + '%';
+}
+async function saveVideo(btn, id, name) {
+  const fname = (slugJs(name) || 'video') + '.mp4';
+  if (VBLOB[id]) return shareOrDownload(btn, VBLOB[id], fname, name);
+  if (btn.disabled) return;
+  btn.disabled = true; setBtn(btn, 'Đang tải video 0%', 2);
+  try {
+    const r = await fetch('/video/' + id);
+    if (!r.ok) throw new Error('Không tải được video (lỗi ' + r.status + ')');
+    const total = +r.headers.get('content-length') || 0, reader = r.body.getReader(), parts = [];
+    let got = 0;
+    for (;;) {
+      const { done, value } = await reader.read(); if (done) break;
+      parts.push(value); got += value.length;
+      if (total) setBtn(btn, 'Đang tải video ' + Math.round(got / total * 100) + '%', got / total * 100);
+      else setBtn(btn, 'Đang tải ' + (got / 1048576).toFixed(1) + ' MB', 50);
+    }
+    VBLOB[id] = new Blob(parts, { type: 'video/mp4' });
+    btn.disabled = false;
+    const f = new File([VBLOB[id]], fname, { type: 'video/mp4' });
+    if (navigator.canShare && navigator.canShare({ files: [f] })) {
+      setBtn(btn, isIOS() ? '📲 Bấm để lưu vào Ảnh' : '📲 Bấm để lưu / chia sẻ', 100);
+      toast(isIOS() ? 'Tải xong! Bấm nút xanh rồi chọn "Lưu video".' : 'Tải xong! Bấm nút xanh để lưu.', 4500);
+    } else {
+      shareOrDownload(btn, VBLOB[id], fname, name);
+    }
+  } catch (e) { btn.disabled = false; setBtn(btn, '💾 Thử lưu lại', 0); toast(e.message || 'Lỗi mạng, thử lại', 5000); }
+}
+function isIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+async function shareOrDownload(btn, blob, fname, name) {
+  const f = new File([blob], fname, { type: 'video/mp4' });
+  if (navigator.canShare && navigator.canShare({ files: [f] })) {
+    try { await navigator.share({ files: [f], title: name }); setBtn(btn, '✓ Đã mở bảng lưu – bấm lại nếu cần', 100); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  setBtn(btn, '✓ Đã lưu vào Tải xuống', 100);
+}
 function dismiss(id) { store.set('jobs', store.get('jobs', []).filter(j => j.id !== id)); delete jobState[id]; renderJobs(); }
 let polling = null;
 async function pollJobs() {
@@ -499,7 +553,7 @@ async function loadList() {
       ${v.fallback ? '<span class="tag">Giọng dự phòng</span>' : ''}
       ${v.credit ? `<div class="hint">Ghi nguồn nhạc: ${esc(v.credit)} <a href="#" onclick="event.preventDefault();copyText(${esc(JSON.stringify(v.credit))}).then(()=>toast('Đã copy'))">Copy</a></div>` : ''}
       <div class="acts">
-        ${v.ok ? `<button class="btn sm" onclick="play(this,'${v.id}')">Xem</button><a class="btn sm" href="/video/${v.id}" download style="text-decoration:none">Tải</a>` : ''}
+        ${v.ok ? `<button class="btn sm" onclick="play(this,'${v.id}')">Xem</button><button class="btn sm" style="background:var(--ok);color:#fff" onclick="saveVideo(this,'${v.id}',${esc(JSON.stringify(v.name))})">💾 Lưu</button>` : ''}
         ${v.posts ? `<button class="btn sm" onclick="showPosts(this,${i})">📝 Bài đăng</button>` : ''}
         <button class="btn sm" onclick="reuse(${i})">Dùng lại kịch bản</button>
         <button class="btn sm red adm" onclick="delVid('${v.id}')">Xoá</button>

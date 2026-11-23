@@ -170,15 +170,28 @@ async function listVideos(env) {
   return { items, voices: voices || [] };
 }
 
-async function videoRedirect(env, id) {
+async function videoProxy(req, env, id, dl) {
+  // Phát/tải video qua chính trang web (cùng địa chỉ) để iPhone/Android lưu được dễ dàng.
   const rel = await ghJson(env, `/releases/tags/job-${id}`);
   const mp4 = rel && (rel.assets || []).find(a => a.name.endsWith('.mp4'));
   if (!mp4) return new Response('Chưa có video', { status: 404 });
   const r = await gh(env, `/releases/assets/${mp4.id}`, { headers: { accept: 'application/octet-stream' }, redirect: 'manual' });
   const loc = r.headers.get('location');
-  if (loc) return Response.redirect(loc, 302);
-  return new Response(r.body, { headers: { 'content-type': 'video/mp4' } });
+  const range = req.headers.get('range');
+  const src = loc ? await fetch(loc, { headers: range ? { range } : {} }) : r;
+  const h = new Headers({ 'content-type': 'video/mp4', 'accept-ranges': 'bytes', 'cache-control': 'private, max-age=86400' });
+  for (const k of ['content-length', 'content-range', 'etag', 'last-modified']) {
+    const v = src.headers.get(k); if (v) h.set(k, v);
+  }
+  if (dl) h.set('content-disposition', `attachment; filename="${mp4.name.replace(/[^A-Za-z0-9_.-]/g, '_')}"`);
+  return new Response(src.body, { status: src.status === 206 ? 206 : 200, headers: h });
 }
+
+const MANIFEST = JSON.stringify({
+  name: 'Video Vẽ Tay – Du Học Hải Dương', short_name: 'Video Vẽ Tay', start_url: '/', scope: '/', display: 'standalone',
+  background_color: '#f4f6fb', theme_color: '#1f46aa', lang: 'vi',
+  icons: [{ src: '/img/logo', sizes: '512x512', type: 'image/png', purpose: 'any' }],
+});
 
 async function listDir(env, path) {
   const d = await ghJson(env, `/contents/${path}`);
@@ -205,6 +218,8 @@ export default {
     const url = new URL(req.url);
     const p = url.pathname;
     try {
+      if (p === '/manifest.webmanifest') return new Response(MANIFEST, { headers: { 'content-type': 'application/manifest+json' } });
+      if (p === '/img/logo') return rawFile(env, 'engine/assets/logo.png', 'image/png');
       if (p === '/api/login' && req.method === 'POST') {
         const { password } = await req.json().catch(() => ({}));
         const admin = !!env.ADMIN_PASSWORD && password === env.ADMIN_PASSWORD;
@@ -263,7 +278,7 @@ export default {
       if (m) return json(await jobStatus(env, m[1]));
       if (p === '/api/list') return json(await listVideos(env));
       m = p.match(/^\/video\/([a-z0-9]+)$/);
-      if (m) return videoRedirect(env, m[1]);
+      if (m) return videoProxy(req, env, m[1], url.searchParams.get('dl') === '1');
       m = p.match(/^\/api\/jobs\/([a-z0-9]+)\/delete$/);
       if (m && req.method === 'POST') {
         const rel = await ghJson(env, `/releases/tags/job-${m[1]}`);
