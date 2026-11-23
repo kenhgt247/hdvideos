@@ -324,7 +324,7 @@ export default {
       if (p === '/api/timnhac') {
         const q = (url.searchParams.get('q') || 'background').slice(0, 60);
         const lic = url.searchParams.get('by') === '1' ? 'cc0,pdm,by' : 'cc0,pdm';
-        const api = `https://api.openverse.org/v1/audio/?q=${encodeURIComponent(q)}&license=${lic}&category=music&page_size=30&mature=false`;
+        const api = `https://api.openverse.org/v1/audio/?q=${encodeURIComponent(q)}&license=${lic}&category=music&page_size=20&mature=false`;
         const r = await fetch(api, { headers: { 'user-agent': 'hdvideos/1.0 (Du Hoc Hai Duong)', accept: 'application/json' } });
         if (!r.ok) return err(`Kho nhạc Openverse đang bận (lỗi ${r.status}), thử lại sau`, 502);
         const d = await r.json();

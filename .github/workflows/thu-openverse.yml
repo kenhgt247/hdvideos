@@ -8,7 +8,7 @@ jobs:
           for q in "calm piano" "happy ukulele" "inspiring" "corporate"; do
             for lic in "cc0,pdm" "cc0,pdm,by"; do
               echo "== $q | $lic"
-              curl -s -A "hdvideos/1.0" "https://api.openverse.org/v1/audio/?q=$(echo $q | sed 's/ /%20/g')&license=$lic&category=music&page_size=30&mature=false" | python3 -c "
+              curl -s -A "hdvideos/1.0" "https://api.openverse.org/v1/audio/?q=$(echo $q | sed 's/ /%20/g')&license=$lic&category=music&page_size=20&mature=false" | python3 -c "
           import json,sys
           d=json.load(sys.stdin); r=d.get('results',[])
           ok=[x for x in r if x.get('url') and (not x.get('duration') or 30000<=x['duration']<=420000)]
