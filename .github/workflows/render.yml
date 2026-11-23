@@ -26,7 +26,13 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
+
+      - name: Nho thu vien
+        id: venv
+        uses: actions/cache@v4
+        with:
+          path: ~/venv
+          key: venv-${{ runner.os }}-py312-${{ hashFiles('requirements.txt') }}-v2
 
       - name: Nho mo hinh giong doc
         uses: actions/cache@v4
@@ -37,20 +43,18 @@ jobs:
           key: vieneu-models-v1
 
       - name: Cai thu vien
-        env:
-          JOB: ${{ inputs.job }}
+        if: steps.venv.outputs.cache-hit != 'true'
         run: |
-          pip install -r requirements.txt
-          if echo "$JOB" | grep -q '"voice": *"vieneu'; then
-            pip install vieneu --extra-index-url https://download.pytorch.org/whl/cpu || echo "Khong cai duoc VieNeu - se dung giong du phong"
-          fi
+          python -m venv ~/venv
+          ~/venv/bin/pip install -r requirements.txt
+          ~/venv/bin/pip install vieneu --extra-index-url https://download.pytorch.org/whl/cpu || echo "Khong cai duoc VieNeu"
 
       - name: Dung video
         env:
           JOB: ${{ inputs.job }}
         run: |
           printf '%s' "$JOB" > job.json
-          python render.py job.json out
+          ~/venv/bin/python render.py job.json out
 
       - name: Dua video len
         if: always()
@@ -59,7 +63,7 @@ jobs:
           JOB_ID: ${{ inputs.job_id }}
         run: |
           [ -f out/info.json ] || echo '{"ok": false, "error": "Máy dựng bị dừng giữa chừng."}' > out/info.json
-          FILE=$(python -c "import json;print(json.load(open('out/info.json')).get('file','video.mp4'))")
+          FILE=$(python3 -c "import json;print(json.load(open('out/info.json')).get('file','video.mp4'))")
           ASSETS="out/info.json"
           if [ -f out/video.mp4 ] && grep -q '"ok": true' out/info.json; then
             mv out/video.mp4 "out/$FILE"; ASSETS="$ASSETS out/$FILE"

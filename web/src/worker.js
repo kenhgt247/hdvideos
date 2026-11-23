@@ -79,6 +79,7 @@ async function rawFile(env, path, type) {
 const STEP_VI = {
   'Lay ma nguon': 'Chuẩn bị máy dựng',
   'Cai Python': 'Cài đặt máy dựng',
+  'Nho thu vien': 'Nạp thư viện',
   'Nho mo hinh giong doc': 'Nạp giọng đọc',
   'Cai thu vien': 'Cài thư viện giọng đọc',
   'Dung video': 'Đang đọc giọng và vẽ video',
