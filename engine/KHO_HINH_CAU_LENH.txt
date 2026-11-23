@@ -1,0 +1,162 @@
+﻿STYLE (dán 1 lần ở đầu cuộc trò chuyện ChatGPT):
+
+You will draw a series of illustrations for whiteboard hand-drawn explainer videos of a Vietnamese study-abroad center. Keep EVERY image in exactly this same style:
+- Hand-drawn marker doodle, thick clean black outlines, simple flat colors only: royal blue #2046AA, red #D62632, orange #EE8014, light grey, natural skin tone. No shading, no gradients.
+- Plain pure white background. No floor shadow, no frame, no border.
+- NO text, NO letters, NO numbers, NO logos, NO watermark anywhere (signs and papers stay blank).
+- Horizontal 4:3 image, subject centered, generous white space around.
+- Recurring characters (draw them the same every time):
+  * "Consultant man": young Vietnamese man, short neat black hair, royal blue polo shirt, dark trousers, red name badge on a red lanyard.
+  * "Consultant woman": young Vietnamese woman, long black ponytail with small orange bow, royal blue blouse, dark pencil skirt, red name badge.
+  * "Student Nam": Vietnamese teenage boy, short black hair, white T-shirt, jeans, orange backpack.
+  * "Student Lan": Vietnamese teenage girl, shoulder-length black hair, light blue shirt, dark skirt.
+  * "Parents": Vietnamese mother (bun hair, purple blouse) and father (short hair, grey shirt), around 45 years old.
+Reply "Ready" and wait. Then for each message "Draw: ..." create ONE image.
+
+CÁCH LÀM
+1. Mở cuộc trò chuyện MỚI trên ChatGPT, dán khối STYLE ở trên.
+2. Gửi lần lượt từng dòng "Draw: ..." bên dưới. Mỗi lần 1 ảnh.
+3. Tải ảnh về, ĐẶT TÊN FILE đúng như tên in đậm (ví dụ: phong van visa.png). Tên file chính là từ khóa để app tự chọn ảnh.
+4. Trong app: Kho hình → "+ Thêm ảnh..." → chọn nhiều ảnh một lúc. App tự tách nền.
+5. Ảnh nào lệch phong cách: gửi lại "Same style as before, redraw: ..." hoặc bỏ qua.
+
+
+A. HỒ SƠ & VISA
+1. ho so du hoc.png
+   Draw: a neat stack of blank document folders and papers on a desk, Student Nam smiling next to it with a thumbs up
+2. kiem tra giay to.png
+   Draw: Consultant woman checking blank documents with a magnifying glass at a desk, Student Lan watching
+3. dich thuat cong chung.png
+   Draw: blank documents with a big rubber stamp and a translation arrow between two papers
+4. phong van visa.png
+   Draw: visa interview: Student Nam sitting nervously across a desk from a friendly interviewer officer (grey suit), a small blank flag on the desk
+5. do visa.png
+   Draw: Student Lan jumping with joy holding an open passport, confetti around
+6. truot visa.png
+   Draw: Student Nam looking sad holding a passport, small grey rain cloud above his head
+7. cho ket qua visa.png
+   Draw: Student Nam sitting on a bench checking his phone, a big clock on the wall
+8. nop ho so.png
+   Draw: Student Lan handing a document folder to an officer behind a service counter
+9. chup anh the.png
+   Draw: Student Nam sitting in front of a camera on a tripod against a white wall
+10. ky don.png
+   Draw: close-up of a hand signing a blank application form with a pen
+
+B. TƯ VẤN & GIA ĐÌNH
+11. tu van phu huynh.png
+   Draw: Consultant man explaining a blank chart to Parents and Student Nam around a table, everyone smiling
+12. phu huynh lo lang.png
+   Draw: Parents looking worried, thinking bubble with a question mark and an airplane
+13. hoc sinh phan van.png
+   Draw: Student Lan thinking, two thought bubbles: a South Korea flag and a Taiwan-style sun flag (simple, no text)
+14. gia dinh ung ho.png
+   Draw: Parents hugging Student Nam who wears a graduation cap, hearts around
+15. chia tay san bay.png
+   Draw: Student Lan with a suitcase waving goodbye to Parents at an airport gate
+16. goi video ve nha.png
+   Draw: Student Nam in a dorm room video-calling his mother on a laptop, both smiling
+17. nhan tin inbox.png
+   Draw: a big smartphone with chat bubbles (blank), Consultant woman pointing at it
+18. trung tam tu van.png
+   Draw: a bright small consulting office with Consultant man and Consultant woman waving welcome
+
+C. CHI PHÍ & HỌC BỔNG
+19. chi phi du hoc.png
+   Draw: a calculator, stacks of coins and banknotes (no numbers), Parents calculating
+20. so tiet kiem.png
+   Draw: a bank savings book and a piggy bank with coins
+21. hoc bong.png
+   Draw: Student Lan on a small stage receiving a big certificate with a gold medal ribbon
+22. dong hoc phi.png
+   Draw: Student Nam paying at a university cashier window with a card
+23. tiet kiem tien.png
+   Draw: a glass jar filling with coins and a small plant growing from coins
+
+D. HỌC TẬP
+24. hoc tieng han.png
+   Draw: Student Nam studying at a desk with a textbook and flashcards, a South Korea flag pennant on the wall
+25. hoc tieng trung.png
+   Draw: Student Lan practicing writing in a notebook with a brush pen, a Taiwan-style pennant on the wall
+26. lop hoc tieng.png
+   Draw: a language classroom: teacher at a whiteboard (blank) and four international students raising hands
+27. thi chung chi.png
+   Draw: students taking an exam in a quiet hall, papers on desks
+28. thu vien.png
+   Draw: Student Lan reading in a university library with tall bookshelves
+29. thuyet trinh.png
+   Draw: Student Nam giving a presentation pointing at a blank bar chart on a screen
+30. le tot nghiep.png
+   Draw: Student Nam and Student Lan in graduation gowns throwing caps in the air
+31. truong dai hoc.png
+   Draw: a beautiful university campus building with trees and a clock tower
+
+E. SÂN BAY & LÊN ĐƯỜNG
+32. chuan bi vali.png
+   Draw: Student Nam packing an open suitcase with clothes, books and a small rice cooker
+33. san bay.png
+   Draw: Student Lan pulling a suitcase inside a bright airport terminal, airplane visible through the window
+34. may bay cat canh.png
+   Draw: a passenger airplane taking off over clouds
+35. den noi.png
+   Draw: Student Nam arriving with a suitcase, looking amazed at a modern city skyline
+
+F. CUỘC SỐNG Ở HÀN QUỐC
+36. ky tuc xa han quoc.png
+   Draw: a tidy Korean university dorm room with two beds, desks and a window, Student Nam unpacking
+37. mon an han quoc.png
+   Draw: a table with kimchi, tteokbokki, bibimbap and a bowl of ramen, chopsticks
+38. tau dien ngam han quoc.png
+   Draw: Student Lan standing inside a clean subway train holding a strap
+39. mua dong han quoc.png
+   Draw: Student Nam in a warm winter coat and scarf in snow, snowflakes
+40. hoa anh dao han quoc.png
+   Draw: Student Lan walking under pink cherry blossom trees
+41. cung dien han quoc.png
+   Draw: a traditional Korean palace gate with curved roof (generic, no text)
+42. cua hang tien loi.png
+   Draw: Student Nam working part-time at a convenience store counter (blank signs)
+
+G. CUỘC SỐNG Ở ĐÀI LOAN
+43. cho dem dai loan.png
+   Draw: a busy Taiwan night market with food stalls and lanterns (blank signs), Student Lan eating street food
+44. tra sua tran chau.png
+   Draw: a big cup of bubble milk tea with tapioca pearls, Student Lan smiling holding it
+45. thap 101.png
+   Draw: a tall modern skyscraper with stacked segments above a city skyline (Taipei style), no text
+46. ky tuc xa dai loan.png
+   Draw: a Taiwan university dorm room with bunk beds and a fan, Student Nam waving
+47. xe may dai loan.png
+   Draw: a street with many scooters and green trees, warm sunny day
+48. vua hoc vua lam.png
+   Draw: Student Nam split into two halves: left studying at a desk, right working in a clean factory/workshop wearing gloves
+49. mon an dai loan.png
+   Draw: a table with beef noodle soup, dumplings, pineapple cake and bubble tea
+
+H. LÀM THÊM & VIỆC LÀM
+50. lam them nha hang.png
+   Draw: Student Lan working part-time as a waitress carrying a tray in a restaurant
+51. thuc tap cong ty.png
+   Draw: Student Nam in a shirt working on a laptop in a modern office with colleagues
+52. nhan luong.png
+   Draw: Student Nam happily holding an envelope of money, coins sparkle
+53. co hoi viec lam.png
+   Draw: Student Lan in business attire climbing steps of a rising bar chart toward a star
+54. phong van xin viec.png
+   Draw: Student Lan shaking hands with a manager across a desk
+
+I. LƯU Ý & CẢNH BÁO
+55. lua dao du hoc.png
+   Draw: a suspicious man in sunglasses handing a too-good-to-be-true paper to Student Nam, a big warning triangle sign (no text)
+56. lam chui.png
+   Draw: Student Nam working secretly in a back kitchen at night looking nervous, a police silhouette at the door
+57. nho nha.png
+   Draw: Student Lan sitting by a dorm window at night looking at a photo of her family, small sad face
+58. soc van hoa.png
+   Draw: Student Nam confused with many question marks around his head in a foreign street
+59. lac duong.png
+   Draw: Student Lan holding a paper map, looking lost at a crossroads with arrows
+60. can nhac ky.png
+   Draw: Consultant man raising a finger with a lightbulb above his head, giving advice
+
+Ghi chú: tên file KHÔNG DẤU cũng được (app tự hiểu), ví dụ "phong van visa.png" = từ khóa "phỏng vấn visa".

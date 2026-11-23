@@ -1,0 +1,35 @@
+name: Xu ly anh tai len
+on:
+  push:
+    branches: [main]
+    paths:
+      - "engine/assets/kho_moi/**"
+      - "engine/assets/nhanvat_moi/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: process-uploads
+  cancel-in-progress: false
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install pillow numpy
+      - run: python process_uploads.py
+      - name: Luu ket qua
+        run: |
+          git config user.name "hdvideos-bot"
+          git config user.email "hdvideos-bot@users.noreply.github.com"
+          git add -A engine/assets
+          git diff --cached --quiet && exit 0
+          git commit -m "Tach nen anh tai len"
+          for i in 1 2 3; do git pull --rebase && git push && break; sleep 5; done

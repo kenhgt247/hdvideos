@@ -1,0 +1,233 @@
+﻿STYLE (dán 1 lần ở đầu cuộc trò chuyện ChatGPT):
+
+You will draw a series of illustrations for whiteboard hand-drawn explainer videos of a Vietnamese study-abroad center. Keep EVERY image in exactly this same style:
+- Hand-drawn marker doodle, thick clean black outlines, simple flat colors only: royal blue #2046AA, red #D62632, orange #EE8014, light grey, natural skin tone. No shading, no gradients.
+- Plain pure white background. No floor shadow, no frame, no border.
+- NO text, NO letters, NO numbers, NO logos, NO watermark anywhere (signs and papers stay blank).
+- Horizontal 4:3 image, subject centered, generous white space around.
+- Recurring characters (draw them the same every time):
+  * "Consultant man": young Vietnamese man, short neat black hair, royal blue polo shirt, dark trousers, red name badge on a red lanyard.
+  * "Consultant woman": young Vietnamese woman, long black ponytail with small orange bow, royal blue blouse, dark pencil skirt, red name badge.
+  * "Student Nam": Vietnamese teenage boy, short black hair, white T-shirt, jeans, orange backpack.
+  * "Student Lan": Vietnamese teenage girl, shoulder-length black hair, light blue shirt, dark skirt.
+  * "Parents": Vietnamese mother (bun hair, purple blouse) and father (short hair, grey shirt), around 45 years old.
+Reply "Ready" and wait. Then for each message I send, create ONE image exactly as described.
+
+CÁCH LÀM NHANH – VẼ LƯỚI 4 CẢNH / 1 ẢNH (60 cảnh = 15 lần gửi)
+1. Mở cuộc trò chuyện MỚI trên ChatGPT, dán khối STYLE ở trên. Đợi ChatGPT trả lời "Ready".
+2. Gửi lần lượt từng câu lệnh "LƯỚI 1", "LƯỚI 2"... bên dưới (copy cả đoạn "Draw a 2x2 grid...").
+3. Tải ảnh về. Trong app: Kho hình → "Cắt ảnh lưới (4 hình/ảnh)..." → chọn ảnh → kiểu lưới 2 x 2
+   → dán 4 TÊN tương ứng (đã ghi sẵn dưới mỗi câu lệnh) → "Cắt và thêm vào kho".
+4. Hình nào trong lưới bị xấu: ghi dấu - thay cho tên đó để bỏ qua, rồi vẽ lại riêng hình đó sau.
+Mẹo: nếu ChatGPT vẽ dính các hình vào nhau, nhắn thêm: "Redraw with much wider white gaps between the 4 pictures."
+
+============================================================
+LƯỚI 1
+Draw a 2x2 grid of 4 SEPARATE illustrations on ONE white canvas (landscape 3:2), same style as before. Leave very wide empty white gaps between the 4 pictures, no borders, no dividing lines, no text, no numbers. Each picture stays fully inside its own quarter.
+- top-left: a neat stack of blank document folders and papers on a desk, Student Nam smiling next to it with a thumbs up
+- top-right: Consultant woman checking blank documents with a magnifying glass at a desk, Student Lan watching
+- bottom-left: blank documents with a big rubber stamp and a translation arrow between two papers
+- bottom-right: visa interview: Student Nam sitting nervously across a desk from a friendly interviewer officer (grey suit), a small blank flag on the desk
+
+TÊN để dán vào app (Cắt ảnh lưới):
+ho so du hoc
+kiem tra giay to
+dich thuat cong chung
+phong van visa
+
+============================================================
+LƯỚI 2
+Draw a 2x2 grid of 4 SEPARATE illustrations on ONE white canvas (landscape 3:2), same style as before. Leave very wide empty white gaps between the 4 pictures, no borders, no dividing lines, no text, no numbers. Each picture stays fully inside its own quarter.
+- top-left: Student Lan jumping with joy holding an open passport, confetti around
+- top-right: Student Nam looking sad holding a passport, small grey rain cloud above his head
+- bottom-left: Student Nam sitting on a bench checking his phone, a big clock on the wall
+- bottom-right: Student Lan handing a document folder to an officer behind a service counter
+
+TÊN để dán vào app (Cắt ảnh lưới):
+do visa
+truot visa
+cho ket qua visa
+nop ho so
+
+============================================================
+LƯỚI 3
+Draw a 2x2 grid of 4 SEPARATE illustrations on ONE white canvas (landscape 3:2), same style as before. Leave very wide empty white gaps between the 4 pictures, no borders, no dividing lines, no text, no numbers. Each picture stays fully inside its own quarter.
+- top-left: Student Nam sitting in front of a camera on a tripod against a white wall
+- top-right: close-up of a hand signing a blank application form with a pen
+- bottom-left: Consultant man explaining a blank chart to Parents and Student Nam around a table, everyone smiling
+- bottom-right: Parents looking worried, thinking bubble with a question mark and an airplane
+
+TÊN để dán vào app (Cắt ảnh lưới):
+chup anh the
+ky don
+tu van phu huynh
+phu huynh lo lang
+
+============================================================
+LƯỚI 4
+Draw a 2x2 grid of 4 SEPARATE illustrations on ONE white canvas (landscape 3:2), same style as before. Leave very wide empty white gaps between the 4 pictures, no borders, no dividing lines, no text, no numbers. Each picture stays fully inside its own quarter.
+- top-left: Student Lan thinking, two thought bubbles: a South Korea flag and a Taiwan-style sun flag (simple, no text)
+- top-right: Parents hugging Student Nam who wears a graduation cap, hearts around
+- bottom-left: Student Lan with a suitcase waving goodbye to Parents at an airport gate
+- bottom-right: Student Nam in a dorm room video-calling his mother on a laptop, both smiling
+
+TÊN để dán vào app (Cắt ảnh lưới):
+hoc sinh phan van
+gia dinh ung ho
+chia tay san bay
+goi video ve nha
+
+============================================================
+LƯỚI 5
+Draw a 2x2 grid of 4 SEPARATE illustrations on ONE white canvas (landscape 3:2), same style as before. Leave very wide empty white gaps between the 4 pictures, no borders, no dividing lines, no text, no numbers. Each picture stays fully inside its own quarter.
+- top-left: a big smartphone with chat bubbles (blank), Consultant woman pointing at it
+- top-right: a bright small consulting office with Consultant man and Consultant woman waving welcome
+- bottom-left: a calculator, stacks of coins and banknotes (no numbers), Parents calculating
+- bottom-right: a bank savings book and a piggy bank with coins
+
+TÊN để dán vào app (Cắt ảnh lưới):
+nhan tin inbox
+trung tam tu van
+chi phi du hoc
+so tiet kiem
+
+============================================================
+LƯỚI 6
+Draw a 2x2 grid of 4 SEPARATE illustrations on ONE white canvas (landscape 3:2), same style as before. Leave very wide empty white gaps between the 4 pictures, no borders, no dividing lines, no text, no numbers. Each picture stays fully inside its own quarter.
+- top-left: Student Lan on a small stage receiving a big certificate with a gold medal ribbon
+- top-right: Student Nam paying at a university cashier window with a card
+- bottom-left: a glass jar filling with coins and a small plant growing from coins
+- bottom-right: Student Nam studying at a desk with a textbook and flashcards, a South Korea flag pennant on the wall
+
+TÊN để dán vào app (Cắt ảnh lưới):
+hoc bong
+dong hoc phi
+tiet kiem tien
+hoc tieng han
+
+============================================================
+LƯỚI 7
+Draw a 2x2 grid of 4 SEPARATE illustrations on ONE white canvas (landscape 3:2), same style as before. Leave very wide empty white gaps between the 4 pictures, no borders, no dividing lines, no text, no numbers. Each picture stays fully inside its own quarter.
+- top-left: Student Lan practicing writing in a notebook with a brush pen, a Taiwan-style pennant on the wall
+- top-right: a language classroom: teacher at a whiteboard (blank) and four international students raising hands
+- bottom-left: students taking an exam in a quiet hall, papers on desks
+- bottom-right: Student Lan reading in a university library with tall bookshelves
+
+TÊN để dán vào app (Cắt ảnh lưới):
+hoc tieng trung
+lop hoc tieng
+thi chung chi
+thu vien
+
+============================================================
+LƯỚI 8
+Draw a 2x2 grid of 4 SEPARATE illustrations on ONE white canvas (landscape 3:2), same style as before. Leave very wide empty white gaps between the 4 pictures, no borders, no dividing lines, no text, no numbers. Each picture stays fully inside its own quarter.
+- top-left: Student Nam giving a presentation pointing at a blank bar chart on a screen
+- top-right: Student Nam and Student Lan in graduation gowns throwing caps in the air
+- bottom-left: a beautiful university campus building with trees and a clock tower
+- bottom-right: Student Nam packing an open suitcase with clothes, books and a small rice cooker
+
+TÊN để dán vào app (Cắt ảnh lưới):
+thuyet trinh
+le tot nghiep
+truong dai hoc
+chuan bi vali
+
+============================================================
+LƯỚI 9
+Draw a 2x2 grid of 4 SEPARATE illustrations on ONE white canvas (landscape 3:2), same style as before. Leave very wide empty white gaps between the 4 pictures, no borders, no dividing lines, no text, no numbers. Each picture stays fully inside its own quarter.
+- top-left: Student Lan pulling a suitcase inside a bright airport terminal, airplane visible through the window
+- top-right: a passenger airplane taking off over clouds
+- bottom-left: Student Nam arriving with a suitcase, looking amazed at a modern city skyline
+- bottom-right: a tidy Korean university dorm room with two beds, desks and a window, Student Nam unpacking
+
+TÊN để dán vào app (Cắt ảnh lưới):
+san bay
+may bay cat canh
+den noi
+ky tuc xa han quoc
+
+============================================================
+LƯỚI 10
+Draw a 2x2 grid of 4 SEPARATE illustrations on ONE white canvas (landscape 3:2), same style as before. Leave very wide empty white gaps between the 4 pictures, no borders, no dividing lines, no text, no numbers. Each picture stays fully inside its own quarter.
+- top-left: a table with kimchi, tteokbokki, bibimbap and a bowl of ramen, chopsticks
+- top-right: Student Lan standing inside a clean subway train holding a strap
+- bottom-left: Student Nam in a warm winter coat and scarf in snow, snowflakes
+- bottom-right: Student Lan walking under pink cherry blossom trees
+
+TÊN để dán vào app (Cắt ảnh lưới):
+mon an han quoc
+tau dien ngam han quoc
+mua dong han quoc
+hoa anh dao han quoc
+
+============================================================
+LƯỚI 11
+Draw a 2x2 grid of 4 SEPARATE illustrations on ONE white canvas (landscape 3:2), same style as before. Leave very wide empty white gaps between the 4 pictures, no borders, no dividing lines, no text, no numbers. Each picture stays fully inside its own quarter.
+- top-left: a traditional Korean palace gate with curved roof (generic, no text)
+- top-right: Student Nam working part-time at a convenience store counter (blank signs)
+- bottom-left: a busy Taiwan night market with food stalls and lanterns (blank signs), Student Lan eating street food
+- bottom-right: a big cup of bubble milk tea with tapioca pearls, Student Lan smiling holding it
+
+TÊN để dán vào app (Cắt ảnh lưới):
+cung dien han quoc
+cua hang tien loi
+cho dem dai loan
+tra sua tran chau
+
+============================================================
+LƯỚI 12
+Draw a 2x2 grid of 4 SEPARATE illustrations on ONE white canvas (landscape 3:2), same style as before. Leave very wide empty white gaps between the 4 pictures, no borders, no dividing lines, no text, no numbers. Each picture stays fully inside its own quarter.
+- top-left: a tall modern skyscraper with stacked segments above a city skyline (Taipei style), no text
+- top-right: a Taiwan university dorm room with bunk beds and a fan, Student Nam waving
+- bottom-left: a street with many scooters and green trees, warm sunny day
+- bottom-right: Student Nam split into two halves: left studying at a desk, right working in a clean factory/workshop wearing gloves
+
+TÊN để dán vào app (Cắt ảnh lưới):
+thap 101
+ky tuc xa dai loan
+xe may dai loan
+vua hoc vua lam
+
+============================================================
+LƯỚI 13
+Draw a 2x2 grid of 4 SEPARATE illustrations on ONE white canvas (landscape 3:2), same style as before. Leave very wide empty white gaps between the 4 pictures, no borders, no dividing lines, no text, no numbers. Each picture stays fully inside its own quarter.
+- top-left: a table with beef noodle soup, dumplings, pineapple cake and bubble tea
+- top-right: Student Lan working part-time as a waitress carrying a tray in a restaurant
+- bottom-left: Student Nam in a shirt working on a laptop in a modern office with colleagues
+- bottom-right: Student Nam happily holding an envelope of money, coins sparkle
+
+TÊN để dán vào app (Cắt ảnh lưới):
+mon an dai loan
+lam them nha hang
+thuc tap cong ty
+nhan luong
+
+============================================================
+LƯỚI 14
+Draw a 2x2 grid of 4 SEPARATE illustrations on ONE white canvas (landscape 3:2), same style as before. Leave very wide empty white gaps between the 4 pictures, no borders, no dividing lines, no text, no numbers. Each picture stays fully inside its own quarter.
+- top-left: Student Lan in business attire climbing steps of a rising bar chart toward a star
+- top-right: Student Lan shaking hands with a manager across a desk
+- bottom-left: a suspicious man in sunglasses handing a too-good-to-be-true paper to Student Nam, a big warning triangle sign (no text)
+- bottom-right: Student Nam working secretly in a back kitchen at night looking nervous, a police silhouette at the door
+
+TÊN để dán vào app (Cắt ảnh lưới):
+co hoi viec lam
+phong van xin viec
+lua dao du hoc
+lam chui
+
+============================================================
+LƯỚI 15
+Draw a 2x2 grid of 4 SEPARATE illustrations on ONE white canvas (landscape 3:2), same style as before. Leave very wide empty white gaps between the 4 pictures, no borders, no dividing lines, no text, no numbers. Each picture stays fully inside its own quarter.
+- top-left: Student Lan sitting by a dorm window at night looking at a photo of her family, small sad face
+- top-right: Student Nam confused with many question marks around his head in a foreign street
+- bottom-left: Student Lan holding a paper map, looking lost at a crossroads with arrows
+- bottom-right: Consultant man raising a finger with a lightbulb above his head, giving advice
+
+TÊN để dán vào app (Cắt ảnh lưới):
+nho nha
+soc van hoa
+lac duong
+can nhac ky
+

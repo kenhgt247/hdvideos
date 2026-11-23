@@ -1,0 +1,68 @@
+name: Dung video
+run-name: "job ${{ inputs.job_id }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: "Mã việc"
+        required: true
+      job:
+        description: "Nội dung (JSON)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Lay ma nguon
+        uses: actions/checkout@v4
+
+      - name: Cai Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Nho mo hinh giong doc
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/huggingface
+            ~/.cache/vieneu
+          key: vieneu-models-v1
+
+      - name: Cai thu vien
+        env:
+          JOB: ${{ inputs.job }}
+        run: |
+          pip install -r requirements.txt
+          if echo "$JOB" | grep -q '"voice": *"vieneu'; then
+            pip install vieneu --extra-index-url https://download.pytorch.org/whl/cpu || echo "Khong cai duoc VieNeu - se dung giong du phong"
+          fi
+
+      - name: Dung video
+        env:
+          JOB: ${{ inputs.job }}
+        run: |
+          printf '%s' "$JOB" > job.json
+          python render.py job.json out
+
+      - name: Dua video len
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_ID: ${{ inputs.job_id }}
+        run: |
+          [ -f out/info.json ] || echo '{"ok": false, "error": "Máy dựng bị dừng giữa chừng."}' > out/info.json
+          FILE=$(python -c "import json;print(json.load(open('out/info.json')).get('file','video.mp4'))")
+          ASSETS="out/info.json"
+          if [ -f out/video.mp4 ] && grep -q '"ok": true' out/info.json; then
+            mv out/video.mp4 "out/$FILE"; ASSETS="$ASSETS out/$FILE"
+          fi
+          gh release delete "job-$JOB_ID" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "job-$JOB_ID" $ASSETS --title "job-$JOB_ID" --notes-file out/info.json --prerelease

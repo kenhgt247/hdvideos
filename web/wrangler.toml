@@ -1,0 +1,7 @@
+name = "hdvideos"
+main = "src/worker.js"
+compatibility_date = "2025-01-01"
+workers_dev = true
+
+[vars]
+REPO = "kenhgt247/hdvideos"

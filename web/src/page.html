@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f46aa">
+<title>Video Vẽ Tay – Du Học Hải Dương</title>
+<link rel="icon" href="/img/logo">
+<link rel="apple-touch-icon" href="/img/logo">
+<style>
+:root{--blue:#1f46aa;--blue2:#e8eefc;--red:#d62632;--orange:#ee8014;--ink:#1d2433;--mut:#6b7385;--line:#e3e7f0;--bg:#f4f6fb;--card:#fff;--ok:#1e8c46}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;-webkit-text-size-adjust:100%}
+header{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:10px 16px;padding-top:max(10px,env(safe-area-inset-top))}
+header img{width:36px;height:36px;object-fit:contain}
+header b{display:block;font-size:16px;color:var(--blue)}
+header small{color:var(--mut);font-size:12px}
+main{max-width:720px;margin:0 auto;padding:14px 14px 110px}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:5;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;background:none;padding:9px 0 8px;font-size:12px;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:3px}
+nav button svg{width:23px;height:23px}
+nav button.on{color:var(--blue);font-weight:600}
+.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(20,40,90,.06)}
+h2{font-size:17px;margin:0 0 12px}
+label.f{display:block;font-size:13px;color:var(--mut);margin:12px 0 5px;font-weight:600}
+input[type=text],input[type=tel],select,textarea{width:100%;font:inherit;font-size:16px;border:1.5px solid var(--line);border-radius:12px;padding:11px 12px;background:#fff;color:var(--ink)}
+textarea{min-height:260px;line-height:1.5;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>*{flex:1;min-width:0}
+.btn{border:0;border-radius:12px;padding:11px 14px;font:inherit;font-size:15px;font-weight:600;background:var(--blue2);color:var(--blue);cursor:pointer;white-space:nowrap}
+.btn.sm{padding:8px 11px;font-size:14px}
+.btn.red{background:#fde8ea;color:var(--red)}
+.btn.main{width:100%;background:var(--red);color:#fff;font-size:18px;padding:15px;margin-top:16px;box-shadow:0 4px 14px rgba(214,38,50,.25)}
+.btn:disabled{opacity:.5}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.hint{font-size:13px;color:var(--mut);margin-top:6px;line-height:1.45}
+.chk{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:15px}
+.chk input{width:20px;height:20px}
+.job{border-left:4px solid var(--orange)}
+.job.done{border-left-color:var(--ok)}
+.job.error{border-left-color:var(--red)}
+.job .t{font-weight:600}
+.job .s{color:var(--mut);font-size:14px;margin-top:3px}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;width:30%;background:var(--orange);border-radius:3px;animation:mv 1.6s ease-in-out infinite}
+@keyframes mv{0%{margin-left:-30%}100%{margin-left:100%}}
+video{width:100%;max-height:62vh;border-radius:12px;background:#000;margin-top:10px}
+.vid{display:flex;gap:12px;align-items:flex-start}
+.vid .meta{flex:1;min-width:0}
+.vid .n{font-weight:600;word-break:break-word}
+.vid .d{font-size:13px;color:var(--mut);margin-top:2px}
+.vid .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:20px;background:#fff3e6;color:#a65a00;margin-top:4px}
+.tag.e{background:#fde8ea;color:var(--red)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px}
+.grid .it{background:#fafbfe;border:1px solid var(--line);border-radius:12px;padding:6px;text-align:center;font-size:12px;position:relative}
+.grid .it img{width:100%;aspect-ratio:1;object-fit:contain;display:block}
+.grid .it .x{position:absolute;top:3px;right:3px;border:0;background:#fff;border-radius:50%;width:26px;height:26px;color:var(--red);font-size:16px;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.up{display:flex;gap:10px;align-items:center;margin-top:10px}
+.up img{width:64px;height:64px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#fafbfe}
+.up input{flex:1}
+.nv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.nv .it{text-align:center;font-size:13px;background:#fafbfe;border:1px solid var(--line);border-radius:12px;padding:8px}
+.nv img{width:100%;height:130px;object-fit:contain}
+.empty{color:var(--mut);text-align:center;padding:24px 8px;font-size:14px}
+#toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#1d2433;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:9;opacity:0;transition:.25s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.on{opacity:1}
+.hide{display:none!important}
+details summary{cursor:pointer;color:var(--blue);font-weight:600;font-size:14px;margin-top:10px}
+pre.fmt{white-space:pre-wrap;font-size:13px;background:#fafbfe;border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0 0}
+</style>
+</head>
+<body>
+<header>
+  <img src="/img/logo" alt="">
+  <div><b>Video Vẽ Tay</b><small>Du Học Hải Dương · Định Hướng Tương Lai</small></div>
+</header>
+
+<main>
+<!-- ===== TẠO VIDEO ===== -->
+<section id="tab-tao">
+  <div id="jobs"></div>
+  <div class="card">
+    <h2>Kịch bản</h2>
+    <div class="tools">
+      <button class="btn sm" id="bPaste">Dán</button>
+      <button class="btn sm" id="bPrompt">Copy câu lệnh ChatGPT</button>
+      <button class="btn sm" id="bSample">Mẫu</button>
+      <button class="btn sm red" id="bClear">Xoá</button>
+    </div>
+    <textarea id="script" placeholder="Mỗi dòng là một cảnh.&#10;Chữ trên màn hình / dòng 2 || lời đọc đầy đủ&#10;- gạch đầu dòng&#10;[vẽ: tên hình]"></textarea>
+    <div class="hint" id="count">0 cảnh</div>
+    <details><summary>Cách viết kịch bản</summary>
+<pre class="fmt">• Mỗi dòng = 1 cảnh.
+• Chữ ngắn trên màn hình, lời đọc dài hơn:
+  Trống 2 năm / du học Hàn được không? || Tốt nghiệp được hai năm rồi có đi được không?
+• " / " (có cách 2 bên) = xuống dòng chữ.
+• Dòng bắt đầu bằng "- " = gạch đầu dòng.
+• [vẽ: tiền]  [vẽ: hộ chiếu mở] = chọn hình minh hoạ.
+• Không cần tô màu: máy tự tô số đỏ, từ khoá xanh, gạch chân ý chính.
+Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi chủ đề, rồi copy kịch bản về dán vào đây.</pre>
+    </details>
+  </div>
+
+  <div class="card">
+    <h2>Tuỳ chọn</h2>
+    <label class="f" for="name">Tên video</label>
+    <input type="text" id="name" placeholder="Ví dụ: Trống năm đi Hàn">
+    <label class="f" for="voice">Giọng đọc</label>
+    <select id="voice"></select>
+    <div class="row">
+      <div><label class="f" for="rate">Tốc độ đọc</label>
+        <select id="rate"><option value="-10">Chậm</option><option value="0" selected>Bình thường</option><option value="10">Nhanh</option><option value="18">Rất nhanh</option></select></div>
+      <div><label class="f" for="character">Nhân vật</label>
+        <select id="character"><option value="auto">Theo giọng đọc</option><option value="anh">Anh tư vấn</option><option value="chi">Chị tư vấn</option><option value="none">Không có</option></select></div>
+    </div>
+    <div class="row">
+      <div><label class="f" for="label">Nhãn góc phải</label><input type="text" id="label" placeholder="Du học Hàn"></div>
+      <div><label class="f" for="hotline">Hotline cuối video</label><input type="tel" id="hotline" placeholder="09xx xxx xxx"></div>
+    </div>
+    <label class="chk"><input type="checkbox" id="auto" checked> Tự trang trí (tô màu, gạch chân, hình minh hoạ)</label>
+    <label class="chk"><input type="checkbox" id="logo" checked> Hiện logo</label>
+    <label class="f" for="by">Người tạo</label>
+    <input type="text" id="by" placeholder="Tên của bạn">
+    <button class="btn main" id="bGo">TẠO VIDEO</button>
+    <div class="hint" style="text-align:center">Mỗi video mất khoảng 4–8 phút. Có thể tắt máy, lát quay lại mục <b>Video</b> để tải.</div>
+  </div>
+</section>
+
+<!-- ===== VIDEO ĐÃ LÀM ===== -->
+<section id="tab-video" class="hide">
+  <div class="card">
+    <div class="row" style="align-items:center"><h2 style="margin:0">Video đã làm</h2><button class="btn sm" id="bReload" style="flex:0">Làm mới</button></div>
+    <div class="hint">Video được giữ 60 ngày. Tải về máy để đăng TikTok / Reels.</div>
+  </div>
+  <div id="vlist"><div class="empty">Đang tải...</div></div>
+</section>
+
+<!-- ===== KHO HÌNH ===== -->
+<section id="tab-kho" class="hide">
+  <div class="card">
+    <h2>Thêm ảnh vào Kho</h2>
+    <div class="hint">Ảnh nền trắng (vẽ bằng ChatGPT). Đặt tên đúng thứ trong ảnh, máy sẽ tự chọn ảnh khi kịch bản nhắc tới tên đó, hoặc gọi bằng <b>[vẽ: tên]</b>. Ảnh mới cần khoảng 1–2 phút để tách nền rồi mới hiện.</div>
+    <input type="file" id="khoFiles" accept="image/*" multiple class="hide">
+    <div class="tools" style="margin-top:10px">
+      <button class="btn" id="bPick">Chọn ảnh</button>
+      <button class="btn sm" id="bPromptAnh">Copy câu lệnh vẽ ảnh</button>
+      <button class="btn sm" id="bPromptLuoi">Câu lệnh lưới 4 ảnh</button>
+    </div>
+    <div id="upList"></div>
+    <button class="btn main hide" id="bUpload" style="background:var(--blue)">Tải lên Kho</button>
+  </div>
+  <div class="card">
+    <div class="row" style="align-items:center"><h2 style="margin:0">Kho hình <span id="khoN" style="color:var(--mut);font-weight:400"></span></h2><button class="btn sm" id="bKhoReload" style="flex:0">Làm mới</button></div>
+    <div class="hint" id="khoPending"></div>
+    <div class="grid" id="khoGrid" style="margin-top:10px"></div>
+  </div>
+</section>
+
+<!-- ===== CÀI ĐẶT ===== -->
+<section id="tab-cai" class="hide">
+  <div class="card">
+    <h2>Nhân vật dẫn chuyện</h2>
+    <div class="hint">Bấm vào một ảnh để thay. Dùng ảnh nền trắng, máy sẽ tự tách nền (mất 1–2 phút).</div>
+    <div class="nv" id="nvGrid" style="margin-top:10px"></div>
+    <button class="btn sm red" id="bRestore" style="margin-top:12px">Khôi phục nhân vật gốc</button>
+    <input type="file" id="nvFile" accept="image/*" class="hide">
+  </div>
+  <div class="card">
+    <h2>Logo</h2>
+    <div class="up"><img id="logoImg" src="/img/logo" alt=""><button class="btn" id="bLogo">Đổi logo</button></div>
+    <input type="file" id="logoFile" accept="image/png,image/*" class="hide">
+    <div class="hint">Nên dùng ảnh PNG nền trong suốt.</div>
+  </div>
+  <div class="card">
+    <h2>Mẹo</h2>
+    <div class="hint">Trên iPhone: bấm nút Chia sẻ của Safari, chọn <b>Thêm vào MH chính</b> để có biểu tượng như app.</div>
+    <button class="btn sm red" id="bOut" style="margin-top:12px">Đăng xuất</button>
+  </div>
+</section>
+</main>
+
+<nav>
+  <button data-t="tao" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Tạo video</button>
+  <button data-t="video"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z"/></svg>Video</button>
+  <button data-t="kho"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>Kho hình</button>
+  <button data-t="cai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Nhân vật</button>
+</nav>
+<div id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('hdv_' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('hdv_' + k, JSON.stringify(v)); } catch {} },
+};
+function toast(msg, ms = 2600) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), ms); }
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  if (r.status === 401) { location.reload(); throw new Error('Chưa đăng nhập'); }
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || ('Lỗi ' + r.status));
+  return d;
+}
+function esc(s) { return String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function when(sec) { const d = new Date(sec * 1000); return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }); }
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); return true; } catch {
+    const a = document.createElement('textarea'); a.value = t; document.body.appendChild(a); a.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch {} a.remove(); return ok;
+  }
+}
+
+// ---------- tabs
+let curTab = 'tao';
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => showTab(b.dataset.t));
+function showTab(t) {
+  curTab = t;
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  document.querySelectorAll('main>section').forEach(s => s.classList.toggle('hide', s.id !== 'tab-' + t));
+  window.scrollTo(0, 0);
+  if (t === 'video') loadList();
+  if (t === 'kho') loadKho();
+  if (t === 'cai') loadNv();
+}
+
+// ---------- form
+const FIELDS = ['name', 'voice', 'rate', 'character', 'label', 'hotline', 'by'];
+const VOICES_BASE = [
+  ['vieneu_nam', 'VieNeu – giọng nam (tự chọn)'],
+  ['vieneu_nu', 'VieNeu – giọng nữ (tự chọn)'],
+  ['namminh', 'Microsoft – Nam Minh (nam)'],
+  ['hoaimy', 'Microsoft – Hoài My (nữ)'],
+];
+function fillVoices(list) {
+  const sel = $('voice'), cur = sel.value || store.get('voice', 'vieneu_nam');
+  sel.innerHTML = '';
+  const g1 = document.createElement('optgroup'); g1.label = 'Giọng chính';
+  VOICES_BASE.forEach(([v, t]) => g1.appendChild(new Option(t, v)));
+  sel.appendChild(g1);
+  if (list && list.length) {
+    const g2 = document.createElement('optgroup'); g2.label = 'Giọng VieNeu cụ thể';
+    list.forEach(l => g2.appendChild(new Option(l.replace(/^⭐\s*/, '★ '), 'vn:' + l)));
+    sel.appendChild(g2);
+  }
+  sel.value = cur; if (!sel.value) sel.value = 'vieneu_nam';
+}
+fillVoices(store.get('voices', []));
+FIELDS.forEach(k => { if (k !== 'voice' && k !== 'name') { const v = store.get(k, null); if (v != null) $(k).value = v; } });
+['auto', 'logo'].forEach(k => { $(k).checked = store.get(k, true); });
+$('script').value = store.get('draft', '');
+function countScenes() {
+  const n = $('script').value.split('\n').filter(l => l.trim() && !/^\s*-\s/.test(l)).length;
+  $('count').textContent = n + ' cảnh';
+}
+countScenes();
+$('script').addEventListener('input', () => { countScenes(); store.set('draft', $('script').value); });
+
+$('bPaste').onclick = async () => {
+  try { const t = await navigator.clipboard.readText(); if (!t) throw 0; $('script').value = cleanPasted(t); countScenes(); store.set('draft', $('script').value); toast('Đã dán kịch bản'); }
+  catch { $('script').focus(); toast('Hãy nhấn giữ vào ô kịch bản rồi chọn Dán'); }
+};
+function cleanPasted(t) {
+  const m = t.match(/```[a-zA-Z]*\n([\s\S]*?)```/);
+  return (m ? m[1] : t).replace(/\r/g, '').trim();
+}
+$('bClear').onclick = () => { if (!$('script').value || confirm('Xoá kịch bản đang viết?')) { $('script').value = ''; $('name').value = ''; countScenes(); store.set('draft', ''); } };
+$('bSample').onclick = () => {
+  if ($('script').value.trim() && !confirm('Thay kịch bản đang viết bằng kịch bản mẫu?')) return;
+  $('script').value = `Tốt nghiệp 2–3 năm / còn đi du học Hàn được không? || Tốt nghiệp cấp ba được hai, ba năm rồi, giờ còn đi du học Hàn được không? [vẽ: học sinh suy nghĩ chọn nước]
+Câu trả lời là: vẫn đi được nha! [vẽ: tích]
+Quan trọng là giải trình / khoảng thời gian trống || Điều quan trọng nhất là bạn giải trình được khoảng thời gian trống đó. [vẽ: kế hoạch học tập]
+Bạn có thể chứng minh bằng:
+- Hợp đồng đi làm
+- Bằng học nghề
+- Giấy xuất ngũ
+Trống càng lâu / hồ sơ càng cần chặt chẽ || Thời gian trống càng dài thì hồ sơ càng cần chuẩn bị kỹ. [vẽ: bộ hồ sơ xếp chồng]
+Inbox năm tốt nghiệp / mình check trường ngay! || Inbox năm tốt nghiệp cho Du Học Hải Dương, mình check trường phù hợp cho bạn ngay nhé!`;
+  $('name').value = 'Trống năm đi Hàn'; countScenes(); store.set('draft', $('script').value);
+};
+$('bPrompt').onclick = () => copyFile('chatgpt', 'Đã copy câu lệnh. Mở ChatGPT, dán vào rồi gửi chủ đề video.');
+$('bPromptAnh').onclick = () => copyFile('anh', 'Đã copy câu lệnh vẽ ảnh cho ChatGPT.');
+$('bPromptLuoi').onclick = () => copyFile('luoi', 'Đã copy câu lệnh lưới 4 ảnh.');
+const textCache = {};
+async function copyFile(f, msg) {
+  try {
+    if (!textCache[f]) { const r = await fetch('/api/text?f=' + f); if (!r.ok) throw 0; textCache[f] = await r.text(); }
+    toast(await copyText(textCache[f]) ? msg : 'Không copy được, hãy thử lại');
+  } catch { toast('Không tải được câu lệnh'); }
+}
+
+$('bGo').onclick = async () => {
+  const script = $('script').value.trim();
+  if (!script) { toast('Hãy dán kịch bản trước'); return; }
+  FIELDS.forEach(k => k !== 'name' && store.set(k, $(k).value));
+  store.set('auto', $('auto').checked); store.set('logo', $('logo').checked);
+  let voice = $('voice').value, vieneu_voice = '';
+  if (voice.startsWith('vn:')) { vieneu_voice = voice.slice(3); voice = 'vieneu'; }
+  const name = $('name').value.trim() || script.split('\n')[0].split(/\s\/\s|\|\|/)[0].replace(/\[.*?\]/g, '').trim().slice(0, 50);
+  const body = { script, name, voice, vieneu_voice, rate: $('rate').value, character: $('character').value, label: $('label').value,
+    hotline: $('hotline').value, auto: $('auto').checked, logo: $('logo').checked, by: $('by').value };
+  $('bGo').disabled = true; $('bGo').textContent = 'Đang gửi...';
+  try {
+    const d = await api('/api/jobs', body);
+    const jobs = store.get('jobs', []); jobs.unshift({ id: d.id, name, t: Date.now() }); store.set('jobs', jobs.slice(0, 10));
+    toast('Đã gửi! Video đang được dựng.');
+    renderJobs(); pollJobs(); window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (e) { toast(e.message, 5000); }
+  $('bGo').disabled = false; $('bGo').textContent = 'TẠO VIDEO';
+};
+
+// ---------- jobs đang dựng
+const jobState = {};
+function renderJobs() {
+  const jobs = store.get('jobs', []);
+  $('jobs').innerHTML = jobs.map(j => {
+    const s = jobState[j.id] || { state: 'queued', step: 'Đang gửi lệnh' };
+    const mins = Math.floor((Date.now() - j.t) / 60000);
+    if (s.state === 'done') {
+      return `<div class="card job done"><div class="t">✓ ${esc(j.name)}</div>
+        <div class="s">Xong · ${esc(s.info && s.info.voice || '')}</div>
+        ${s.info && s.info.fallback ? `<span class="tag">Đã dùng giọng dự phòng</span>` : ''}
+        <video src="/video/${j.id}" controls playsinline preload="metadata"></video>
+        <div class="row" style="margin-top:10px"><a class="btn" href="/video/${j.id}" download style="text-align:center;text-decoration:none">Tải video</a>
+        <button class="btn red" onclick="dismiss('${j.id}')">Đóng</button></div></div>`;
+    }
+    if (s.state === 'error') {
+      return `<div class="card job error"><div class="t">✗ ${esc(j.name)}</div><div class="s" style="white-space:pre-wrap">${esc(s.error)}</div>
+        <div class="row" style="margin-top:10px"><button class="btn red" onclick="dismiss('${j.id}')">Đóng</button></div></div>`;
+    }
+    return `<div class="card job"><div class="t">${esc(j.name)}</div>
+      <div class="s">${esc(s.step || 'Đang dựng')} · ${mins} phút</div><div class="bar"><i></i></div></div>`;
+  }).join('');
+}
+function dismiss(id) { store.set('jobs', store.get('jobs', []).filter(j => j.id !== id)); delete jobState[id]; renderJobs(); }
+let polling = null;
+async function pollJobs() {
+  clearTimeout(polling);
+  const jobs = store.get('jobs', []);
+  const open = jobs.filter(j => !jobState[j.id] || !['done', 'error'].includes(jobState[j.id].state));
+  for (const j of open) {
+    try {
+      const s = await api('/api/jobs/' + j.id);
+      const was = jobState[j.id] && jobState[j.id].state;
+      jobState[j.id] = s;
+      if (s.state === 'done' && was !== 'done' && was) toast('Video "' + j.name + '" đã xong!');
+      if (s.state === 'queued' && Date.now() - j.t > 45 * 60000) jobState[j.id] = { state: 'error', error: 'Quá lâu không thấy kết quả.' };
+    } catch (e) { /* thử lại lần sau */ }
+  }
+  renderJobs();
+  if (open.length) polling = setTimeout(pollJobs, 8000);
+}
+renderJobs(); pollJobs();
+setInterval(() => { if (curTab === 'tao') renderJobsLight(); }, 30000);
+function renderJobsLight() { if (!document.querySelector('#jobs video')) renderJobs(); }
+
+// ---------- danh sách video
+async function loadList() {
+  $('vlist').innerHTML = '<div class="empty">Đang tải...</div>';
+  try {
+    const d = await api('/api/list');
+    if (d.voices && d.voices.length) { store.set('voices', d.voices); fillVoices(d.voices); }
+    if (!d.items.length) { $('vlist').innerHTML = '<div class="empty">Chưa có video nào.</div>'; return; }
+    window._items = d.items;
+    $('vlist').innerHTML = d.items.map((v, i) => `<div class="card"><div class="vid"><div class="meta">
+      <div class="n">${v.ok ? '' : '✗ '}${esc(v.name)}</div>
+      <div class="d">${when(v.created)}${v.by ? ' · ' + esc(v.by) : ''}${v.voice ? ' · ' + esc(v.voice) : ''}</div>
+      ${v.ok ? '' : `<span class="tag e">${esc(v.error || 'Lỗi')}</span>`}
+      ${v.fallback ? '<span class="tag">Giọng dự phòng</span>' : ''}
+      <div class="acts">
+        ${v.ok ? `<button class="btn sm" onclick="play(this,'${v.id}')">Xem</button><a class="btn sm" href="/video/${v.id}" download style="text-decoration:none">Tải</a>` : ''}
+        <button class="btn sm" onclick="reuse(${i})">Dùng lại kịch bản</button>
+        <button class="btn sm red" onclick="delVid('${v.id}')">Xoá</button>
+      </div></div></div></div>`).join('');
+  } catch (e) { $('vlist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+$('bReload').onclick = loadList;
+function play(btn, id) {
+  const card = btn.closest('.card'); if (card.querySelector('video')) return;
+  const v = document.createElement('video'); v.src = '/video/' + id; v.controls = true; v.playsInline = true; v.autoplay = true; card.appendChild(v);
+}
+function reuse(i) {
+  const v = window._items[i]; if (!v || !v.script) { toast('Không có kịch bản'); return; }
+  $('script').value = v.script; $('name').value = v.name; countScenes(); store.set('draft', v.script); showTab('tao');
+}
+async function delVid(id) {
+  if (!confirm('Xoá video này?')) return;
+  try { await api('/api/jobs/' + id + '/delete', {}); toast('Đã xoá'); loadList(); } catch (e) { toast(e.message); }
+}
+
+// ---------- ảnh: thu nhỏ trước khi gửi
+function readImage(file, maxSide = 1400) {
+  return new Promise((ok, bad) => {
+    const img = new Image(); const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+      const du = c.toDataURL('image/png'); ok({ preview: du, data: du.split(',')[1] });
+    };
+    img.onerror = () => bad(new Error('Không đọc được ảnh ' + file.name));
+    img.src = url;
+  });
+}
+function nameFromFile(n) { return n.replace(/\.[^.]+$/, '').replace(/[_\-]+/g, ' ').replace(/\s+/g, ' ').trim(); }
+
+// ---------- kho
+let ups = [];
+$('bPick').onclick = () => $('khoFiles').click();
+$('khoFiles').onchange = async e => {
+  for (const f of e.target.files) {
+    try { const im = await readImage(f); ups.push({ ...im, name: nameFromFile(f.name) }); } catch (er) { toast(er.message); }
+  }
+  e.target.value = ''; drawUps();
+};
+function drawUps() {
+  $('upList').innerHTML = ups.map((u, i) => `<div class="up"><img src="${u.preview}"><input type="text" value="${esc(u.name)}" oninput="ups[${i}].name=this.value" placeholder="Tên ảnh, ví dụ: ký túc xá">
+    <button class="btn sm red" onclick="ups.splice(${i},1);drawUps()">✕</button></div>`).join('');
+  $('bUpload').classList.toggle('hide', !ups.length);
+  $('bUpload').textContent = 'Tải ' + ups.length + ' ảnh lên Kho';
+}
+$('bUpload').onclick = async () => {
+  if (ups.some(u => !u.name.trim())) { toast('Hãy đặt tên cho tất cả ảnh'); return; }
+  $('bUpload').disabled = true; let n = 0;
+  while (ups.length) {
+    const u = ups[0]; $('bUpload').textContent = 'Đang tải ' + (n + 1) + '...';
+    try { await api('/api/kho', { name: u.name, data: u.data }); ups.shift(); n++; drawUps(); }
+    catch (e) { toast(e.message, 5000); break; }
+  }
+  $('bUpload').disabled = false;
+  if (n) { toast('Đã tải ' + n + ' ảnh. Khoảng 1–2 phút nữa ảnh sẽ có trong Kho.', 4500); setTimeout(loadKho, 1500); }
+};
+async function loadKho() {
+  try {
+    const d = await api('/api/kho');
+    $('khoN').textContent = '(' + d.items.length + ')';
+    $('khoPending').textContent = d.pending.length ? 'Đang tách nền ' + d.pending.length + ' ảnh mới...' : '';
+    $('khoGrid').innerHTML = d.items.length ? d.items.map(it => `<div class="it"><img loading="lazy" src="/img/kho/${it.file}"><div>${esc(it.name)}</div>
+      <button class="x" onclick="delKho('${it.file}')">✕</button></div>`).join('') : '<div class="empty">Kho đang trống</div>';
+    if (d.pending.length && curTab === 'kho') setTimeout(loadKho, 20000);
+  } catch (e) { $('khoGrid').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+$('bKhoReload').onclick = loadKho;
+async function delKho(f) {
+  if (!confirm('Xoá ảnh "' + f.replace(/_/g, ' ').replace('.png', '') + '" khỏi Kho?')) return;
+  try { await api('/api/kho/' + f + '/delete', {}); toast('Đã xoá'); loadKho(); } catch (e) { toast(e.message); }
+}
+
+// ---------- nhân vật, logo
+const NV = [['anh', 'chao', 'Anh · Chào'], ['anh', 'chi', 'Anh · Chỉ tay'], ['anh', 'like', 'Anh · Like'],
+            ['chi', 'chao', 'Chị · Chào'], ['chi', 'chi', 'Chị · Chỉ tay'], ['chi', 'like', 'Chị · Like']];
+let nvTarget = null;
+function loadNv() {
+  const v = Date.now();
+  $('nvGrid').innerHTML = NV.map(([g, p, t]) => `<div class="it" onclick="pickNv('${g}','${p}')"><img src="/img/nv/${g}_${p}.png?v=${v}"><div>${t}</div></div>`).join('');
+}
+function pickNv(g, p) { nvTarget = [g, p]; $('nvFile').click(); }
+$('nvFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f || !nvTarget) return;
+  try { const im = await readImage(f, 1600); toast('Đang tải lên...'); await api('/api/nhanvat', { gender: nvTarget[0], pose: nvTarget[1], data: im.data });
+    toast('Đã tải. Khoảng 1–2 phút nữa nhân vật mới sẽ được dùng.', 4500); setTimeout(loadNv, 90000); } catch (er) { toast(er.message); }
+};
+$('bRestore').onclick = async () => {
+  if (!confirm('Khôi phục 6 ảnh nhân vật gốc?')) return;
+  try { await api('/api/nhanvat/restore', {}); toast('Đang khôi phục, 1–2 phút nữa sẽ xong.'); setTimeout(loadNv, 90000); } catch (e) { toast(e.message); }
+};
+$('bLogo').onclick = () => $('logoFile').click();
+$('logoFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try { const im = await readImage(f, 1000); await api('/api/logo', { data: im.data }); $('logoImg').src = im.preview; toast('Đã đổi logo cho các video sau.'); } catch (er) { toast(er.message); }
+};
+$('bOut').onclick = async () => { await fetch('/api/logout'); location.reload(); };
+
+// lấy danh sách giọng VieNeu (nếu đã từng dựng)
+api('/api/list').then(d => { if (d.voices && d.voices.length) { store.set('voices', d.voices); fillVoices(d.voices); } }).catch(() => {});
+</script>
+</body>
+</html>
