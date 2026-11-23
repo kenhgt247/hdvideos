@@ -10,15 +10,24 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: a81755e30df6cc0a5b3220aa64278e2a
     steps:
       - uses: actions/checkout@v4
-      - uses: cloudflare/wrangler-action@v3
+      - uses: actions/setup-node@v4
         with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          workingDirectory: web
-          secrets: |
-            GH_TOKEN
-            APP_PASSWORD
+          node-version: "22"
+      - name: Dang web
+        run: npx --yes wrangler@4 deploy
+      - name: Cai ma bi mat
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
           APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
+        run: |
+          node -e 'process.stdout.write(JSON.stringify({GH_TOKEN:process.env.GH_TOKEN,APP_PASSWORD:process.env.APP_PASSWORD}))' > /tmp/s.json
+          npx --yes wrangler@4 secret bulk /tmp/s.json
+          rm /tmp/s.json
