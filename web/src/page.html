@@ -120,6 +120,7 @@ Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi c
     <input type="text" id="name" placeholder="Ví dụ: Trống năm đi Hàn">
     <label class="f" for="voice">Giọng đọc</label>
     <select id="voice"></select>
+    <div class="hint"><a href="#" id="goRec" style="color:var(--blue);font-weight:600">🎙 Ghi âm giọng của bạn (giọng nhân bản)</a> · <a href="#" id="goMusic" style="color:var(--blue);font-weight:600">🎵 Thêm nhạc nền</a></div>
     <div class="row">
       <div><label class="f" for="rate">Tốc độ đọc</label>
         <select id="rate"><option value="-10">Chậm</option><option value="0" selected>Bình thường</option><option value="10">Nhanh</option><option value="18">Rất nhanh</option></select></div>
@@ -614,6 +615,9 @@ $('bRec').onclick = async () => {
   } catch (e) { toast('Không mở được micro. Hãy cho phép trình duyệt dùng micro.', 5000); }
 };
 loadMedia();
+function goCard(id) { showTab('cai'); setTimeout(() => $(id).closest('.card').scrollIntoView({ behavior: 'smooth', block: 'start' }), 150); }
+$('goRec').onclick = e => { e.preventDefault(); goCard('bRec'); };
+$('goMusic').onclick = e => { e.preventDefault(); goCard('bMFile'); };
 $('bLogo').onclick = () => $('logoFile').click();
 $('logoFile').onchange = async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
