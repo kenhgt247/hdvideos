@@ -202,10 +202,11 @@ Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi c
   </div>
   <div class="card">
     <h2>Nhạc nền</h2>
-    <div class="hint">Tải nhạc không lời (mp3, m4a). Nhạc sẽ tự nhỏ đi khi có giọng đọc. Chỉ dùng nhạc miễn phí bản quyền (ví dụ thư viện âm thanh của TikTok/YouTube).</div>
+    <div class="hint">Tải nhạc không lời (mp3, m4a). Nhạc sẽ tự nhỏ đi khi có giọng đọc. Chỉ dùng nhạc miễn phí bản quyền: <b>pixabay.com/music</b> hoặc <b>mixkit.co/free-stock-music</b> (dùng cho quảng cáo được, không cần ghi nguồn).</div>
     <input type="text" id="mName" placeholder="Tên nhạc, ví dụ: vui tươi" style="margin-top:10px">
     <button class="btn" id="bMFile" style="margin-top:10px">Tải nhạc lên</button>
     <input type="file" id="mFile" accept="audio/*" class="hide">
+    <div class="row" style="margin-top:10px"><input type="text" id="mUrl" placeholder="Hoặc dán link file mp3 (Pixabay, Mixkit...)"><button class="btn" id="bMUrl" style="flex:none">Thêm</button></div>
     <div id="mList" style="margin-top:8px"></div>
   </div>
   <div class="card">
@@ -580,6 +581,15 @@ $('bGFile').onclick = () => $('gFile').click();
 $('gFile').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (f) await uploadAudio('giong', $('gName').value, f); };
 $('bMFile').onclick = () => { if (!$('mName').value.trim()) { toast('Hãy đặt tên nhạc trước'); $('mName').focus(); return; } $('mFile').click(); };
 $('mFile').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (f) await uploadAudio('nhac', $('mName').value, f); };
+$('bMUrl').onclick = async () => {
+  const name = $('mName').value.trim(), url = $('mUrl').value.trim();
+  if (!name) { toast('Hãy đặt tên nhạc trước'); $('mName').focus(); return; }
+  if (!url) { toast('Hãy dán link mp3'); return; }
+  $('bMUrl').disabled = true; toast('Đang tải nhạc từ link...');
+  try { await api('/api/nhac/link', { name, url }); toast('Đã thêm nhạc!'); $('mUrl').value = ''; $('mName').value = ''; loadMedia(); }
+  catch (e) { toast(e.message, 6000); }
+  $('bMUrl').disabled = false;
+};
 let rec = null, recChunks = [], recTimer = null;
 $('bRec').onclick = async () => {
   if (rec && rec.state === 'recording') { rec.stop(); return; }

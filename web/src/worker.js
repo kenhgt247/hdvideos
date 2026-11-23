@@ -283,6 +283,27 @@ export default {
         await putFile(env, `engine/assets/${m[1]}/${name}.${ext}`, b.data, `${m[1] === 'nhac' ? 'Nhạc nền' : 'Giọng mẫu'}: thêm ${name}`);
         return json({ ok: true, file: `${name}.${ext}` });
       }
+      if (p === '/api/nhac/link' && req.method === 'POST') {
+        const b = await req.json();
+        const name = slug(b.name);
+        if (!name) return err('Hãy đặt tên nhạc');
+        let u;
+        try { u = new URL(String(b.url || '').trim()); } catch { return err('Link không hợp lệ'); }
+        if (!/^https?:$/.test(u.protocol)) return err('Link phải bắt đầu bằng http hoặc https');
+        const r = await fetch(u.toString(), { redirect: 'follow', headers: { 'user-agent': 'Mozilla/5.0 hdvideos' } });
+        if (!r.ok) return err(`Không tải được nhạc từ link (lỗi ${r.status})`);
+        const ct = (r.headers.get('content-type') || '').toLowerCase();
+        if (ct.includes('text/html')) return err('Link này là trang web, không phải file nhạc. Hãy dùng link tải trực tiếp (thường kết thúc bằng .mp3)');
+        const buf = new Uint8Array(await r.arrayBuffer());
+        if (buf.length < 10000) return err('File nhạc quá nhỏ hoặc không đúng');
+        if (buf.length > 14e6) return err('File nhạc quá lớn (tối đa 14MB)');
+        let ext = (u.pathname.match(/\.(mp3|m4a|aac|wav|ogg)$/i) || [])[1];
+        ext = (ext || (ct.includes('mp4') || ct.includes('m4a') ? 'm4a' : ct.includes('wav') ? 'wav' : ct.includes('ogg') ? 'ogg' : 'mp3')).toLowerCase();
+        let bin = '';
+        for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+        await putFile(env, `engine/assets/nhac/${name}.${ext}`, btoa(bin), `Nhạc nền: thêm ${name} từ link`);
+        return json({ ok: true, file: `${name}.${ext}` });
+      }
       m = p.match(/^\/api\/(nhac|giong)\/([a-z0-9_]+\.[a-z0-9]+)\/delete$/);
       if (m && req.method === 'POST') {
         const path = `engine/assets/${m[1]}/${m[2]}`;
