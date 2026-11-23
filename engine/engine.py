@@ -17,7 +17,9 @@ CPS = 0.034          # giây cho mỗi ký tự khi viết
 GAP, ENTER, EXIT = 0.16, 0.35, 0.45
 TOP_AREA = 400       # dưới logo góc trái
 BOTTOM_AREA = 1460   # phía dưới bị caption TikTok/Reels che
-SUB_Y = 1400         # đáy khung phụ đề (khi bật phụ đề, nội dung dồn lên trên)
+SUB_Y = 1366         # đỉnh dòng phụ đề karaoke (khi bật phụ đề, nội dung dồn lên trên một chút)
+SUB_MAXW = 960
+SUB_ON, SUB_OFF = (238, 128, 20), (34, 36, 48)
 ERASE = 0.5          # thời gian lau bảng khi chuyển cảnh
 LCX, LMAXW = W / 2, 960   # cột nội dung (đổi khi có nhân vật đứng bên trái)
 
@@ -1613,7 +1615,7 @@ class Renderer:
             self.logo_big = lg.resize((int(lg.width * 460 / lg.height), 460), Image.LANCZOS)
         self.paper = make_paper(bg or 'trang')
         self.subs = bool(subs)
-        self.sub_font = font(52)
+        self.sub_font = font(60)
         self.label = None
         if label and label.strip():
             t = Txt(label.strip().upper(), 40, (255, 255, 255), 0, cx=0)
@@ -1655,7 +1657,7 @@ class Renderer:
             er = self.eraser.rotate(8 if ltr else -8, expand=True, resample=Image.BICUBIC)
             f.paste(er, (int(cx - er.width / 2), int(cy - er.height / 2)), er)
 
-    def _wrap_sub(self, text, maxw=920):
+    def _wrap_sub(self, text, maxw=SUB_MAXW):
         words, lines, cur = text.split(), [], ''
         for w_ in words:
             t = (cur + ' ' + w_).strip()
@@ -1668,46 +1670,48 @@ class Renderer:
         return lines
 
     def make_subs(self, say, start, dur):
-        """Chia lời đọc thành từng cụm ngắn (tối đa 2 dòng) và chia thời gian theo độ dài chữ."""
+        """Phụ đề karaoke: mỗi lần 1 dòng ngắn, từng từ đổi màu theo nhịp đọc (thời gian chia theo độ dài chữ)."""
         say = re.sub(r'\s+', ' ', (say or '').replace('*', '')).strip()
         say = re.sub(r'([?!.…:])\s*,', r'\1', say).rstrip(',')
         if not say or not dur:
             return []
-        parts = [p.strip() for p in re.split(r'(?<=[.!?…;:,])\s+', say) if p.strip()]
-        chunks = []
+        parts = [p_.strip() for p_ in re.split(r'(?<=[.!?…;:,])\s+', say) if p_.strip()]
+        lines = []
         for p_ in parts:
-            ls = self._wrap_sub(p_)
-            for i in range(0, len(ls), 2):
-                chunks.append(' '.join(ls[i:i + 2]))
-        merged = []
-        for c in chunks:              # gộp cụm quá ngắn vào cụm trước nếu vẫn vừa 2 dòng
-            if merged and len(c) < 14 and len(self._wrap_sub(merged[-1] + ' ' + c)) <= 2:
-                merged[-1] += ' ' + c
-            else:
-                merged.append(c)
-        total = sum(len(c) + 6 for c in merged)
+            for l in self._wrap_sub(p_):
+                if lines and len(l) < 12 and self.sub_font.getlength(lines[-1] + ' ' + l) <= SUB_MAXW:
+                    lines[-1] += ' ' + l
+                else:
+                    lines.append(l)
+        weight = lambda w_: len(w_) + 2
+        total = sum(weight(w_) for l in lines for w_ in l.split())
         out, t = [], start
-        for c in merged:
-            d = dur * (len(c) + 6) / total
-            out.append((t, t + d, self._wrap_sub(c.rstrip(',').strip())))
-            t += d
+        for l in lines:
+            words = l.rstrip(',').split()
+            ws, wt = [], t
+            for w_ in words:
+                d = dur * weight(w_) / total
+                ws.append((wt, wt + d))
+                wt += d
+            out.append((t, wt, words, ws))
+            t = wt
         return out
 
     def draw_sub(self, f, pl, t):
-        for a, b, lines in pl.get('subs') or []:
-            if a <= t < b:
-                lh = 64
-                h = lh * len(lines) + 26
-                y1 = SUB_Y + 52
-                y0 = y1 - h
-                wmax = max(self.sub_font.getlength(l) for l in lines)
-                ov = Image.new('RGBA', (int(wmax + 56), int(h)), (0, 0, 0, 0))
-                od = ImageDraw.Draw(ov)
-                od.rounded_rectangle((0, 0, ov.width - 1, ov.height - 1), 22, fill=(30, 32, 44, 236))
-                for i, l in enumerate(lines):
-                    lw = self.sub_font.getlength(l)
-                    od.text(((ov.width - lw) / 2, 13 + i * lh), l, font=self.sub_font, fill=(255, 255, 255))
-                f.paste(ov, (int(W / 2 - ov.width / 2), int(y0)), ov)
+        subs = pl.get('subs') or []
+        for k, (a, b, words, ws) in enumerate(subs):
+            last = k == len(subs) - 1
+            if a <= t < b or (last and b <= t < b + 0.6):
+                fnt = self.sub_font
+                sp = fnt.getlength(' ')
+                widths = [fnt.getlength(w_) for w_ in words]
+                total = sum(widths) + sp * (len(words) - 1)
+                x = W / 2 - total / 2
+                d = ImageDraw.Draw(f)
+                for w_, wd, (wa, wb) in zip(words, widths, ws):
+                    col = SUB_ON if t >= wa else SUB_OFF
+                    d.text((x, SUB_Y), w_, font=fnt, fill=col, stroke_width=7, stroke_fill=(255, 255, 255))
+                    x += wd + sp
                 return
 
     def plan(self, scenes, audio_durs, gender=None):
@@ -1715,7 +1719,7 @@ class Renderer:
         plans = []
         old_bottom = BOTTOM_AREA
         if self.subs:
-            BOTTOM_AREA = SUB_Y - 140 if any(audio_durs or []) else BOTTOM_AREA
+            BOTTOM_AREA = SUB_Y - 22 if any(audio_durs or []) else BOTTOM_AREA
         n = len(scenes)
         poses = [None] * n
         if gender and char_path(gender, 'chao'):
