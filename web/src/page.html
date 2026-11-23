@@ -86,6 +86,11 @@ video{width:100%;max-height:62vh;border-radius:12px;background:#000;margin-top:1
 .mrow .tx b{display:block;font-size:15px}
 .mrow .tx small{color:var(--mut);font-size:12px}
 .mrow .ck{flex:none;color:var(--blue);font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chips button{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 11px;font:inherit;font-size:13px;color:var(--blue)}
+.tnr{display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid var(--line)}
+.tnr .tx{flex:1;min-width:0}.tnr .tx b{display:block;font-size:14px;overflow-wrap:anywhere}.tnr .tx small{color:var(--mut);font-size:12px}
+.tnr .pl{flex:none;width:34px;height:34px;border-radius:50%;border:0;background:#fff;color:var(--blue);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .maddt{font-size:13px;font-weight:700;color:var(--mut);margin-bottom:6px}
 .mfoot{display:flex;gap:8px;flex-wrap:wrap;padding:8px 4px 4px;border-top:1px solid var(--line);margin-top:4px}
 .au .x{border:0;background:#fde8ea;color:var(--red);border-radius:10px;padding:6px 10px;font-weight:600}
@@ -153,6 +158,13 @@ Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi c
     <button type="button" class="mcur" id="mCur"><span id="mCurTxt">🎵 Không có nhạc</span><span class="chev">Chọn ▾</span></button>
     <div class="mpanel hide" id="mPanel">
       <div id="mRows"></div>
+      <div class="mfoot" style="display:block">
+        <div class="maddt">🔍 Tìm nhạc miễn phí (không cần ghi nguồn)</div>
+        <div class="row"><input type="text" id="tnQ" placeholder="Ví dụ: piano, happy, inspiring"><button type="button" class="btn" id="tnGo" style="flex:none">Tìm</button></div>
+        <div class="chips" id="tnChips"></div>
+        <label class="chk" style="font-size:13px;margin-top:6px"><input type="checkbox" id="tnBy"> Gồm cả nhạc cần ghi tên tác giả (nhiều bài hơn)</label>
+        <div id="tnRes"></div>
+      </div>
       <div class="mfoot" style="display:block">
         <div class="maddt">➕ Thêm nhạc mới</div>
         <button type="button" class="btn" id="mUp" style="width:100%">⬆ Chọn file nhạc trong máy (mp3)</button>
@@ -620,7 +632,7 @@ $('bMUrl').onclick = async () => {
 };
 let MUSIC = store.get('music_list', []);
 const player = new Audio(); let playing = '';
-player.onended = () => { playing = ''; drawMusic(); };
+player.onended = () => { playing = ''; drawMusic(); if (TN.length) tnDraw(); };
 function setMusic(f) {
   $('music').value = f || ''; store.set('music', f || '');
   const m = MUSIC.find(x => x.file === f);
@@ -662,6 +674,44 @@ $('mLinkGo').onclick = async () => {
   $('mLinkGo').disabled = false;
 };
 setMusic(store.get('music', ''));
+// ----- tìm nhạc miễn phí (Openverse)
+const TN_CHIPS = [['Nhẹ nhàng', 'calm piano'], ['Tươi vui', 'happy ukulele'], ['Truyền cảm hứng', 'inspiring'], ['Doanh nghiệp', 'corporate'],
+  ['Guitar mộc', 'acoustic guitar'], ['Lofi', 'lofi chill'], ['Sôi động', 'upbeat pop'], ['Du lịch', 'travel']];
+$('tnChips').innerHTML = TN_CHIPS.map(([t, q]) => `<button type="button" onclick="tnSearch('${q}')">${t}</button>`).join('');
+let TN = [];
+async function tnSearch(q) {
+  q = (q || $('tnQ').value || '').trim() || 'background';
+  $('tnQ').value = q; $('tnRes').innerHTML = '<div class="hint">Đang tìm...</div>';
+  try {
+    const d = await api('/api/timnhac?q=' + encodeURIComponent(q) + ($('tnBy').checked ? '&by=1' : ''));
+    TN = d.items;
+    if (!TN.length) { $('tnRes').innerHTML = '<div class="hint">Không thấy bài nào. Thử từ khoá tiếng Anh khác (piano, guitar, happy...) hoặc tích ô "gồm cả nhạc cần ghi tên".</div>'; return; }
+    tnDraw();
+  } catch (e) { $('tnRes').innerHTML = `<div class="hint">${esc(e.message)}</div>`; }
+}
+function tnDraw() {
+  $('tnRes').innerHTML = TN.map((x, i) => `<div class="tnr">
+    <button type="button" class="pl" onclick="tnPlay(${i})">${playing === 'tn' + i ? '❚❚' : '▶'}</button>
+    <div class="tx"><b>${esc(x.title)}</b><small>${x.dur ? Math.floor(x.dur / 60) + ':' + String(x.dur % 60).padStart(2, '0') + ' · ' : ''}${esc(x.creator)} · ${esc(x.license)}</small></div>
+    <button type="button" class="btn sm" id="tnAdd${i}" onclick="tnAdd(${i})" style="flex:none">+ Thêm</button></div>`).join('');
+}
+function tnPlay(i) {
+  const k = 'tn' + i;
+  if (playing === k) { player.pause(); playing = ''; }
+  else { player.src = TN[i].url; player.play().catch(() => toast('Bài này không nghe thử được')); playing = k; }
+  tnDraw(); drawMusic();
+}
+async function tnAdd(i) {
+  const x = TN[i], b = $('tnAdd' + i); b.disabled = true; b.textContent = 'Đang thêm...';
+  const credit = x.license.startsWith('BY') ? ('Nhạc: ' + x.title + ' – ' + x.creator + ' (' + x.license + ')') : '';
+  try {
+    const d = await api('/api/nhac/link', { name: x.title, url: x.url, who: whoName(), credit });
+    toast(credit ? 'Đã thêm. Nhớ ghi tên tác giả trong mô tả video!' : 'Đã thêm vào kho nhạc!', 4500);
+    b.textContent = '✓ Đã thêm'; await loadMedia(); pickMusic(d.file);
+  } catch (e) { toast(e.message, 6000); b.disabled = false; b.textContent = '+ Thêm'; }
+}
+$('tnGo').onclick = () => tnSearch();
+$('tnQ').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); tnSearch(); } });
 // ----- ghi âm: idle -> recording -> review
 let rec = null, recStream = null, recChunks = [], recTimer = null, recSec = 0, recBlob = null, recState = 'idle';
 function recDraw() {

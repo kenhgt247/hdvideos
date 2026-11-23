@@ -98,6 +98,16 @@ async function saveName(env, folder, file, ten, who) {
   }
 }
 
+async function saveCredit(env, file, credit) {
+  const { data, sha } = await readNames(env, 'nhac');
+  data[file] = { ...(data[file] || {}), mo_ta: credit };
+  const bytes = new TextEncoder().encode(JSON.stringify(data, null, 1));
+  let bin = ''; bytes.forEach(b => { bin += String.fromCharCode(b); });
+  const body = { message: 'Ghi nguồn nhạc', content: btoa(bin), branch: 'main' };
+  if (sha) body.sha = sha;
+  await gh(env, '/contents/engine/assets/nhac/_danh_sach.json', { method: 'PUT', body: JSON.stringify(body) });
+}
+
 async function rawFile(env, path, type) {
   const r = await gh(env, `/contents/${path}`, { headers: { accept: 'application/vnd.github.raw' } });
   if (!r.ok) return new Response('Không tìm thấy', { status: 404 });
@@ -311,6 +321,21 @@ export default {
         await saveName(env, m[1], `${name}.${ext}`, String(b.name).trim().slice(0, 60), slug(b.who || ''));
         return json({ ok: true, file: `${name}.${ext}` });
       }
+      if (p === '/api/timnhac') {
+        const q = (url.searchParams.get('q') || 'background').slice(0, 60);
+        const lic = url.searchParams.get('by') === '1' ? 'cc0,pdm,by' : 'cc0,pdm';
+        const api = `https://api.openverse.org/v1/audio/?q=${encodeURIComponent(q)}&license=${lic}&category=music&page_size=30&mature=false`;
+        const r = await fetch(api, { headers: { 'user-agent': 'hdvideos/1.0 (Du Hoc Hai Duong)', accept: 'application/json' } });
+        if (!r.ok) return err(`Kho nhạc Openverse đang bận (lỗi ${r.status}), thử lại sau`, 502);
+        const d = await r.json();
+        const items = (d.results || []).filter(x => x.url && (!x.duration || (x.duration >= 30000 && x.duration <= 420000)))
+          .map(x => ({
+            title: (x.title || 'Không tên').slice(0, 70), creator: x.creator || '', url: x.url, dur: Math.round((x.duration || 0) / 1000),
+            license: (x.license || '').toUpperCase(), source: x.source || x.provider || '', page: x.foreign_landing_url || '',
+            attr: x.attribution || '',
+          }));
+        return json({ items });
+      }
       if (p === '/api/nhac/link' && req.method === 'POST') {
         const b = await req.json();
         const name = slug(b.name);
@@ -331,6 +356,7 @@ export default {
         for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
         await putFile(env, `engine/assets/nhac/${name}.${ext}`, btoa(bin), `Nhạc nền: thêm ${name} từ link`);
         await saveName(env, 'nhac', `${name}.${ext}`, String(b.name).trim().slice(0, 60), slug(b.who || ''));
+        if (b.credit) await saveCredit(env, `${name}.${ext}`, String(b.credit).slice(0, 300));
         return json({ ok: true, file: `${name}.${ext}` });
       }
       m = p.match(/^\/api\/(nhac|giong)\/([a-z0-9_]+\.[a-z0-9]+)\/delete$/);

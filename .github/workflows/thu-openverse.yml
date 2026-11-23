@@ -1,0 +1,20 @@
+name: Thu openverse
+on: workflow_dispatch
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for q in "calm piano" "happy ukulele" "inspiring" "corporate"; do
+            for lic in "cc0,pdm" "cc0,pdm,by"; do
+              echo "== $q | $lic"
+              curl -s -A "hdvideos/1.0" "https://api.openverse.org/v1/audio/?q=$(echo $q | sed 's/ /%20/g')&license=$lic&category=music&page_size=30&mature=false" | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin); r=d.get('results',[])
+          ok=[x for x in r if x.get('url') and (not x.get('duration') or 30000<=x['duration']<=420000)]
+          print('total',d.get('result_count'),'got',len(r),'ok',len(ok))
+          for x in ok[:4]: print(' ',x.get('title'),'|',x.get('license'),'|',x.get('source'),'|',x.get('filetype'),'|',x.get('duration'),'|',x.get('url'))"
+            done
+          done
+          U=$(curl -s -A "hdvideos/1.0" "https://api.openverse.org/v1/audio/?q=inspiring&license=cc0,pdm,by&category=music&page_size=5" | python3 -c "import json,sys;print(json.load(sys.stdin)['results'][0]['url'])")
+          curl -sIL -A "Mozilla/5.0 hdvideos" "$U" | grep -iE "^HTTP|content-type|content-length"
