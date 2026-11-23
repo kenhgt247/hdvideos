@@ -41,6 +41,7 @@ def main():
             'out_path': os.path.join(out_dir, 'video.mp4')}
     if not job.get('logo', True):
         opts['logo'] = None
+    E.STROKE = job.get('stroke', True) is not False
     fmt = job.get('fmt') or 'doc'
     E.set_format(fmt if fmt in E.FORMATS else 'doc')
     info['fmt'] = fmt

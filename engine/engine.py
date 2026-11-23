@@ -5,6 +5,13 @@ import json, math, os, random, re, shutil, subprocess, sys, tempfile, unicodedat
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
+try:
+    import stroke as _stroke
+except Exception:                     # chạy từ thư mục khác
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import stroke as _stroke
+STROKE = True        # True = vẽ từng nét như người thật; False = quét nhanh (kiểu cũ)
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSETS = os.path.join(HERE, 'assets')
 W, H, FPS = 1080, 1920, 30
@@ -60,6 +67,7 @@ def set_format(name):
     SUB_Y, SUB_MAXW = LAY['sub_y'], LAY['sub_w']
     LCX, LMAXW = LAY['col_full']
     CharItem._cache.clear()
+    Txt._plans.clear()
     return LAY
 
 VOICES = {
@@ -214,6 +222,21 @@ class Txt:
         self.x = int(left - self.PAD) if left is not None else int(cx - im.width / 2)
         self.y = int(cy - im.height / 2)
         self.dur = max(0.3, len(text) * CPS)
+        self.sp = None
+        if STROKE:
+            try:
+                key = (text, int(size), tuple(c for _, c in segs))
+                if key not in Txt._plans:
+                    a = np.asarray(im)
+                    Txt._plans[key] = _stroke.plan(a[:, :, 3] > 90, 'text', size)
+                self.sp = Txt._plans[key]
+                if self.sp is not None:
+                    self._arr = np.asarray(im).copy()
+                    self.dur = max(0.4, len(text) * CPS * 1.25)
+            except Exception:
+                self.sp = None
+
+    _plans = {}
 
     @property
     def left(self):
@@ -229,12 +252,23 @@ class Txt:
         if r >= 1:
             f.paste(self.im, (self.x, self.y), self.im)
             return
+        if self.sp is not None:
+            rev = self.sp[0]
+            a = self._arr.copy()
+            a[:, :, 3] = np.where(rev <= r, a[:, :, 3], 0)
+            c = Image.fromarray(a)
+            f.paste(c, (self.x, self.y), c)
+            return
         wv = int(self.im.width * r)
         if wv > 0:
             c = self.im.crop((0, 0, wv, self.im.height))
             f.paste(c, (self.x, self.y), c)
 
     def pos(self, r, t):
+        if self.sp is not None:
+            q = _stroke.pen_at(self.sp[1], clamp(r))
+            if q:
+                return (self.x + q[0], self.y + q[1])
         return (self.left + (self.right - self.left) * clamp(r), self.cy + 10 * math.sin(t * 38))
 
 
@@ -252,11 +286,17 @@ class CharItem:
             la = np.where((mx < 75) & (mx - mn < 30) & (a[:, :, 3] > 0), a[:, :, 3], 0).astype(np.uint8)
             lines = Image.new('RGBA', im.size, (30, 30, 36, 0))
             lines.putalpha(Image.fromarray(la))
-            CharItem._cache[key] = (im, lines)
-        self.im, self.lines = CharItem._cache[key]
+            sp = None
+            if STROKE:
+                try:
+                    sp = _stroke.plan(la > 40, 'img', 40)
+                except Exception:
+                    sp = None
+            CharItem._cache[key] = (im, lines, sp, np.asarray(lines).copy())
+        self.im, self.lines, self.sp, self._larr = CharItem._cache[key]
         self.x = int(cx - self.im.width / 2)
         self.y = int(feet_y - self.im.height)
-        self.dur = 1.6
+        self.dur = 2.0 if self.sp is not None else 1.6
 
     def draw(self, f, r):
         if r <= 0:
@@ -264,10 +304,18 @@ class CharItem:
         if r >= 1:
             f.paste(self.im, (self.x, self.y), self.im)
             return
-        rl = clamp(r / 0.6)
-        if r > 0.6:
-            col = with_alpha(self.im, clamp((r - 0.6) / 0.4))
+        LE = 0.72 if self.sp is not None else 0.6      # phần thời gian vẽ nét đen, còn lại tô màu
+        rl = clamp(r / LE)
+        if r > LE:
+            col = with_alpha(self.im, clamp((r - LE) / (1 - LE)))
             f.paste(col, (self.x, self.y), col)
+        if self.sp is not None:
+            if r < 1:
+                a = self._larr.copy()
+                a[:, :, 3] = np.where(self.sp[0] <= rl, a[:, :, 3], 0)
+                c = Image.fromarray(a)
+                f.paste(c, (self.x, self.y), c)
+            return
         hh = int(self.lines.height * rl)
         if hh > 0:
             c = self.lines.crop((0, 0, self.lines.width, hh))
@@ -275,7 +323,11 @@ class CharItem:
 
     def pos(self, r, t):
         w, h = self.im.width, self.im.height
-        if r < 0.6:
+        if self.sp is not None and r < 0.72:
+            q = _stroke.pen_at(self.sp[1], clamp(r / 0.72))
+            if q:
+                return (self.x + q[0], self.y + q[1])
+        if r < 0.6 and self.sp is None:
             rl = clamp(r / 0.6)
             return (self.x + w * (0.5 + 0.4 * math.sin(rl * 60)), self.y + h * rl)
         return (self.x + w * (0.5 + 0.3 * math.sin(t * 9)), self.y + h * (0.45 + 0.2 * math.cos(t * 7)))
@@ -635,7 +687,7 @@ def kho_item(name, cx, cy, h):
     maxw = LMAXW * 0.95
     hh = min(h, maxw * h0 / w0)
     it = CharItem(path, cx, cy + hh / 2, hh)
-    it.dur = 1.4
+    it.dur = 2.4 if it.sp is not None else 1.4
     return [it]
 
 
@@ -1347,7 +1399,7 @@ def layout_scene(scene, idx, has_logo_end):
             h = min(BOTTOM_AREA - TOP_AREA, 600)
             parts = icon_paths(name, W * 0.27, (TOP_AREA + BOTTOM_AREA) / 2, h * (0.95 if big_icon(name) else 0.88),
                                tag_color(icons[0][1]), idx * 100)
-            budget = 2.6 if big_icon(name) else 2.0
+            budget = (3.0 if kho_has(name) else 2.6) if big_icon(name) else 2.0
             tot = sum(it.dur for it in parts) or 1
             for it in parts:
                 it.gap = 0.015 if len(parts) > 6 else 0.08
@@ -1371,7 +1423,7 @@ def layout_scene(scene, idx, has_logo_end):
         h = b['h']
         if b['k'] == 'icon':
             parts = icon_paths(b['name'], LCX, y + h / 2, h * (0.95 if big_icon(b['name']) else 0.88), b['color'], seed)
-            budget = 2.6 if big_icon(b['name']) else 2.0
+            budget = (3.0 if kho_has(b['name']) else 2.6) if big_icon(b['name']) else 2.0
             tot = sum(it.dur for it in parts) or 1
             for it in parts:
                 it.gap = 0.015 if len(parts) > 6 else 0.08

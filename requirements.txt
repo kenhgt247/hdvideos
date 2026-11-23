@@ -2,3 +2,5 @@ pillow
 numpy
 edge-tts
 imageio-ffmpeg
+scipy
+scikit-image

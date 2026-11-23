@@ -274,6 +274,7 @@ export default {
           bg: /^[a-z_]{2,20}$/.test(b.bg || '') ? b.bg : 'trang',
           fmt: ['doc', 'ngang', 'vuong', 'doc45'].includes(b.fmt) ? b.fmt : 'doc',
           subs: !!b.subs,
+          stroke: b.stroke !== false,
           preview: !!b.preview,
           music: /^[a-z0-9_]+\.(mp3|m4a|aac|wav|ogg)$/.test(b.music || '') ? b.music : '',
           music_vol: Math.max(0, Math.min(40, parseInt(b.music_vol || 12, 10) || 12)),

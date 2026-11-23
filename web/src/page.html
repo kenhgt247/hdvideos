@@ -235,6 +235,7 @@ Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi c
     <label class="f">Kiểu nền</label>
     <input type="hidden" id="bg">
     <div class="bgs" id="bgs"></div>
+    <label class="chk"><input type="checkbox" id="stroke" checked> Vẽ từng nét như người thật (chữ, ảnh, nhân vật)</label>
     <label class="chk"><input type="checkbox" id="subs"> Hiện phụ đề chạy theo giọng đọc</label>
     <label class="f" for="pen">Tiếng bút vẽ</label>
     <select id="pen"><option value="0">Tắt</option><option value="1" selected>Nhỏ</option><option value="1.8">Vừa</option></select>
@@ -413,6 +414,8 @@ fillVoices(store.get('voices', []));
 FIELDS.forEach(k => { if (k !== 'voice' && k !== 'name') { const v = store.get(k, null); if (v != null) $(k).value = v; } });
 ['auto', 'logo'].forEach(k => { $(k).checked = store.get(k, true); });
 $('subs').checked = store.get('subs', false);
+$('stroke').checked = store.get('stroke', true);
+$('stroke').onchange = () => store.set('stroke', $('stroke').checked);
 $('subs').onchange = () => store.set('subs', $('subs').checked);
 if (!$('bg').value) $('bg').value = 'trang';
 drawBgs();
@@ -470,7 +473,7 @@ function jobBody(preview) {
   return { script, name, voice, vieneu_voice, rate: $('rate').value, character: $('character').value, label: $('label').value,
     hotline: $('hotline').value, auto: $('auto').checked, logo: $('logo').checked, by: $('by').value,
     clone, music: $('music').value, music_vol: $('music_vol').value, pen: $('pen').value,
-    bg: $('bg').value || 'trang', fmt: $('fmt').value || 'doc', subs: $('subs').checked, preview: !!preview };
+    bg: $('bg').value || 'trang', fmt: $('fmt').value || 'doc', subs: $('subs').checked, stroke: $('stroke').checked, preview: !!preview };
 }
 $('bGo').onclick = async () => {
   const script = $('script').value.trim();
