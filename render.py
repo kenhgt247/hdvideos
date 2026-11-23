@@ -41,16 +41,42 @@ def main():
             'out_path': os.path.join(out_dir, 'video.mp4')}
     if not job.get('logo', True):
         opts['logo'] = None
+    pen = job.get('pen', 1)
+    pen = {True: 1.0, False: 0.0}.get(pen, pen)
+    try:
+        pen = max(0.0, min(3.0, float(pen)))
+    except (TypeError, ValueError):
+        pen = 1.0
+    opts['pen_sound'] = pen > 0
+    opts['pen_vol'] = pen
+    music = os.path.basename(job.get('music') or '')
+    if music and os.path.exists(os.path.join(HERE, 'engine', 'assets', 'nhac', music)):
+        opts['music'] = os.path.join(HERE, 'engine', 'assets', 'nhac', music)
+        opts['music_vol'] = max(0, min(40, int(job.get('music_vol') or 12)))
+        info['music'] = music
+    clone = os.path.basename(job.get('clone') or '')
+    clone_src = os.path.join(HERE, 'engine', 'assets', 'giong', clone) if clone else ''
 
+    who = re.sub(r'[^a-z0-9_]', '', job.get('who') or '')
+    if who and os.path.isdir(os.path.join(HERE, 'engine', 'assets', 'nhanvat_rieng', who)):
+        E.CHAR_OVERRIDE = os.path.join(HERE, 'engine', 'assets', 'nhanvat_rieng', who)
     gender = 'chi' if voice in ('vieneu_nu', 'hoaimy') else 'anh'
     if voice.startswith('vieneu') and job.get('vieneu_voice'):
         lab = E.norm(job['vieneu_voice'])
         tail = lab.split('—')[-1] if '—' in lab else lab
         if tail.replace('·', ' ').split()[:1] == ['nu']:
             gender = 'chi'
+    if voice == 'clone' and re.search(r'(^|_)(chi|nu|co|nu_)', os.path.splitext(clone)[0]):
+        gender = 'chi'
     opts['character'] = gender if character == 'auto' else character
 
-    if voice.startswith('vieneu'):
+    if voice == 'clone' and clone_src and os.path.exists(clone_src):
+        ref = os.path.join(out_dir, 'giong_mau.wav')
+        E.run_ff(['-i', clone_src, '-ac', '1', '-ar', '24000', '-t', '20', ref])
+        opts['voice'] = 'vieneu'
+        opts['vieneu_ref'] = ref
+        info['clone'] = clone
+    elif voice.startswith('vieneu'):
         opts['voice'] = 'vieneu'
         opts['vieneu_voice'] = job.get('vieneu_voice') or ('auto:nu' if voice == 'vieneu_nu' else 'auto:nam')
     else:
@@ -70,7 +96,9 @@ def main():
             opts['voice'] = 'hoaimy' if gender == 'chi' else 'namminh'
             E.render(job.get('script', ''), opts, log)
             used = opts['voice']
-        if used == 'vieneu':
+        if used == 'vieneu' and opts.get('vieneu_ref'):
+            info['voice'] = 'Giọng nhân bản: ' + os.path.splitext(clone)[0].replace('_', ' ')
+        elif used == 'vieneu':
             info['voice'] = 'VieNeu: ' + (E.LAST_VIENEU.get('picked') or opts.get('vieneu_voice') or '')
         else:
             info['voice'] = {'namminh': 'Microsoft Nam Minh', 'hoaimy': 'Microsoft Hoài My'}.get(used, used)

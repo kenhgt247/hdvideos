@@ -68,6 +68,10 @@ video{width:100%;max-height:62vh;border-radius:12px;background:#000;margin-top:1
 .nv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .nv .it{text-align:center;font-size:13px;background:#fafbfe;border:1px solid var(--line);border-radius:12px;padding:8px}
 .nv img{width:100%;height:130px;object-fit:contain}
+.nv .tg{font-size:11px;color:var(--mut)}
+.au{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px}
+.au audio{flex:1;min-width:0;height:36px}
+.au .x{border:0;background:#fde8ea;color:var(--red);border-radius:10px;padding:6px 10px;font-weight:600}
 .empty{color:var(--mut);text-align:center;padding:24px 8px;font-size:14px}
 #toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#1d2433;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:9;opacity:0;transition:.25s;pointer-events:none;max-width:90vw;text-align:center}
 #toast.on{opacity:1}
@@ -126,6 +130,13 @@ Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi c
       <div><label class="f" for="label">Nhãn góc phải</label><input type="text" id="label" placeholder="Du học Hàn"></div>
       <div><label class="f" for="hotline">Hotline cuối video</label><input type="tel" id="hotline" placeholder="09xx xxx xxx"></div>
     </div>
+    <div class="row">
+      <div><label class="f" for="music">Nhạc nền</label><select id="music"><option value="">Không có nhạc</option></select></div>
+      <div><label class="f" for="music_vol">Âm lượng nhạc</label>
+        <select id="music_vol"><option value="7">Rất nhỏ</option><option value="12" selected>Nhỏ</option><option value="18">Vừa</option><option value="26">To</option></select></div>
+    </div>
+    <label class="f" for="pen">Tiếng bút vẽ</label>
+    <select id="pen"><option value="0">Tắt</option><option value="1" selected>Nhỏ</option><option value="1.8">Vừa</option></select>
     <label class="chk"><input type="checkbox" id="auto" checked> Tự trang trí (tô màu, gạch chân, hình minh hoạ)</label>
     <label class="chk"><input type="checkbox" id="logo" checked> Hiện logo</label>
     <label class="f" for="by">Người tạo</label>
@@ -168,12 +179,34 @@ Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi c
 <!-- ===== CÀI ĐẶT ===== -->
 <section id="tab-cai" class="hide">
   <div class="card">
-    <h2>Nhân vật dẫn chuyện</h2>
-    <div class="hint adm">Bấm vào một ảnh để thay. Dùng ảnh nền trắng, máy sẽ tự tách nền (mất 1–2 phút).</div>
-    <div class="hint staff">Chỉ quản lý mới thay được nhân vật và logo.</div>
+    <h2>Nhân vật của tôi</h2>
+    <div class="hint" id="nvWho"></div>
+    <label class="chk adm"><input type="checkbox" id="nvChung"> Sửa bộ nhân vật CHUNG của trung tâm</label>
     <div class="nv" id="nvGrid" style="margin-top:10px"></div>
-    <button class="btn sm red adm" id="bRestore" style="margin-top:12px">Khôi phục nhân vật gốc</button>
+    <div class="hint" id="nvPending"></div>
+    <button class="btn sm red" id="bRestore" style="margin-top:12px">Về bộ nhân vật chung</button>
     <input type="file" id="nvFile" accept="image/*" class="hide">
+  </div>
+  <div class="card">
+    <h2>Giọng nhân bản</h2>
+    <div class="hint">Ghi âm khoảng 10–15 giây đọc rõ ràng, nơi yên tĩnh. Máy sẽ bắt chước giọng này để đọc video (dùng VieNeu). Đặt tên có chữ "chi" hoặc "nu" nếu là giọng nữ, ví dụ "chi Lan".</div>
+    <pre class="fmt" style="margin-top:10px">Đọc thử đoạn này: "Xin chào các bạn, mình là tư vấn viên của Du Học Hải Dương. Hôm nay mình sẽ chia sẻ những điều cần biết khi đi du học Hàn Quốc và Đài Loan, để bạn chuẩn bị thật tốt cho tương lai."</pre>
+    <input type="text" id="gName" placeholder="Tên giọng, ví dụ: anh Bắc" style="margin-top:10px">
+    <div class="tools" style="margin-top:10px">
+      <button class="btn" id="bRec">● Ghi âm</button>
+      <button class="btn sm" id="bGFile">Tải file ghi âm</button>
+    </div>
+    <input type="file" id="gFile" accept="audio/*,video/mp4" class="hide">
+    <div id="recBox" class="hint"></div>
+    <div id="gList" style="margin-top:8px"></div>
+  </div>
+  <div class="card">
+    <h2>Nhạc nền</h2>
+    <div class="hint">Tải nhạc không lời (mp3, m4a). Nhạc sẽ tự nhỏ đi khi có giọng đọc. Chỉ dùng nhạc miễn phí bản quyền (ví dụ thư viện âm thanh của TikTok/YouTube).</div>
+    <input type="text" id="mName" placeholder="Tên nhạc, ví dụ: vui tươi" style="margin-top:10px">
+    <button class="btn" id="bMFile" style="margin-top:10px">Tải nhạc lên</button>
+    <input type="file" id="mFile" accept="audio/*" class="hide">
+    <div id="mList" style="margin-top:8px"></div>
   </div>
   <div class="card">
     <h2>Logo</h2>
@@ -195,7 +228,7 @@ Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi c
   <button data-t="tao" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Tạo video</button>
   <button data-t="video"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z"/></svg>Video</button>
   <button data-t="kho"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>Kho hình</button>
-  <button data-t="cai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Nhân vật</button>
+  <button data-t="cai" id="navCai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Cài đặt</button>
 </nav>
 <div id="toast"></div>
 
@@ -232,23 +265,29 @@ function showTab(t) {
   window.scrollTo(0, 0);
   if (t === 'video') loadList();
   if (t === 'kho') loadKho();
-  if (t === 'cai') loadNv();
+  if (t === 'cai') { loadNv(); loadMedia(); }
 }
 
 // ---------- form
-const FIELDS = ['name', 'voice', 'rate', 'character', 'label', 'hotline', 'by'];
+const FIELDS = ['name', 'voice', 'rate', 'character', 'label', 'hotline', 'by', 'music', 'music_vol', 'pen'];
 const VOICES_BASE = [
   ['vieneu_nam', 'VieNeu – giọng nam (tự chọn)'],
   ['vieneu_nu', 'VieNeu – giọng nữ (tự chọn)'],
   ['namminh', 'Microsoft – Nam Minh (nam)'],
   ['hoaimy', 'Microsoft – Hoài My (nữ)'],
 ];
+let CLONES = store.get('clones', []);
 function fillVoices(list) {
   const sel = $('voice'), cur = sel.value || store.get('voice', 'vieneu_nam');
   sel.innerHTML = '';
   const g1 = document.createElement('optgroup'); g1.label = 'Giọng chính';
   VOICES_BASE.forEach(([v, t]) => g1.appendChild(new Option(t, v)));
   sel.appendChild(g1);
+  if (CLONES.length) {
+    const g0 = document.createElement('optgroup'); g0.label = 'Giọng nhân bản (ghi âm)';
+    CLONES.forEach(c => g0.appendChild(new Option('🎙 ' + c.name, 'clone:' + c.file)));
+    sel.appendChild(g0);
+  }
   if (list && list.length) {
     const g2 = document.createElement('optgroup'); g2.label = 'Giọng VieNeu cụ thể';
     list.forEach(l => g2.appendChild(new Option(l.replace(/^⭐\s*/, '★ '), 'vn:' + l)));
@@ -306,10 +345,13 @@ $('bGo').onclick = async () => {
   FIELDS.forEach(k => k !== 'name' && store.set(k, $(k).value));
   store.set('auto', $('auto').checked); store.set('logo', $('logo').checked);
   let voice = $('voice').value, vieneu_voice = '';
+  let clone = '';
   if (voice.startsWith('vn:')) { vieneu_voice = voice.slice(3); voice = 'vieneu'; }
+  if (voice.startsWith('clone:')) { clone = voice.slice(6); voice = 'clone'; }
   const name = $('name').value.trim() || script.split('\n')[0].split(/\s\/\s|\|\|/)[0].replace(/\[.*?\]/g, '').trim().slice(0, 50);
   const body = { script, name, voice, vieneu_voice, rate: $('rate').value, character: $('character').value, label: $('label').value,
-    hotline: $('hotline').value, auto: $('auto').checked, logo: $('logo').checked, by: $('by').value };
+    hotline: $('hotline').value, auto: $('auto').checked, logo: $('logo').checked, by: $('by').value,
+    clone, music: $('music').value, music_vol: $('music_vol').value, pen: $('pen').value };
   $('bGo').disabled = true; $('bGo').textContent = 'Đang gửi...';
   try {
     const d = await api('/api/jobs', body);
@@ -461,20 +503,107 @@ async function delKho(f) {
 const NV = [['anh', 'chao', 'Anh · Chào'], ['anh', 'chi', 'Anh · Chỉ tay'], ['anh', 'like', 'Anh · Like'],
             ['chi', 'chao', 'Chị · Chào'], ['chi', 'chi', 'Chị · Chỉ tay'], ['chi', 'like', 'Chị · Like']];
 let nvTarget = null;
-function loadNv() {
-  const v = Date.now();
-  $('nvGrid').innerHTML = NV.map(([g, p, t]) => `<div class="it" onclick="pickNv('${g}','${p}')"><img src="/img/nv/${g}_${p}.png?v=${v}"><div>${t}</div></div>`).join('');
+const whoName = () => ($('by').value || store.get('by', '') || '').trim();
+const isAdm = () => document.body.classList.contains('admin');
+const nvChung = () => isAdm() && $('nvChung').checked;
+async function loadNv() {
+  const who = nvChung() ? '' : whoName(), v = Date.now();
+  $('nvWho').innerHTML = nvChung() ? 'Đang sửa <b>bộ chung</b> (ai chưa có nhân vật riêng sẽ dùng bộ này).'
+    : who ? 'Nhân vật riêng của <b>' + esc(who) + '</b>. Bấm vào ảnh để thay. Chỉ video do bạn tạo (ô "Người tạo" = ' + esc(who) + ') mới dùng bộ này.'
+    : 'Hãy nhập tên của bạn ở ô <b>Người tạo</b> (tab Tạo video) để có bộ nhân vật riêng.';
+  $('bRestore').textContent = nvChung() ? 'Khôi phục bộ chung gốc' : 'Về bộ nhân vật chung';
+  let info = { mine: [], pending: [] };
+  try { info = await api('/api/nhanvat?who=' + encodeURIComponent(who)); } catch {}
+  $('nvGrid').innerHTML = NV.map(([g, p, t]) => {
+    const f = g + '_' + p + '.png', mine = info.mine.includes(f);
+    return `<div class="it" onclick="pickNv('${g}','${p}')"><img src="/img/nv/${f}?who=${encodeURIComponent(who)}&v=${v}"><div>${t}</div>
+      <div class="tg">${nvChung() ? 'bộ chung' : mine ? 'của bạn' : 'đang dùng bộ chung'}</div></div>`;
+  }).join('');
+  $('nvPending').textContent = info.pending.length ? 'Đang tách nền ' + info.pending.length + ' ảnh, khoảng 1–2 phút...' : '';
+  if (info.pending.length && curTab === 'cai') setTimeout(loadNv, 20000);
 }
-function pickNv(g, p) { if (!document.body.classList.contains('admin')) { toast('Chỉ quản lý mới thay được nhân vật'); return; } nvTarget = [g, p]; $('nvFile').click(); }
+$('nvChung').onchange = loadNv;
+function pickNv(g, p) {
+  if (!nvChung() && !whoName()) { toast('Hãy nhập tên ở ô "Người tạo" trước'); showTab('tao'); $('by').focus(); return; }
+  nvTarget = [g, p]; $('nvFile').click();
+}
 $('nvFile').onchange = async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f || !nvTarget) return;
-  try { const im = await readImage(f, 1600); toast('Đang tải lên...'); await api('/api/nhanvat', { gender: nvTarget[0], pose: nvTarget[1], data: im.data });
-    toast('Đã tải. Khoảng 1–2 phút nữa nhân vật mới sẽ được dùng.', 4500); setTimeout(loadNv, 90000); } catch (er) { toast(er.message); }
+  try { const im = await readImage(f, 1600); toast('Đang tải lên...');
+    await api('/api/nhanvat', { gender: nvTarget[0], pose: nvTarget[1], data: im.data, who: whoName(), scope: nvChung() ? 'chung' : 'rieng' });
+    toast('Đã tải. Khoảng 1–2 phút nữa ảnh sẽ được tách nền.', 4500); setTimeout(loadNv, 1500); } catch (er) { toast(er.message, 4500); }
 };
 $('bRestore').onclick = async () => {
-  if (!confirm('Khôi phục 6 ảnh nhân vật gốc?')) return;
-  try { await api('/api/nhanvat/restore', {}); toast('Đang khôi phục, 1–2 phút nữa sẽ xong.'); setTimeout(loadNv, 90000); } catch (e) { toast(e.message); }
+  const chung = nvChung();
+  if (!chung && !whoName()) { toast('Chưa có tên người tạo'); return; }
+  if (!confirm(chung ? 'Khôi phục 6 ảnh nhân vật CHUNG gốc?' : 'Xoá nhân vật riêng của bạn và dùng lại bộ chung?')) return;
+  try { await api('/api/nhanvat/restore', { scope: chung ? 'chung' : 'rieng', who: whoName() }); toast('Xong. Có thể mất 1–2 phút để cập nhật.'); setTimeout(loadNv, 3000); } catch (e) { toast(e.message); }
 };
+
+// ---------- giọng nhân bản + nhạc nền
+function toB64(blob) {
+  return new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = bad; r.readAsDataURL(blob); });
+}
+function extOf(file) {
+  const t = (file.type || '').toLowerCase(), n = (file.name || '').toLowerCase();
+  const m = n.match(/\.([a-z0-9]+)$/);
+  if (m && ['mp3', 'm4a', 'aac', 'wav', 'ogg', 'webm', 'mp4'].includes(m[1])) return m[1];
+  if (t.includes('mpeg')) return 'mp3'; if (t.includes('mp4') || t.includes('m4a')) return 'm4a';
+  if (t.includes('webm')) return 'webm'; if (t.includes('wav')) return 'wav'; if (t.includes('ogg')) return 'ogg';
+  return 'm4a';
+}
+async function uploadAudio(kind, name, blob) {
+  if (!name.trim()) { toast('Hãy đặt tên trước'); return false; }
+  if (blob.size > 14e6) { toast('File quá lớn (tối đa 14MB)'); return false; }
+  toast('Đang tải lên...');
+  try { await api('/api/' + kind, { name, ext: extOf(blob), data: await toB64(blob) }); toast('Đã tải lên!'); loadMedia(); return true; }
+  catch (e) { toast(e.message, 5000); return false; }
+}
+async function loadMedia() {
+  try {
+    const d = await api('/api/media');
+    CLONES = d.giong; store.set('clones', CLONES); fillVoices(store.get('voices', []));
+    const ms = $('music'), cur = ms.value || store.get('music', '');
+    ms.innerHTML = '<option value="">Không có nhạc</option>' + d.nhac.map(x => `<option value="${x.file}">${esc(x.name)}</option>`).join('');
+    ms.value = d.nhac.some(x => x.file === cur) ? cur : '';
+    const row = (kind, x) => `<div class="au"><span style="flex:none;max-width:35%">${esc(x.name)}</span><audio controls preload="none" src="/media/${kind}/${x.file}"></audio>
+      <button class="x adm" onclick="delMedia('${kind}','${x.file}')">Xoá</button></div>`;
+    $('gList').innerHTML = d.giong.map(x => row('giong', x)).join('') || '<div class="hint">Chưa có giọng nhân bản.</div>';
+    $('mList').innerHTML = d.nhac.map(x => row('nhac', x)).join('') || '<div class="hint">Chưa có nhạc nền.</div>';
+  } catch {}
+}
+async function delMedia(kind, f) {
+  if (!confirm('Xoá "' + f + '"?')) return;
+  try { await api('/api/' + kind + '/' + f + '/delete', {}); toast('Đã xoá'); loadMedia(); } catch (e) { toast(e.message); }
+}
+$('bGFile').onclick = () => $('gFile').click();
+$('gFile').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (f) await uploadAudio('giong', $('gName').value, f); };
+$('bMFile').onclick = () => { if (!$('mName').value.trim()) { toast('Hãy đặt tên nhạc trước'); $('mName').focus(); return; } $('mFile').click(); };
+$('mFile').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (f) await uploadAudio('nhac', $('mName').value, f); };
+let rec = null, recChunks = [], recTimer = null;
+$('bRec').onclick = async () => {
+  if (rec && rec.state === 'recording') { rec.stop(); return; }
+  if (!$('gName').value.trim()) { toast('Hãy đặt tên giọng trước'); $('gName').focus(); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    rec = new MediaRecorder(stream); recChunks = [];
+    rec.ondataavailable = e => e.data.size && recChunks.push(e.data);
+    rec.onstop = async () => {
+      clearInterval(recTimer); stream.getTracks().forEach(t => t.stop());
+      $('bRec').textContent = '● Ghi âm';
+      const blob = new Blob(recChunks, { type: rec.mimeType || 'audio/mp4' });
+      const url = URL.createObjectURL(blob);
+      $('recBox').innerHTML = `<div class="au"><audio controls src="${url}"></audio></div>
+        <div class="row" style="margin-top:8px"><button class="btn" id="bRecOk">Dùng bản ghi này</button><button class="btn red" id="bRecNo">Ghi lại</button></div>`;
+      $('bRecOk').onclick = async () => { if (await uploadAudio('giong', $('gName').value, blob)) $('recBox').innerHTML = ''; };
+      $('bRecNo').onclick = () => { $('recBox').innerHTML = ''; };
+    };
+    rec.start(); let sec = 0;
+    $('bRec').textContent = '■ Dừng (0s)';
+    recTimer = setInterval(() => { sec++; $('bRec').textContent = '■ Dừng (' + sec + 's)'; if (sec >= 25) rec.stop(); }, 1000);
+  } catch (e) { toast('Không mở được micro. Hãy cho phép trình duyệt dùng micro.', 5000); }
+};
+loadMedia();
 $('bLogo').onclick = () => $('logoFile').click();
 $('logoFile').onchange = async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
@@ -484,7 +613,7 @@ $('bOut').onclick = async () => { await fetch('/api/logout'); location.reload();
 
 api('/api/me').then(d => {
   document.body.classList.toggle('admin', !!d.admin);
-  $('roleTxt').textContent = d.admin ? 'Bạn đang dùng quyền QUẢN LÝ (xoá ảnh, xoá video, đổi nhân vật, logo).' : 'Bạn đang dùng quyền nhân viên. Muốn xoá ảnh/video hay đổi nhân vật, hãy đăng xuất rồi đăng nhập bằng mật khẩu quản lý.';
+  $('roleTxt').textContent = d.admin ? 'Bạn đang dùng quyền QUẢN LÝ (xoá ảnh, xoá video, nhạc, giọng, sửa nhân vật chung, logo).' : 'Bạn đang dùng quyền nhân viên. Muốn xoá ảnh/video, sửa nhân vật chung hay logo, hãy đăng xuất rồi đăng nhập bằng mật khẩu quản lý.';
 }).catch(() => {});
 // lấy danh sách giọng VieNeu (nếu đã từng dựng)
 api('/api/list').then(d => { if (d.voices && d.voices.length) { store.set('voices', d.voices); fillVoices(d.voices); } }).catch(() => {});

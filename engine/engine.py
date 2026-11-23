@@ -17,7 +17,7 @@ CPS = 0.034          # giây cho mỗi ký tự khi viết
 GAP, ENTER, EXIT = 0.16, 0.35, 0.45
 TOP_AREA = 400       # dưới logo góc trái
 BOTTOM_AREA = 1460   # phía dưới bị caption TikTok/Reels che
-ERASE = 0.9          # thời gian lau bảng khi chuyển cảnh
+ERASE = 0.5          # thời gian lau bảng khi chuyển cảnh
 LCX, LMAXW = W / 2, 960   # cột nội dung (đổi khi có nhân vật đứng bên trái)
 
 VOICES = {
@@ -215,9 +215,16 @@ class CharItem:
 NV_DIR = os.path.join(ASSETS, 'nhanvat')
 
 
+CHAR_OVERRIDE = None   # thư mục nhân vật riêng của từng nhân viên (bản web)
+
+
 def char_path(gender, pose):
-    p = os.path.join(NV_DIR, '%s_%s.png' % (gender, pose))
-    return p if os.path.exists(p) else None
+    for d in (CHAR_OVERRIDE, NV_DIR):
+        if d:
+            p = os.path.join(d, '%s_%s.png' % (gender, pose))
+            if os.path.exists(p):
+                return p
+    return None
 
 
 POSES = [('chao', 'Chào'), ('chi', 'Chỉ tay'), ('like', 'Like')]
@@ -1501,6 +1508,66 @@ def wav_dur(p):
         return w.getnframes() / w.getframerate()
 
 
+# ------------------------------------------------------------------ tiếng bút / tiếng lau bảng
+def _smooth(x, k):
+    return np.convolve(x, np.ones(k, dtype=np.float32) / k, mode='same')
+
+
+def _norm_noise(x):
+    sd = float(x.std()) or 1.0
+    return (x / sd).astype(np.float32)
+
+
+def sfx_track(plans, rate=44100, pen_vol=0.05, seed=7):
+    """Tiếng sột soạt nhỏ khi tay đang vẽ + tiếng lau bảng khi chuyển cảnh (mảng float, đơn vị = biên độ 16-bit)."""
+    rng = np.random.default_rng(seed)
+    lens = [int(round(pl['n'] / FPS * rate)) for pl in plans]
+    out = np.zeros(sum(lens), dtype=np.float32)
+    amp = pen_vol * 32767
+    off = 0
+    for pl, ln in zip(plans, lens):
+        for it, s0, e0 in pl['sch']:
+            soft = 0.55 if isinstance(it, (Fill, CharItem)) else 1.0
+            t = s0
+            while t < e0 - 0.03:
+                L = min(rng.uniform(0.06, 0.18), e0 - t)
+                n = int(L * rate)
+                if n < 64:
+                    break
+                x = rng.standard_normal(n + 64).astype(np.float32)
+                hp = x - _smooth(x, 4)                     # tiếng giấy rít (cao)
+                mid = _smooth(x, 3) - _smooth(x, 14)       # thân tiếng bút
+                nz = _norm_noise(0.65 * hp + 0.35 * mid)[32:32 + n]
+                env = np.sin(np.linspace(0, np.pi, n)) ** 0.6
+                env *= 0.75 + 0.25 * np.sin(np.linspace(0, rng.uniform(6, 14) * np.pi, n))
+                a = off + int(t * rate)
+                b = min(a + n, off + ln)
+                if b > a:
+                    out[a:b] += nz[:b - a] * env[:b - a] * amp * rng.uniform(0.55, 1.0) * soft
+                t += L + rng.uniform(0.02, 0.07)
+        if not pl['last']:
+            n = int(ERASE * rate)
+            x = rng.standard_normal(n + 400).astype(np.float32)
+            rub = _norm_noise(_smooth(x, 9) - _smooth(x, 60))[200:200 + n]
+            k = np.linspace(0, 1, n)
+            env = np.abs(np.sin(np.pi * 4 * k)) ** 0.5 * np.minimum(1, (1 - k) * 8)
+            a = off + ln - n
+            out[a:a + n] += rub * env * amp * 1.1
+        off += ln
+    return out
+
+
+def mix_into_wav(path, track):
+    with wave.open(path) as w:
+        ch, sw, fr, nf = w.getnchannels(), w.getsampwidth(), w.getframerate(), w.getnframes()
+        data = np.frombuffer(w.readframes(nf), dtype=np.int16).astype(np.float32).reshape(-1, ch)
+    m = min(len(data), len(track))
+    data[:m] += track[:m, None]
+    with wave.open(path, 'wb') as w:
+        w.setnchannels(ch); w.setsampwidth(sw); w.setframerate(fr)
+        w.writeframes(np.clip(data, -32768, 32767).astype(np.int16).tobytes())
+
+
 # ------------------------------------------------------------------ dựng
 class Renderer:
     def __init__(self, logo_path=None, label=None):
@@ -1536,7 +1603,7 @@ class Renderer:
         return im.resize((int(im.width * 1.2), int(im.height * 1.35)), Image.LANCZOS)
 
     def erase(self, f, e):
-        top, bot, rows = 390, 1500, 6
+        top, bot, rows = 390, 1500, 4
         rh = (bot - top) / rows
         pos = clamp(e) * rows
         r = min(rows - 1, int(pos))
@@ -1776,6 +1843,9 @@ def render(script_text, opts, progress=lambda msg, frac: None):
                     data = b'\x00' * 4 * int(lead * rate_hz) + data
                 data = data[:total * 4]
                 out.writeframes(data + b'\x00' * (total * 4 - len(data)))
+
+        if opts.get('pen_sound', True):
+            mix_into_wav(narr, sfx_track(plans, rate_hz, 0.04 * float(opts.get('pen_vol', 1.0))))
 
         tmp_out = out_path + '.dang-tao.mp4'
         music = opts.get('music')

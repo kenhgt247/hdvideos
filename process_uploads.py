@@ -42,6 +42,17 @@ def main():
             continue
         if ext.lower() not in IMG:
             continue
+        if '__' in base:                       # nhân vật riêng: <người>__<anh|chi>_<tư thế>
+            who, rest = base.split('__', 1)
+            parts = rest.split('_')
+            if who and len(parts) == 2 and parts[0] in dict(E.GENDERS) and parts[1] in dict(E.POSES):
+                dst_dir = os.path.join(E.ASSETS, 'nhanvat_rieng', who)
+                os.makedirs(dst_dir, exist_ok=True)
+                E.remove_bg(src).save(os.path.join(dst_dir, rest + '.png'))
+                print('Nhân vật riêng:', who, rest)
+                n += 1
+            os.remove(src)
+            continue
         parts = base.split('_')
         if len(parts) == 2 and parts[0] in dict(E.GENDERS) and parts[1] in dict(E.POSES):
             try:

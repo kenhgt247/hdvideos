@@ -199,7 +199,7 @@ export default {
       }
       const admin = await isAdmin(req, env);
       if (p === '/api/me') return json({ admin });
-      const needAdmin = /^\/api\/(jobs\/[a-z0-9]+\/delete|kho\/[^/]+\/delete|nhanvat|nhanvat\/restore|logo)$/.test(p) && req.method === 'POST';
+      const needAdmin = /^\/api\/(jobs\/[a-z0-9]+\/delete|(kho|nhac|giong)\/[^/]+\/delete|logo)$/.test(p) && req.method === 'POST';
       if (needAdmin && !admin) return err(ADMIN_ONLY, 403);
 
       // ---- tạo video
@@ -214,6 +214,11 @@ export default {
           character: b.character || 'auto', label: (b.label || '').slice(0, 30), hotline: (b.hotline || '').slice(0, 40),
           auto: b.auto !== false, logo: b.logo !== false, rate: Math.max(-30, Math.min(30, parseInt(b.rate || 0, 10) || 0)),
           by: (b.by || '').slice(0, 40),
+          who: slug(b.by || ''),
+          pen: Math.max(0, Math.min(3, Number(b.pen ?? 1) || 0)),
+          music: /^[a-z0-9_]+\.(mp3|m4a|aac|wav|ogg)$/.test(b.music || '') ? b.music : '',
+          music_vol: Math.max(0, Math.min(40, parseInt(b.music_vol || 12, 10) || 12)),
+          clone: /^[a-z0-9_]+\.(mp3|m4a|aac|wav|ogg|webm|mp4)$/.test(b.clone || '') ? b.clone : '',
         };
         const r = await gh(env, `/actions/workflows/${WF}/dispatches`, {
           method: 'POST', body: JSON.stringify({ ref: 'main', inputs: { job_id: id, job: JSON.stringify(job) } }),
@@ -261,18 +266,79 @@ export default {
       m = p.match(/^\/img\/kho\/([a-z0-9_]+\.png)$/);
       if (m) return rawFile(env, `engine/assets/kho/${m[1]}`, 'image/png');
 
+      // ---- nhạc nền, giọng mẫu (nhân bản)
+      if (p === '/api/media' && req.method === 'GET') {
+        const [nhac, giong] = await Promise.all([listDir(env, 'engine/assets/nhac'), listDir(env, 'engine/assets/giong')]);
+        const pick = arr => arr.filter(f => !f.name.startsWith('.')).map(f => ({ file: f.name, name: f.name.replace(/\.[^.]+$/, '').replace(/_/g, ' '), size: f.size }));
+        return json({ nhac: pick(nhac), giong: pick(giong) });
+      }
+      m = p.match(/^\/api\/(nhac|giong)$/);
+      if (m && req.method === 'POST') {
+        const b = await req.json();
+        const name = slug(b.name);
+        const ext = String(b.ext || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (!name) return err('Hãy đặt tên');
+        if (!['mp3', 'm4a', 'aac', 'wav', 'ogg', 'webm', 'mp4'].includes(ext)) return err('Định dạng âm thanh không hỗ trợ');
+        if (!b.data || b.data.length > 20e6) return err('File trống hoặc quá lớn (tối đa khoảng 14MB)');
+        await putFile(env, `engine/assets/${m[1]}/${name}.${ext}`, b.data, `${m[1] === 'nhac' ? 'Nhạc nền' : 'Giọng mẫu'}: thêm ${name}`);
+        return json({ ok: true, file: `${name}.${ext}` });
+      }
+      m = p.match(/^\/api\/(nhac|giong)\/([a-z0-9_]+\.[a-z0-9]+)\/delete$/);
+      if (m && req.method === 'POST') {
+        const path = `engine/assets/${m[1]}/${m[2]}`;
+        const cur = await ghJson(env, `/contents/${path}`);
+        if (cur) await gh(env, `/contents/${path}`, { method: 'DELETE', body: JSON.stringify({ message: `Xoá ${m[2]}`, sha: cur.sha, branch: 'main' }) });
+        return json({ ok: true });
+      }
+      m = p.match(/^\/media\/(nhac|giong)\/([a-z0-9_]+)\.([a-z0-9]+)$/);
+      if (m) {
+        const types = { mp3: 'audio/mpeg', m4a: 'audio/mp4', mp4: 'audio/mp4', aac: 'audio/aac', wav: 'audio/wav', ogg: 'audio/ogg', webm: 'audio/webm' };
+        return rawFile(env, `engine/assets/${m[1]}/${m[2]}.${m[3]}`, types[m[3]] || 'application/octet-stream');
+      }
+
       // ---- nhân vật, logo
+      const NVF = /^(anh|chi)_(chao|chi|like)\.png$/;
       m = p.match(/^\/img\/nv\/((anh|chi)_(chao|chi|like)\.png)$/);
-      if (m) return rawFile(env, `engine/assets/nhanvat/${m[1]}`, 'image/png');
+      if (m) {
+        const who = slug(url.searchParams.get('who') || '');
+        if (who) {
+          const r = await gh(env, `/contents/engine/assets/nhanvat_rieng/${who}/${m[1]}`, { headers: { accept: 'application/vnd.github.raw' } });
+          if (r.ok) return new Response(r.body, { headers: { 'content-type': 'image/png', 'cache-control': 'no-store' } });
+        }
+        return rawFile(env, `engine/assets/nhanvat/${m[1]}`, 'image/png');
+      }
       if (p === '/img/logo') return rawFile(env, 'engine/assets/logo.png', 'image/png');
+      if (p === '/api/nhanvat' && req.method === 'GET') {
+        const who = slug(url.searchParams.get('who') || '');
+        const mine = who ? (await listDir(env, `engine/assets/nhanvat_rieng/${who}`)).map(f => f.name).filter(n => NVF.test(n)) : [];
+        const pending = (await listDir(env, 'engine/assets/nhanvat_moi')).map(f => f.name).filter(n => !n.startsWith('.'));
+        return json({ mine, pending: pending.filter(n => who ? n.startsWith(who + '__') : !n.includes('__')) });
+      }
       if (p === '/api/nhanvat' && req.method === 'POST') {
         const b = await req.json();
         if (!['anh', 'chi'].includes(b.gender) || !['chao', 'chi', 'like'].includes(b.pose) || !b.data) return err('Thiếu thông tin');
-        await putFile(env, `engine/assets/nhanvat_moi/${b.gender}_${b.pose}.png`, b.data, `Nhân vật: thay ${b.gender}_${b.pose}`);
+        if (b.scope === 'chung') {
+          if (!admin) return err(ADMIN_ONLY, 403);
+          await putFile(env, `engine/assets/nhanvat_moi/${b.gender}_${b.pose}.png`, b.data, `Nhân vật chung: thay ${b.gender}_${b.pose}`);
+        } else {
+          const who = slug(b.who || '');
+          if (!who) return err('Hãy nhập tên của bạn ở ô "Người tạo" (tab Tạo video) trước');
+          await putFile(env, `engine/assets/nhanvat_moi/${who}__${b.gender}_${b.pose}.png`, b.data, `Nhân vật của ${who}: thay ${b.gender}_${b.pose}`);
+        }
         return json({ ok: true });
       }
       if (p === '/api/nhanvat/restore' && req.method === 'POST') {
-        await putFile(env, 'engine/assets/nhanvat_moi/_khoi_phuc', btoa('1'), 'Nhân vật: khôi phục gốc');
+        const b = await req.json().catch(() => ({}));
+        if (b.scope === 'chung') {
+          if (!admin) return err(ADMIN_ONLY, 403);
+          await putFile(env, 'engine/assets/nhanvat_moi/_khoi_phuc', btoa('1'), 'Nhân vật chung: khôi phục gốc');
+          return json({ ok: true });
+        }
+        const who = slug(b.who || '');
+        if (!who) return err('Thiếu tên');
+        for (const f of await listDir(env, `engine/assets/nhanvat_rieng/${who}`)) {
+          await gh(env, `/contents/${f.path}`, { method: 'DELETE', body: JSON.stringify({ message: `Nhân vật của ${who}: về bộ chung`, sha: f.sha, branch: 'main' }) });
+        }
         return json({ ok: true });
       }
       if (p === '/api/logo' && req.method === 'POST') {
