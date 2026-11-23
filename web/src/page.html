@@ -10,7 +10,7 @@
 <style>
 :root{--blue:#1f46aa;--blue2:#e8eefc;--red:#d62632;--orange:#ee8014;--ink:#1d2433;--mut:#6b7385;--line:#e3e7f0;--bg:#f4f6fb;--card:#fff;--ok:#1e8c46}
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;-webkit-text-size-adjust:100%}
+html,body{margin:0;overflow-x:hidden;max-width:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;-webkit-text-size-adjust:100%}
 header{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:10px 16px;padding-top:max(10px,env(safe-area-inset-top))}
 header img{width:36px;height:36px;object-fit:contain}
 header b{display:block;font-size:16px;color:var(--blue)}
@@ -28,6 +28,11 @@ textarea{min-height:260px;line-height:1.5;resize:vertical}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
 .row{display:flex;gap:8px;flex-wrap:wrap}
 .row>*{flex:1;min-width:0}
+.hd{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hd h2{margin:0;min-width:0}
+.hd .btn{flex:none}
+.grid .empty{grid-column:1/-1}
+.vid .d,.vid .n{overflow-wrap:anywhere}
 .btn{border:0;border-radius:12px;padding:11px 14px;font:inherit;font-size:15px;font-weight:600;background:var(--blue2);color:var(--blue);cursor:pointer;white-space:nowrap}
 .btn.sm{padding:8px 11px;font-size:14px}
 .btn.red{background:#fde8ea;color:var(--red)}
@@ -59,7 +64,7 @@ video{width:100%;max-height:62vh;border-radius:12px;background:#000;margin-top:1
 .grid .it .x{position:absolute;top:3px;right:3px;border:0;background:#fff;border-radius:50%;width:26px;height:26px;color:var(--red);font-size:16px;box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .up{display:flex;gap:10px;align-items:center;margin-top:10px}
 .up img{width:64px;height:64px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#fafbfe}
-.up input{flex:1}
+.up input{flex:1;min-width:0}
 .nv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .nv .it{text-align:center;font-size:13px;background:#fafbfe;border:1px solid var(--line);border-radius:12px;padding:8px}
 .nv img{width:100%;height:130px;object-fit:contain}
@@ -131,7 +136,7 @@ Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi c
 <!-- ===== VIDEO ĐÃ LÀM ===== -->
 <section id="tab-video" class="hide">
   <div class="card">
-    <div class="row" style="align-items:center"><h2 style="margin:0">Video đã làm</h2><button class="btn sm" id="bReload" style="flex:0">Làm mới</button></div>
+    <div class="hd"><h2>Video đã làm</h2><button class="btn sm" id="bReload">Làm mới</button></div>
     <div class="hint">Video được giữ 60 ngày. Tải về máy để đăng TikTok / Reels.</div>
   </div>
   <div id="vlist"><div class="empty">Đang tải...</div></div>
@@ -152,7 +157,7 @@ Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi c
     <button class="btn main hide" id="bUpload" style="background:var(--blue)">Tải lên Kho</button>
   </div>
   <div class="card">
-    <div class="row" style="align-items:center"><h2 style="margin:0">Kho hình <span id="khoN" style="color:var(--mut);font-weight:400"></span></h2><button class="btn sm" id="bKhoReload" style="flex:0">Làm mới</button></div>
+    <div class="hd"><h2>Kho hình <span id="khoN" style="color:var(--mut);font-weight:400"></span></h2><button class="btn sm" id="bKhoReload">Làm mới</button></div>
     <div class="hint" id="khoPending"></div>
     <div class="grid" id="khoGrid" style="margin-top:10px"></div>
   </div>
