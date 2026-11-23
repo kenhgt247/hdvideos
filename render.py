@@ -111,6 +111,11 @@ def main():
         if E.LAST_VIENEU.get('voices'):
             info['voices'] = E.LAST_VIENEU['voices']
         info['ok'] = True
+        try:
+            from posts import make_posts
+            info['posts'] = make_posts(job.get('script', ''), name, job.get('hotline', ''), info.get('credit', ''))
+        except Exception as e:
+            print('Không soạn được bài đăng:', e)
         info['seconds'] = int(time.time() - t0)
         info['size'] = os.path.getsize(opts['out_path'])
     except E.VideoError as e:

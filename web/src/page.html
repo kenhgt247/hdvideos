@@ -91,6 +91,12 @@ video{width:100%;max-height:62vh;border-radius:12px;background:#000;margin-top:1
 .tnr{display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid var(--line)}
 .tnr .tx{flex:1;min-width:0}.tnr .tx b{display:block;font-size:14px;overflow-wrap:anywhere}.tnr .tx small{color:var(--mut);font-size:12px}
 .tnr .pl{flex:none;width:34px;height:34px;border-radius:50%;border:0;background:#fff;color:var(--blue);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.posts{margin-top:12px;border:1.5px solid var(--line);border-radius:12px;overflow:hidden}
+.posts .tabs{display:flex;background:#f4f6fb}
+.posts .tabs button{flex:1;border:0;background:none;padding:10px 4px;font:inherit;font-size:14px;font-weight:600;color:var(--mut)}
+.posts .tabs button.on{background:#fff;color:var(--blue);box-shadow:inset 0 -2px 0 var(--blue)}
+.posts textarea{border:0;border-radius:0;min-height:190px;font-size:14px}
+.posts .pb{display:flex;gap:8px;padding:8px;border-top:1px solid var(--line)}
 .maddt{font-size:13px;font-weight:700;color:var(--mut);margin-bottom:6px}
 .mfoot{display:flex;gap:8px;flex-wrap:wrap;padding:8px 4px 4px;border-top:1px solid var(--line);margin-top:4px}
 .au .x{border:0;background:#fde8ea;color:var(--red);border-radius:10px;padding:6px 10px;font-weight:600}
@@ -403,16 +409,27 @@ $('bGo').onclick = async () => {
 // ---------- jobs đang dựng
 const jobState = {};
 function renderJobs() {
-  const jobs = store.get('jobs', []);
-  $('jobs').innerHTML = jobs.map(j => {
+  const jobs = store.get('jobs', []), box = $('jobs');
+  const keep = {};
+  box.querySelectorAll('[data-done]').forEach(el => { keep[el.dataset.done] = el; });
+  const html = jobs.map(j => {
+    if (keep[j.id] && jobState[j.id] && jobState[j.id].state === 'done') return `<div data-keep="${j.id}"></div>`;
+    return jobCard(j);
+  }).join('');
+  box.innerHTML = html;
+  box.querySelectorAll('[data-keep]').forEach(ph => ph.replaceWith(keep[ph.dataset.keep]));
+}
+function jobCard(j) {
+  {
     const s = jobState[j.id] || { state: 'queued', step: 'Đang gửi lệnh' };
     const mins = Math.floor((Date.now() - j.t) / 60000);
     if (s.state === 'done') {
-      return `<div class="card job done"><div class="t">✓ ${esc(j.name)}</div>
+      return `<div class="card job done" data-done="${j.id}"><div class="t">✓ ${esc(j.name)}</div>
         <div class="s">Xong · ${esc(s.info && s.info.voice || '')}</div>
         ${s.info && s.info.fallback ? `<span class="tag">Đã dùng giọng dự phòng</span>` : ''}
         ${s.info && s.info.credit ? `<div class="hint" style="margin-top:6px">Dán vào mô tả video: <b>${esc(s.info.credit)}</b> <a href="#" onclick="event.preventDefault();copyText(${esc(JSON.stringify(s.info.credit))}).then(()=>toast('Đã copy'))">Copy</a></div>` : ''}
         <video src="/video/${j.id}" controls playsinline preload="metadata"></video>
+        ${postsBox(s.info && s.info.posts)}
         <div class="row" style="margin-top:10px"><a class="btn" href="/video/${j.id}" download style="text-align:center;text-decoration:none">Tải video</a>
         <button class="btn red" onclick="dismiss('${j.id}')">Đóng</button></div></div>`;
     }
@@ -422,8 +439,29 @@ function renderJobs() {
     }
     return `<div class="card job"><div class="t">${esc(j.name)}</div>
       <div class="s">${esc(s.step || 'Đang dựng')} · ${mins} phút</div><div class="bar"><i></i></div></div>`;
-  }).join('');
+  }
 }
+const POSTS = {}; let postSeq = 0;
+function postsBox(p) {
+  if (!p || !p.facebook) return '';
+  const k = 'p' + (++postSeq); POSTS[k] = p;
+  return `<div class="posts" id="${k}"><div class="tabs">
+      <button type="button" class="on" onclick="postTab('${k}','facebook',this)">Facebook</button>
+      <button type="button" onclick="postTab('${k}','tiktok',this)">TikTok</button>
+      <button type="button" onclick="postTab('${k}','youtube',this)">YouTube</button></div>
+    <div class="hint" id="${k}_t" style="padding:8px 10px 0" hidden></div>
+    <textarea id="${k}_x">${esc(p.facebook)}</textarea>
+    <div class="pb"><button type="button" class="btn" style="flex:1" onclick="copyPost('${k}')">📋 Copy bài đăng</button></div></div>`;
+}
+function postTab(k, which, btn) {
+  const p = POSTS[k];
+  btn.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
+  $(k + '_x').value = p[which] || '';
+  const t = $(k + '_t');
+  if (which === 'youtube') { t.hidden = false; t.innerHTML = 'Tiêu đề: <b>' + esc(p.youtube_title || '') + '</b> <a href="#" onclick="event.preventDefault();copyText(POSTS[\'' + k + '\'].youtube_title).then(()=>toast(\'Đã copy tiêu đề\'))">Copy tiêu đề</a>'; }
+  else t.hidden = true;
+}
+function copyPost(k) { copyText($(k + '_x').value).then(ok => toast(ok ? 'Đã copy! Mở app và dán vào bài đăng.' : 'Không copy được, hãy giữ tay vào ô chữ để chọn')); }
 function dismiss(id) { store.set('jobs', store.get('jobs', []).filter(j => j.id !== id)); delete jobState[id]; renderJobs(); }
 let polling = null;
 async function pollJobs() {
@@ -462,6 +500,7 @@ async function loadList() {
       ${v.credit ? `<div class="hint">Ghi nguồn nhạc: ${esc(v.credit)} <a href="#" onclick="event.preventDefault();copyText(${esc(JSON.stringify(v.credit))}).then(()=>toast('Đã copy'))">Copy</a></div>` : ''}
       <div class="acts">
         ${v.ok ? `<button class="btn sm" onclick="play(this,'${v.id}')">Xem</button><a class="btn sm" href="/video/${v.id}" download style="text-decoration:none">Tải</a>` : ''}
+        ${v.posts ? `<button class="btn sm" onclick="showPosts(this,${i})">📝 Bài đăng</button>` : ''}
         <button class="btn sm" onclick="reuse(${i})">Dùng lại kịch bản</button>
         <button class="btn sm red adm" onclick="delVid('${v.id}')">Xoá</button>
       </div></div></div></div>`).join('');
@@ -471,6 +510,11 @@ $('bReload').onclick = loadList;
 function play(btn, id) {
   const card = btn.closest('.card'); if (card.querySelector('video')) return;
   const v = document.createElement('video'); v.src = '/video/' + id; v.controls = true; v.playsInline = true; v.autoplay = true; card.appendChild(v);
+}
+function showPosts(btn, i) {
+  const card = btn.closest('.card'); const old = card.querySelector('.posts');
+  if (old) { old.remove(); return; }
+  card.insertAdjacentHTML('beforeend', postsBox(window._items[i].posts));
 }
 function reuse(i) {
   const v = window._items[i]; if (!v || !v.script) { toast('Không có kịch bản'); return; }
