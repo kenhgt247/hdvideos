@@ -1670,6 +1670,7 @@ class Renderer:
     def make_subs(self, say, start, dur):
         """Chia lời đọc thành từng cụm ngắn (tối đa 2 dòng) và chia thời gian theo độ dài chữ."""
         say = re.sub(r'\s+', ' ', (say or '').replace('*', '')).strip()
+        say = re.sub(r'([?!.…:])\s*,', r'\1', say).rstrip(',')
         if not say or not dur:
             return []
         parts = [p.strip() for p in re.split(r'(?<=[.!?…;:,])\s+', say) if p.strip()]
@@ -1688,7 +1689,7 @@ class Renderer:
         out, t = [], start
         for c in merged:
             d = dur * (len(c) + 6) / total
-            out.append((t, t + d, self._wrap_sub(c)))
+            out.append((t, t + d, self._wrap_sub(c.rstrip(',').strip())))
             t += d
         return out
 
