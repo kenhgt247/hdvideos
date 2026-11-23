@@ -272,6 +272,7 @@ export default {
           who: slug(b.by || ''),
           pen: Math.max(0, Math.min(3, Number(b.pen ?? 1) || 0)),
           bg: /^[a-z_]{2,20}$/.test(b.bg || '') ? b.bg : 'trang',
+          fmt: ['doc', 'ngang', 'vuong', 'doc45'].includes(b.fmt) ? b.fmt : 'doc',
           subs: !!b.subs,
           preview: !!b.preview,
           music: /^[a-z0-9_]+\.(mp3|m4a|aac|wav|ogg)$/.test(b.music || '') ? b.music : '',

@@ -41,6 +41,9 @@ def main():
             'out_path': os.path.join(out_dir, 'video.mp4')}
     if not job.get('logo', True):
         opts['logo'] = None
+    fmt = job.get('fmt') or 'doc'
+    E.set_format(fmt if fmt in E.FORMATS else 'doc')
+    info['fmt'] = fmt
     bg = job.get('bg') or 'trang'
     opts['bg'] = bg if bg in dict(E.BG_STYLES) else 'trang'
     opts['subs'] = bool(job.get('subs', False))
@@ -129,7 +132,7 @@ def main():
         info['ok'] = True
         try:
             from posts import make_posts
-            info['posts'] = make_posts(job.get('script', ''), name, job.get('hotline', ''), info.get('credit', ''))
+            info['posts'] = make_posts(job.get('script', ''), name, job.get('hotline', ''), info.get('credit', ''), info.get('fmt', 'doc'))
         except Exception as e:
             print('Không soạn được bài đăng:', e)
         info['seconds'] = int(time.time() - t0)

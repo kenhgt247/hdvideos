@@ -23,6 +23,45 @@ SUB_ON, SUB_OFF = (238, 128, 20), (34, 36, 48)
 ERASE = 0.5          # thời gian lau bảng khi chuyển cảnh
 LCX, LMAXW = W / 2, 960   # cột nội dung (đổi khi có nhân vật đứng bên trái)
 
+# ------------------------------------------------------------------ khung hình (dọc / ngang / vuông / 4:5)
+FORMATS = {
+    # TikTok, Reels, Shorts: phía dưới bị chữ của app che -> nội dung dừng ở 1460
+    'doc': dict(W=1080, H=1920, top=400, bottom=1460, logo_xy=(70, 215), logo_w=170, label_y=230, label_r=150,
+                bar=(70, 1478, 900), erase=(390, 1500), char=(215, 1462, 1.0), col_char=(W / 2 + 170, 640),
+                col_like=(W / 2 + 165, 640), col_full=(W / 2, 960), end_top=900, big_logo=(440, 460), big_logo_y=420,
+                sub_y=1366, sub_w=960, hand_off=(1250, 2150), wide=False, ruled_top=330, thumb=(432, 768)),
+    # YouTube, Facebook thường
+    'ngang': dict(W=1920, H=1080, top=150, bottom=985, logo_xy=(50, 30), logo_w=140, label_y=42, label_r=60,
+                  bar=(60, 1048, 1860), erase=(120, 1040), char=(270, 1040, 1.02), col_char=(1235, 1180),
+                  col_like=(1235, 1180), col_full=(960, 1560), end_top=520, big_logo=(380, 360), big_logo_y=130,
+                  sub_y=930, sub_w=1600, hand_off=(2150, 1500), wide=True, ruled_top=110, thumb=(640, 360)),
+    # bài Facebook / Instagram vuông
+    'vuong': dict(W=1080, H=1080, top=165, bottom=1000, logo_xy=(45, 30), logo_w=130, label_y=40, label_r=50,
+                  bar=(50, 1046, 1030), erase=(140, 1040), char=(190, 1040, 0.98), col_char=(W / 2 + 150, 660),
+                  col_like=(W / 2 + 150, 660), col_full=(W / 2, 960), end_top=560, big_logo=(340, 330), big_logo_y=150,
+                  sub_y=950, sub_w=960, hand_off=(1250, 1500), wide=False, ruled_top=120, thumb=(480, 480)),
+    # bài Facebook / Instagram dọc 4:5
+    'doc45': dict(W=1080, H=1350, top=210, bottom=1270, logo_xy=(55, 45), logo_w=150, label_y=55, label_r=55,
+                  bar=(55, 1310, 1025), erase=(190, 1300), char=(205, 1290, 1.0), col_char=(W / 2 + 165, 650),
+                  col_like=(W / 2 + 165, 650), col_full=(W / 2, 960), end_top=700, big_logo=(400, 400), big_logo_y=170,
+                  sub_y=1185, sub_w=960, hand_off=(1250, 1800), wide=False, ruled_top=170, thumb=(432, 540)),
+}
+FORMAT_NAMES = [('doc', 'Dọc 9:16 – TikTok, Reels, Shorts'), ('ngang', 'Ngang 16:9 – YouTube, Facebook'),
+                ('vuong', 'Vuông 1:1 – bài đăng Facebook/Instagram'), ('doc45', 'Dọc 4:5 – bài đăng Facebook/Instagram')]
+LAY = dict(FORMATS['doc'])
+
+
+def set_format(name):
+    """Đổi khung hình cho cả bộ máy (gọi trước khi dựng)."""
+    global W, H, LAY, TOP_AREA, BOTTOM_AREA, SUB_Y, SUB_MAXW, LCX, LMAXW
+    LAY = dict(FORMATS.get(name) or FORMATS['doc'])
+    W, H = LAY['W'], LAY['H']
+    TOP_AREA, BOTTOM_AREA = LAY['top'], LAY['bottom']
+    SUB_Y, SUB_MAXW = LAY['sub_y'], LAY['sub_w']
+    LCX, LMAXW = LAY['col_full']
+    CharItem._cache.clear()
+    return LAY
+
 VOICES = {
     'hoaimy': 'vi-VN-HoaiMyNeural',
     'namminh': 'vi-VN-NamMinhNeural',
@@ -138,7 +177,7 @@ def make_paper(style='trang'):
         for y in range(18, H, 54):
             d.line((0, y, W, y), fill=(214, 226, 242), width=2)
     elif style == 'ke_dong':
-        for y in range(330, H, 66):
+        for y in range(LAY.get('ruled_top', 330), H, 66):
             d.line((0, y, W, y), fill=(200, 218, 240), width=3)
         d.line((92, 0, 92, H), fill=(240, 170, 170), width=3)
         d.line((100, 0, 100, H), fill=(240, 170, 170), width=2)
@@ -157,7 +196,8 @@ def make_paper(style='trang'):
 class Txt:
     PAD = 14
 
-    def __init__(self, text, size, color, cy, cx=W / 2, left=None, segs=None):
+    def __init__(self, text, size, color, cy, cx=None, left=None, segs=None):
+        cx = W / 2 if cx is None else cx
         f = font(size)
         asc, desc = f.getmetrics()
         segs = segs or [(text, color)]
@@ -1291,7 +1331,30 @@ def build_blocks(scene, scale):
 
 
 def layout_scene(scene, idx, has_logo_end):
-    top = 900 if has_logo_end else TOP_AREA
+    global LCX, LMAXW
+    # Khung ngang, không có nhân vật: hình bên trái, chữ bên phải
+    if LAY.get('wide') and not has_logo_end and abs(LCX - LAY['col_full'][0]) < 1:
+        icons = [(t, tg) for t, tg in scene['lines'] if tag_icon(tg) and icon_known(tag_icon(tg))]
+        texts = [(t, tg) for t, tg in scene['lines'] if not tag_icon(tg)]
+        if icons and any(t for t, _ in texts):
+            save = (LCX, LMAXW)
+            LCX, LMAXW = W * 0.735, W * 0.44
+            try:
+                items = layout_scene(dict(scene, lines=texts), idx, has_logo_end)
+            finally:
+                LCX, LMAXW = save
+            name = tag_icon(icons[0][1])
+            h = min(BOTTOM_AREA - TOP_AREA, 600)
+            parts = icon_paths(name, W * 0.27, (TOP_AREA + BOTTOM_AREA) / 2, h * (0.95 if big_icon(name) else 0.88),
+                               tag_color(icons[0][1]), idx * 100)
+            budget = 2.6 if big_icon(name) else 2.0
+            tot = sum(it.dur for it in parts) or 1
+            for it in parts:
+                it.gap = 0.015 if len(parts) > 6 else 0.08
+                if tot > budget:
+                    it.dur = max(0.04, it.dur * budget / tot)
+            return parts + items
+    top = LAY['end_top'] if has_logo_end else TOP_AREA
     bottom = BOTTOM_AREA
     scale = 1.0
     while True:
@@ -1607,12 +1670,14 @@ class Renderer:
         self.hand = Image.open(os.path.join(ASSETS, 'hand.png')).convert('RGBA')
         self.tip = hj['tip']
         lg = load_logo(logo_path if logo_path and os.path.exists(logo_path) else os.path.join(ASSETS, 'logo.png'))
-        self.logo_small = scaled(lg, 170)
-        if self.logo_small.height > 170:
-            self.logo_small = lg.resize((int(lg.width * 170 / lg.height), 170), Image.LANCZOS)
-        self.logo_big = scaled(lg, 440)
-        if self.logo_big.height > 460:
-            self.logo_big = lg.resize((int(lg.width * 460 / lg.height), 460), Image.LANCZOS)
+        lw = LAY['logo_w']
+        self.logo_small = scaled(lg, lw)
+        if self.logo_small.height > lw:
+            self.logo_small = lg.resize((int(lg.width * lw / lg.height), lw), Image.LANCZOS)
+        bw, bh = LAY['big_logo']
+        self.logo_big = scaled(lg, bw)
+        if self.logo_big.height > bh:
+            self.logo_big = lg.resize((int(lg.width * bh / lg.height), bh), Image.LANCZOS)
         self.paper = make_paper(bg or 'trang')
         self.subs = bool(subs)
         self.sub_font = font(60)
@@ -1637,7 +1702,7 @@ class Renderer:
         return im.resize((int(im.width * 1.2), int(im.height * 1.35)), Image.LANCZOS)
 
     def erase(self, f, e):
-        top, bot, rows = 390, 1500, 4
+        (top, bot), rows = LAY['erase'], 4
         rh = (bot - top) / rows
         pos = clamp(e) * rows
         r = min(rows - 1, int(pos))
@@ -1657,7 +1722,8 @@ class Renderer:
             er = self.eraser.rotate(8 if ltr else -8, expand=True, resample=Image.BICUBIC)
             f.paste(er, (int(cx - er.width / 2), int(cy - er.height / 2)), er)
 
-    def _wrap_sub(self, text, maxw=SUB_MAXW):
+    def _wrap_sub(self, text, maxw=None):
+        maxw = maxw or SUB_MAXW
         words, lines, cur = text.split(), [], ''
         for w_ in words:
             t = (cur + ' ' + w_).strip()
@@ -1735,19 +1801,21 @@ class Renderer:
             logo_end = any('logo' in tags for _, tags in sc['lines'])
             pose = poses[i]
             if pose == 'like':
-                LCX, LMAXW = W / 2 + 165, 640
+                LCX, LMAXW = LAY['col_like']
             elif pose:
-                LCX, LMAXW = W / 2 + 170, 640
+                LCX, LMAXW = LAY['col_char']
             else:
-                LCX, LMAXW = W / 2, 960
+                LCX, LMAXW = LAY['col_full']
             items = layout_scene(sc, i, logo_end)
             if pose:
-                hgt = {'chao': 760, 'chi': 640, 'like': 700}[pose]
-                ch = CharItem(char_path(gender, pose), 215, 1462, hgt)
+                cx_, feet_, kk = LAY['char']
+                hgt = {'chao': 760, 'chi': 640, 'like': 700}[pose] * kk
+                hgt = min(hgt, feet_ - TOP_AREA + 40)
+                ch = CharItem(char_path(gender, pose), cx_, feet_, hgt)
                 ch.gap = 0.1
                 items = [ch] + items
             lcx = LCX
-            LCX, LMAXW = W / 2, 960
+            LCX, LMAXW = LAY['col_full']
             natural = ENTER + sum(it.dur + getattr(it, 'gap', GAP) for it in items)
             A = audio_durs[i] if audio_durs else None
             k = 1.0
@@ -1773,7 +1841,7 @@ class Renderer:
 
     def hand_pos(self, pl, t):
         sch, ed = pl['sch'], pl['ed']
-        OFF = (1250, 2150)
+        OFF = LAY['hand_off']
         if not sch:
             return None
         lerp = lambda a, b, k: (a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k)
@@ -1793,14 +1861,14 @@ class Renderer:
         f = self.paper.copy()
         if not pl['logo_end']:
             lg = with_alpha(self.logo_small, eo(t / 0.4) if first else 1.0)
-            f.paste(lg, (70, 215), lg)
+            f.paste(lg, LAY['logo_xy'], lg)
         if self.label is not None:
-            f.paste(self.label, (W - 150 - self.label.width, 230), self.label)
+            f.paste(self.label, (W - LAY['label_r'] - self.label.width, LAY['label_y']), self.label)
         if pl['logo_end']:
             k = eo((t - 0.1) / 0.6)
             if k > 0:
                 lg = with_alpha(self.logo_big, k)
-                f.paste(lg, (int(pl.get('lcx', W / 2) - lg.width / 2), int(420 + (1 - k) * 30)), lg)
+                f.paste(lg, (int(pl.get('lcx', W / 2) - lg.width / 2), int(LAY['big_logo_y'] + (1 - k) * 30)), lg)
         for it, s, e in pl['sch']:
             if isinstance(it, Fill):
                 it.draw(f, (t - s) / max(e - s, 1e-3))
@@ -1809,8 +1877,9 @@ class Renderer:
                 it.draw(f, (t - s) / max(e - s, 1e-3))
         if prog is not None:
             d = ImageDraw.Draw(f)
-            d.rounded_rectangle((70, 1478, 900, 1490), 6, fill=(232, 232, 228))
-            d.rounded_rectangle((70, 1478, 70 + max(12, int(830 * clamp(prog))), 1490), 6, fill=ORANGE)
+            bx0, by0, bx1 = LAY['bar']
+            d.rounded_rectangle((bx0, by0, bx1, by0 + 12), 6, fill=(232, 232, 228))
+            d.rounded_rectangle((bx0, by0, bx0 + max(12, int((bx1 - bx0) * clamp(prog))), by0 + 12), 6, fill=ORANGE)
         hp = self.hand_pos(pl, t)
         if hp:
             f.paste(self.hand, (int(hp[0] - self.tip[0]), int(hp[1] - self.tip[1])), self.hand)
@@ -1835,12 +1904,13 @@ def preview(script_text, logo_path, out_png, auto=True, label=None, hotline=None
     add_hotline(scenes, hotline)
     r = Renderer(logo_path, label)
     plans = r.plan(scenes, None, gender)
-    thumbs = [r.frame(pl, pl['ed'] + EXIT + 0.05, False).resize((360, 640)) for pl in plans]
+    thumbs = [r.frame(pl, pl['ed'] + EXIT + 0.05, False).resize((360, int(360 * H / W))) for pl in plans]
     cols = min(len(thumbs), 4)
     rows = math.ceil(len(thumbs) / cols)
-    sheet = Image.new('RGB', (cols * 370 + 10, rows * 650 + 10), (70, 70, 70))
+    th_h = thumbs[0].height if thumbs else 640
+    sheet = Image.new('RGB', (cols * 370 + 10, rows * (th_h + 10) + 10), (70, 70, 70))
     for i, th in enumerate(thumbs):
-        sheet.paste(th, (10 + (i % cols) * 370, 10 + (i // cols) * 650))
+        sheet.paste(th, (10 + (i % cols) * 370, 10 + (i // cols) * (th_h + 10)))
     sheet.save(out_png)
     return out_png
 
@@ -1859,13 +1929,13 @@ def preview_scenes(script_text, opts, out_dir):
     info = []
     for i, (sc, pl) in enumerate(zip(scenes, plans)):
         t = pl['ed'] + EXIT + 0.05
+        subs_on, r.subs = r.subs, False
+        fr = r.frame(pl, t, i == 0)
+        r.subs = subs_on
         if pl.get('subs'):
-            t_sub = pl['subs'][0][0] + 0.01
-            fr = r.frame(pl, max(t, 0), i == 0)
-            r.draw_sub(fr, pl, t_sub)
-        else:
-            fr = r.frame(pl, t, i == 0)
-        fr.convert('RGB').resize((432, 768), Image.LANCZOS).save(os.path.join(out_dir, 'c%02d.jpg' % i), quality=82)
+            a0, b0, words, ws = pl['subs'][0]
+            r.draw_sub(fr, pl, ws[len(ws) // 2][0])
+        fr.convert('RGB').resize(LAY['thumb'], Image.LANCZOS).save(os.path.join(out_dir, 'c%02d.jpg' % i), quality=82)
         icon = next((tag_icon(tg) for _, tg in sc['lines'] if tag_icon(tg)), None)
         info.append({'i': i, 'src': sc.get('src') or [], 'icon': icon or '', 'say': ' '.join(sc.get('say') or [])})
     return {'simple': simple, 'scenes': info}

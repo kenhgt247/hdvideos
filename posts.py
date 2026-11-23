@@ -39,7 +39,7 @@ TAGS = [
 ]
 
 
-def make_posts(script, name='', hotline='', credit=''):
+def make_posts(script, name='', hotline='', credit='', fmt='doc'):
     lines = [l.rstrip() for l in (script or '').replace('\r', '').split('\n') if l.strip()]
     lines = [l for l in lines if not l.strip().startswith('===') and not l.lower().startswith('đọc:')]
     rows = []
@@ -104,5 +104,6 @@ def make_posts(script, name='', hotline='', credit=''):
     yt_desc = _sentence(hook) + '\n\n'
     if points:
         yt_desc += fmt('•', '•', '-') + '\n\n'
-    yt_desc += (('👉 ' + _sentence(cta) + '\n') if cta else '') + (hl + '\n' if hl else '') + 'Du Học Hải Dương – Định Hướng Tương Lai' + cr + '\n\n' + ' '.join(tags[:8]) + ' #shorts'
-    return {'facebook': fb, 'tiktok': tt, 'youtube_title': title + ' #shorts', 'youtube': yt_desc}
+    short = fmt in ('doc', 'doc45')
+    yt_desc += (('👉 ' + _sentence(cta) + '\n') if cta else '') + (hl + '\n' if hl else '') + 'Du Học Hải Dương – Định Hướng Tương Lai' + cr + '\n\n' + ' '.join(tags[:8]) + (' #shorts' if short else '')
+    return {'facebook': fb, 'tiktok': tt, 'youtube_title': title + (' #shorts' if short else ''), 'youtube': yt_desc}

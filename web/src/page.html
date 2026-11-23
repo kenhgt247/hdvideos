@@ -107,6 +107,16 @@ video{width:100%;max-height:62vh;border-radius:12px;background:#000;margin-top:1
 .posts .tabs button.on{background:#fff;color:var(--blue);box-shadow:inset 0 -2px 0 var(--blue)}
 .posts textarea{border:0;border-radius:0;min-height:190px;font-size:14px}
 .posts .pb{display:flex;gap:8px;padding:8px;border-top:1px solid var(--line)}
+.fmts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fmts .f1{display:flex;align-items:center;gap:10px;border:2px solid var(--line);border-radius:12px;padding:9px 10px;background:#fff;cursor:pointer}
+.fmts .f1.on{border-color:var(--blue);background:var(--blue2)}
+.fmts .sh{flex:none;width:38px;height:38px;display:grid;place-items:center}
+.fmts .sh i{display:block;border:2.5px solid var(--blue);border-radius:4px;background:#fff}
+.fmts b{display:block;font-size:14px}.fmts small{font-size:11.5px;color:var(--mut);line-height:1.25;display:block}
+.pv.wide{flex-direction:column}
+.pv.wide img{width:100%;height:auto;aspect-ratio:16/9}
+.pv.sq img{width:150px;height:150px}
+.pv.p45 img{width:130px;height:163px}
 .bgs{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 8px;scroll-snap-type:x mandatory}
 .bgs .b{flex:none;width:86px;text-align:center;font-size:12px;color:var(--mut);scroll-snap-align:start;cursor:pointer}
 .bgs .b img{width:86px;height:153px;object-fit:cover;border-radius:10px;border:3px solid transparent;display:block;box-shadow:0 1px 4px rgba(0,0,0,.15)}
@@ -181,6 +191,9 @@ Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi c
 
   <div class="card">
     <h2>Tuỳ chọn</h2>
+    <label class="f">Khung hình (đăng ở đâu?)</label>
+    <input type="hidden" id="fmt">
+    <div class="fmts" id="fmts"></div>
     <label class="f" for="name">Tên video</label>
     <input type="text" id="name" placeholder="Ví dụ: Trống năm đi Hàn">
     <label class="f" for="voice">Giọng đọc</label>
@@ -355,7 +368,15 @@ function showTab(t) {
 }
 
 // ---------- form
-const FIELDS = ['name', 'voice', 'rate', 'character', 'label', 'hotline', 'by', 'music', 'music_vol', 'pen', 'bg'];
+const FIELDS = ['name', 'voice', 'rate', 'character', 'label', 'hotline', 'by', 'music', 'music_vol', 'pen', 'bg', 'fmt'];
+const FMTS = [['doc', 'Dọc 9:16', 'TikTok, Reels, Shorts', 18, 32], ['ngang', 'Ngang 16:9', 'YouTube, Facebook', 34, 19],
+              ['vuong', 'Vuông 1:1', 'Bài đăng FB, Instagram', 27, 27], ['doc45', 'Dọc 4:5', 'Bài đăng FB, Instagram', 24, 30]];
+function drawFmts() {
+  const cur = $('fmt').value || 'doc';
+  $('fmts').innerHTML = FMTS.map(([k, t, d, w, h]) => `<div class="f1 ${k === cur ? 'on' : ''}" onclick="pickFmt('${k}')">
+    <span class="sh"><i style="width:${w}px;height:${h}px"></i></span><span><b>${t}</b><small>${d}</small></span></div>`).join('');
+}
+function pickFmt(k) { $('fmt').value = k; store.set('fmt', k); drawFmts(); }
 const BGS = [['trang', 'Bảng trắng'], ['o_vuong', 'Kẻ ô'], ['ke_dong', 'Vở kẻ dòng'], ['cham_bi', 'Chấm bi'],
              ['giay_vang', 'Giấy vàng'], ['khung_bang', 'Có khung'], ['xanh_nhat', 'Xanh dịu']];
 function drawBgs() {
@@ -395,6 +416,8 @@ $('subs').checked = store.get('subs', false);
 $('subs').onchange = () => store.set('subs', $('subs').checked);
 if (!$('bg').value) $('bg').value = 'trang';
 drawBgs();
+if (!$('fmt').value) $('fmt').value = 'doc';
+drawFmts();
 $('script').value = store.get('draft', '');
 function countScenes() {
   const n = $('script').value.split('\n').filter(l => l.trim() && !/^\s*-\s/.test(l)).length;
@@ -447,7 +470,7 @@ function jobBody(preview) {
   return { script, name, voice, vieneu_voice, rate: $('rate').value, character: $('character').value, label: $('label').value,
     hotline: $('hotline').value, auto: $('auto').checked, logo: $('logo').checked, by: $('by').value,
     clone, music: $('music').value, music_vol: $('music_vol').value, pen: $('pen').value,
-    bg: $('bg').value || 'trang', subs: $('subs').checked, preview: !!preview };
+    bg: $('bg').value || 'trang', fmt: $('fmt').value || 'doc', subs: $('subs').checked, preview: !!preview };
 }
 $('bGo').onclick = async () => {
   const script = $('script').value.trim();
@@ -494,10 +517,11 @@ async function pollPreview(id, t0) {
   pvTimer = setTimeout(() => pollPreview(id, t0), 4000);
 }
 function showPreview(id, s) {
-  PV = { id, simple: s.info.simple, scenes: s.info.scenes.map(x => ({ ...x, text: x.src.join('\n') })) };
+  PV = { id, simple: s.info.simple, fmt: s.info.fmt || 'doc', scenes: s.info.scenes.map(x => ({ ...x, text: x.src.join('\n') })) };
+  const pvCls = { ngang: 'wide', vuong: 'sq', doc45: 'p45' }[PV.fmt] || '';
   $('pvHint').innerHTML = PV.simple ? 'Sửa chữ ngay trong ô bên cạnh mỗi cảnh, bấm <b>Đổi hình</b> để chọn hình khác. Xong bấm <b>Áp dụng & xem lại</b> hoặc <b>TẠO VIDEO</b>.'
     : 'Kịch bản kiểu nâng cao: chỉ xem được, muốn sửa hãy sửa trong ô kịch bản.';
-  $('pvList').innerHTML = PV.scenes.map((x, i) => `<div class="pv"><img src="/prev/${id}/${'c' + String(x.i).padStart(2, '0')}.jpg" alt="">
+  $('pvList').innerHTML = PV.scenes.map((x, i) => `<div class="pv ${pvCls}"><img src="/prev/${id}/${'c' + String(x.i).padStart(2, '0')}.jpg" alt="">
     <div class="ed"><div class="no">Cảnh ${i + 1}${x.icon ? ' · hình: ' + esc(x.icon) : ''}</div>
     ${PV.simple && x.src.length ? `<textarea id="pvT${i}" oninput="PV.scenes[${i}].text=this.value">${esc(x.text)}</textarea>
       <button type="button" class="btn sm" onclick="openKho(${i})">🖼 Đổi hình</button>` : `<div class="hint">${esc(x.say)}</div>`}</div></div>`).join('');
