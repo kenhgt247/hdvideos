@@ -23,7 +23,7 @@ nav button.on{color:var(--blue);font-weight:600}
 .card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(20,40,90,.06)}
 h2{font-size:17px;margin:0 0 12px}
 label.f{display:block;font-size:13px;color:var(--mut);margin:12px 0 5px;font-weight:600}
-input[type=text],input[type=tel],select,textarea{width:100%;font:inherit;font-size:16px;border:1.5px solid var(--line);border-radius:12px;padding:11px 12px;background:#fff;color:var(--ink)}
+input[type=text],input[type=tel],input[type=url],select,textarea{width:100%;font:inherit;font-size:16px;border:1.5px solid var(--line);border-radius:12px;padding:11px 12px;background:#fff;color:var(--ink)}
 textarea{min-height:260px;line-height:1.5;resize:vertical}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
 .row{display:flex;gap:8px;flex-wrap:wrap}
@@ -86,6 +86,7 @@ video{width:100%;max-height:62vh;border-radius:12px;background:#000;margin-top:1
 .mrow .tx b{display:block;font-size:15px}
 .mrow .tx small{color:var(--mut);font-size:12px}
 .mrow .ck{flex:none;color:var(--blue);font-weight:700}
+.maddt{font-size:13px;font-weight:700;color:var(--mut);margin-bottom:6px}
 .mfoot{display:flex;gap:8px;flex-wrap:wrap;padding:8px 4px 4px;border-top:1px solid var(--line);margin-top:4px}
 .au .x{border:0;background:#fde8ea;color:var(--red);border-radius:10px;padding:6px 10px;font-weight:600}
 .empty{color:var(--mut);text-align:center;padding:24px 8px;font-size:14px}
@@ -152,13 +153,12 @@ Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi c
     <button type="button" class="mcur" id="mCur"><span id="mCurTxt">🎵 Không có nhạc</span><span class="chev">Chọn ▾</span></button>
     <div class="mpanel hide" id="mPanel">
       <div id="mRows"></div>
-      <div class="mfoot">
-        <button type="button" class="btn sm" id="mUp">⬆ Tải mp3 từ máy</button>
-        <button type="button" class="btn sm" id="mLinkBtn">🔗 Dán link nhạc</button>
-      </div>
-      <div class="hide" id="mLinkBox" style="margin-top:8px">
-        <input type="text" id="mLinkName" placeholder="Tên bài, ví dụ: Vui tươi">
-        <div class="row" style="margin-top:6px"><input type="text" id="mLinkUrl" placeholder="Link file .mp3"><button type="button" class="btn" id="mLinkGo" style="flex:none">Thêm</button></div>
+      <div class="mfoot" style="display:block">
+        <div class="maddt">➕ Thêm nhạc mới</div>
+        <button type="button" class="btn" id="mUp" style="width:100%">⬆ Chọn file nhạc trong máy (mp3)</button>
+        <div class="maddt" style="margin-top:10px">hoặc dán link nhạc vào ô dưới:</div>
+        <div class="row"><input type="url" id="mLinkUrl" placeholder="Dán link .mp3 vào đây"><button type="button" class="btn" id="mLinkGo" style="flex:none">Thêm</button></div>
+        <div class="hint">Nhạc miễn phí, hay: <b>pixabay.com/music</b>. Tải bài về máy rồi bấm nút "Chọn file nhạc" ở trên.</div>
       </div>
       <input type="file" id="mUpFile" accept="audio/*" class="hide">
     </div>
@@ -631,7 +631,8 @@ function drawMusic() {
   const row = (f, name, desc) => `<div class="mrow ${cur === f ? 'on' : ''}" onclick="pickMusic('${f}')">
     ${f ? `<button type="button" class="pl" onclick="event.stopPropagation();prevMusic('${f}')">${playing === f ? '❚❚' : '▶'}</button>` : '<span class="pl" style="display:grid;place-items:center">✕</span>'}
     <div class="tx"><b>${esc(name)}</b>${desc ? `<small>${esc(desc)}</small>` : ''}</div>${cur === f ? '<span class="ck">✓</span>' : ''}</div>`;
-  $('mRows').innerHTML = row('', 'Không có nhạc', 'Thêm nhạc sau trong TikTok/Facebook') + MUSIC.map(x => row(x.file, x.name, x.desc || (x.builtin ? '' : 'Nhạc tải lên'))).join('');
+  $('mRows').innerHTML = row('', 'Không có nhạc', 'Thêm nhạc sau trong TikTok/Facebook') + MUSIC.map(x => row(x.file, x.name, x.desc || (x.builtin ? '' : 'Nhạc tải lên'))).join('')
+    + (MUSIC.length ? '' : '<div class="hint" style="padding:6px 8px">Kho nhạc đang trống. Thêm bài đầu tiên ở bên dưới 👇</div>');
 }
 function pickMusic(f) { setMusic(f); drawMusic(); }
 function prevMusic(f) {
@@ -649,12 +650,14 @@ $('mUpFile').onchange = async e => {
   const name = (f.name || 'nhac').replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim().slice(0, 50) || 'nhac';
   if (await uploadAudio('nhac', name, f)) toast('Đã thêm "' + name + '". Đang cập nhật danh sách...');
 };
-$('mLinkBtn').onclick = () => $('mLinkBox').classList.toggle('hide');
 $('mLinkGo').onclick = async () => {
-  const name = $('mLinkName').value.trim(), url = $('mLinkUrl').value.trim();
-  if (!name || !url) { toast('Nhập tên bài và link'); return; }
+  const url = $('mLinkUrl').value.trim();
+  if (!url) { toast('Hãy dán link nhạc vào ô trước'); $('mLinkUrl').focus(); return; }
+  let name = '';
+  try { name = decodeURIComponent(new URL(url).pathname.split('/').pop() || '').replace(/\.[a-z0-9]+$/i, '').replace(/[_+-]+/g, ' ').replace(/\s+\d{3,}$/, '').trim(); } catch {}
+  name = (name || 'Nhạc ' + new Date().toLocaleDateString('vi-VN')).slice(0, 50);
   $('mLinkGo').disabled = true; toast('Đang tải nhạc từ link...');
-  try { const d = await api('/api/nhac/link', { name, url, who: whoName() }); toast('Đã thêm nhạc!'); $('mLinkUrl').value = ''; $('mLinkName').value = '';
+  try { const d = await api('/api/nhac/link', { name, url, who: whoName() }); toast('Đã thêm "' + name + '"!'); $('mLinkUrl').value = '';
     await loadMedia(); pickMusic(d.file); } catch (er) { toast(er.message, 6000); }
   $('mLinkGo').disabled = false;
 };
