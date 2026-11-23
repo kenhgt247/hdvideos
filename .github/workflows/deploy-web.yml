@@ -27,7 +27,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
           APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         run: |
-          node -e 'process.stdout.write(JSON.stringify({GH_TOKEN:process.env.GH_TOKEN,APP_PASSWORD:process.env.APP_PASSWORD}))' > /tmp/s.json
+          node -e 'const e=process.env,o={GH_TOKEN:e.GH_TOKEN,APP_PASSWORD:e.APP_PASSWORD};if(e.ADMIN_PASSWORD)o.ADMIN_PASSWORD=e.ADMIN_PASSWORD;process.stdout.write(JSON.stringify(o))' > /tmp/s.json
           npx --yes wrangler@4 secret bulk /tmp/s.json
           rm /tmp/s.json

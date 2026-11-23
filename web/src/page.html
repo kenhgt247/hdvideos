@@ -72,6 +72,8 @@ video{width:100%;max-height:62vh;border-radius:12px;background:#000;margin-top:1
 #toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#1d2433;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:9;opacity:0;transition:.25s;pointer-events:none;max-width:90vw;text-align:center}
 #toast.on{opacity:1}
 .hide{display:none!important}
+body:not(.admin) .adm{display:none!important}
+body.admin .staff{display:none!important}
 details summary{cursor:pointer;color:var(--blue);font-weight:600;font-size:14px;margin-top:10px}
 pre.fmt{white-space:pre-wrap;font-size:13px;background:#fafbfe;border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0 0}
 </style>
@@ -167,19 +169,22 @@ Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi c
 <section id="tab-cai" class="hide">
   <div class="card">
     <h2>Nhân vật dẫn chuyện</h2>
-    <div class="hint">Bấm vào một ảnh để thay. Dùng ảnh nền trắng, máy sẽ tự tách nền (mất 1–2 phút).</div>
+    <div class="hint adm">Bấm vào một ảnh để thay. Dùng ảnh nền trắng, máy sẽ tự tách nền (mất 1–2 phút).</div>
+    <div class="hint staff">Chỉ quản lý mới thay được nhân vật và logo.</div>
     <div class="nv" id="nvGrid" style="margin-top:10px"></div>
-    <button class="btn sm red" id="bRestore" style="margin-top:12px">Khôi phục nhân vật gốc</button>
+    <button class="btn sm red adm" id="bRestore" style="margin-top:12px">Khôi phục nhân vật gốc</button>
     <input type="file" id="nvFile" accept="image/*" class="hide">
   </div>
   <div class="card">
     <h2>Logo</h2>
-    <div class="up"><img id="logoImg" src="/img/logo" alt=""><button class="btn" id="bLogo">Đổi logo</button></div>
+    <div class="up"><img id="logoImg" src="/img/logo" alt=""><button class="btn adm" id="bLogo">Đổi logo</button></div>
     <input type="file" id="logoFile" accept="image/png,image/*" class="hide">
     <div class="hint">Nên dùng ảnh PNG nền trong suốt.</div>
   </div>
   <div class="card">
-    <h2>Mẹo</h2>
+    <h2>Tài khoản</h2>
+    <div class="hint" id="roleTxt"></div>
+    <h2 style="margin-top:14px">Mẹo</h2>
     <div class="hint">Trên iPhone: bấm nút Chia sẻ của Safari, chọn <b>Thêm vào MH chính</b> để có biểu tượng như app.</div>
     <button class="btn sm red" id="bOut" style="margin-top:12px">Đăng xuất</button>
   </div>
@@ -376,7 +381,7 @@ async function loadList() {
       <div class="acts">
         ${v.ok ? `<button class="btn sm" onclick="play(this,'${v.id}')">Xem</button><a class="btn sm" href="/video/${v.id}" download style="text-decoration:none">Tải</a>` : ''}
         <button class="btn sm" onclick="reuse(${i})">Dùng lại kịch bản</button>
-        <button class="btn sm red" onclick="delVid('${v.id}')">Xoá</button>
+        <button class="btn sm red adm" onclick="delVid('${v.id}')">Xoá</button>
       </div></div></div></div>`).join('');
   } catch (e) { $('vlist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
@@ -442,7 +447,7 @@ async function loadKho() {
     $('khoN').textContent = '(' + d.items.length + ')';
     $('khoPending').textContent = d.pending.length ? 'Đang tách nền ' + d.pending.length + ' ảnh mới...' : '';
     $('khoGrid').innerHTML = d.items.length ? d.items.map(it => `<div class="it"><img loading="lazy" src="/img/kho/${it.file}"><div>${esc(it.name)}</div>
-      <button class="x" onclick="delKho('${it.file}')">✕</button></div>`).join('') : '<div class="empty">Kho đang trống</div>';
+      <button class="x adm" onclick="delKho('${it.file}')">✕</button></div>`).join('') : '<div class="empty">Kho đang trống</div>';
     if (d.pending.length && curTab === 'kho') setTimeout(loadKho, 20000);
   } catch (e) { $('khoGrid').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
@@ -460,7 +465,7 @@ function loadNv() {
   const v = Date.now();
   $('nvGrid').innerHTML = NV.map(([g, p, t]) => `<div class="it" onclick="pickNv('${g}','${p}')"><img src="/img/nv/${g}_${p}.png?v=${v}"><div>${t}</div></div>`).join('');
 }
-function pickNv(g, p) { nvTarget = [g, p]; $('nvFile').click(); }
+function pickNv(g, p) { if (!document.body.classList.contains('admin')) { toast('Chỉ quản lý mới thay được nhân vật'); return; } nvTarget = [g, p]; $('nvFile').click(); }
 $('nvFile').onchange = async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f || !nvTarget) return;
   try { const im = await readImage(f, 1600); toast('Đang tải lên...'); await api('/api/nhanvat', { gender: nvTarget[0], pose: nvTarget[1], data: im.data });
@@ -477,6 +482,10 @@ $('logoFile').onchange = async e => {
 };
 $('bOut').onclick = async () => { await fetch('/api/logout'); location.reload(); };
 
+api('/api/me').then(d => {
+  document.body.classList.toggle('admin', !!d.admin);
+  $('roleTxt').textContent = d.admin ? 'Bạn đang dùng quyền QUẢN LÝ (xoá ảnh, xoá video, đổi nhân vật, logo).' : 'Bạn đang dùng quyền nhân viên. Muốn xoá ảnh/video hay đổi nhân vật, hãy đăng xuất rồi đăng nhập bằng mật khẩu quản lý.';
+}).catch(() => {});
 // lấy danh sách giọng VieNeu (nếu đã từng dựng)
 api('/api/list').then(d => { if (d.voices && d.voices.length) { store.set('voices', d.voices); fillVoices(d.voices); } }).catch(() => {});
 </script>

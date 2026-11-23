@@ -30,6 +30,13 @@ async function authed(req, env) {
   return cookieVal(req, 'hdv') === await sha256(env.APP_PASSWORD + '|hdvideos');
 }
 
+async function isAdmin(req, env) {
+  if (!env.ADMIN_PASSWORD) return false;
+  return cookieVal(req, 'hda') === await sha256(env.ADMIN_PASSWORD + '|hdv-admin');
+}
+
+const ADMIN_ONLY = 'Chỉ quản lý mới làm được việc này. Hãy đăng nhập bằng mật khẩu quản lý.';
+
 function gh(env, path, opt = {}) {
   const url = path.startsWith('http') ? path : `https://api.github.com/repos/${env.REPO}${path}`;
   return fetch(url, {
@@ -167,9 +174,13 @@ export default {
     try {
       if (p === '/api/login' && req.method === 'POST') {
         const { password } = await req.json().catch(() => ({}));
-        if (!env.APP_PASSWORD || password !== env.APP_PASSWORD) return err('Sai mật khẩu', 401);
-        const tok = await sha256(env.APP_PASSWORD + '|hdvideos');
-        return json({ ok: true }, 200, { 'set-cookie': `hdv=${tok}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${60 * 86400}` });
+        const admin = !!env.ADMIN_PASSWORD && password === env.ADMIN_PASSWORD;
+        if (!env.APP_PASSWORD || (!admin && password !== env.APP_PASSWORD)) return err('Sai mật khẩu', 401);
+        const opt = `Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${60 * 86400}`;
+        const h = new Headers({ 'content-type': 'application/json' });
+        h.append('set-cookie', `hdv=${await sha256(env.APP_PASSWORD + '|hdvideos')}; ${opt}`);
+        h.append('set-cookie', admin ? `hda=${await sha256(env.ADMIN_PASSWORD + '|hdv-admin')}; ${opt}` : 'hda=; Path=/; Max-Age=0');
+        return new Response(JSON.stringify({ ok: true, admin }), { headers: h });
       }
       if (!(await authed(req, env))) {
         if (p.startsWith('/api/')) return err('Chưa đăng nhập', 401);
@@ -181,8 +192,15 @@ export default {
         return new Response(PAGE, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
       }
       if (p === '/api/logout') {
-        return json({ ok: true }, 200, { 'set-cookie': 'hdv=; Path=/; Max-Age=0' });
+        const h = new Headers({ 'content-type': 'application/json' });
+        h.append('set-cookie', 'hdv=; Path=/; Max-Age=0');
+        h.append('set-cookie', 'hda=; Path=/; Max-Age=0');
+        return new Response('{"ok":true}', { headers: h });
       }
+      const admin = await isAdmin(req, env);
+      if (p === '/api/me') return json({ admin });
+      const needAdmin = /^\/api\/(jobs\/[a-z0-9]+\/delete|kho\/[^/]+\/delete|nhanvat|nhanvat\/restore|logo)$/.test(p) && req.method === 'POST';
+      if (needAdmin && !admin) return err(ADMIN_ONLY, 403);
 
       // ---- tạo video
       if (p === '/api/jobs' && req.method === 'POST') {
