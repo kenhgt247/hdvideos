@@ -478,5 +478,405 @@
    "lo lắng"
   ],
   "lo": 12
+ },
+ "lich_hen_nop_ho_so": {
+  "ten": "Lịch hẹn nộp hồ sơ",
+  "tu_khoa": [
+   "lịch hẹn",
+   "hồ sơ",
+   "thời gian",
+   "visa"
+  ],
+  "lo": 13
+ },
+ "dong_le_phi_do_la": {
+  "ten": "Đóng lệ phí bằng đô la",
+  "tu_khoa": [
+   "lệ phí",
+   "đô la",
+   "thanh toán",
+   "visa"
+  ],
+  "lo": 13
+ },
+ "dien_don_visa_online": {
+  "ten": "Điền đơn visa online",
+  "tu_khoa": [
+   "visa",
+   "biểu mẫu",
+   "trực tuyến",
+   "đăng ký"
+  ],
+  "lo": 13
+ },
+ "nhan_email_ket_qua": {
+  "ten": "Nhận email kết quả",
+  "tu_khoa": [
+   "email",
+   "kết quả",
+   "thông báo",
+   "visa"
+  ],
+  "lo": 13
+ },
+ "the_cu_tru_nguoi_nuoc_ngoai": {
+  "ten": "Thẻ cư trú người nước ngoài",
+  "tu_khoa": [
+   "cư trú",
+   "thẻ",
+   "người nước ngoài",
+   "du học"
+  ],
+  "lo": 14
+ },
+ "gia_han_the_cu_tru": {
+  "ten": "Gia hạn thẻ cư trú",
+  "tu_khoa": [
+   "gia hạn",
+   "cư trú",
+   "hồ sơ",
+   "thủ tục"
+  ],
+  "lo": 14
+ },
+ "thu_tuc_nhap_hoc": {
+  "ten": "Làm thủ tục nhập học tại trường",
+  "tu_khoa": [
+   "nhập học",
+   "trường",
+   "đăng ký",
+   "hồ sơ"
+  ],
+  "lo": 14
+ },
+ "khai_bao_nhap_canh": {
+  "ten": "Khai báo nhập cảnh",
+  "tu_khoa": [
+   "nhập cảnh",
+   "khai báo",
+   "hộ chiếu",
+   "sân bay"
+  ],
+  "lo": 14
+ },
+ "kiem_tra_hai_quan": {
+  "ten": "Kiểm tra hải quan",
+  "tu_khoa": [
+   "hải quan",
+   "hành lý",
+   "kiểm tra",
+   "sân bay"
+  ],
+  "lo": 15
+ },
+ "cua_an_ninh_san_bay": {
+  "ten": "Cửa an ninh sân bay",
+  "tu_khoa": [
+   "an ninh",
+   "soi chiếu",
+   "hành lý",
+   "sân bay"
+  ],
+  "lo": 15
+ },
+ "quay_lam_thu_tuc_bay": {
+  "ten": "Quầy làm thủ tục bay",
+  "tu_khoa": [
+   "check-in",
+   "vé máy bay",
+   "sân bay",
+   "hành lý"
+  ],
+  "lo": 15
+ },
+ "dong_dau_nhap_canh": {
+  "ten": "Đóng dấu nhập cảnh vào hộ chiếu",
+  "tu_khoa": [
+   "nhập cảnh",
+   "con dấu",
+   "hộ chiếu",
+   "thủ tục"
+  ],
+  "lo": 15
+ },
+ "hoc_tieng_han_online": {
+  "ten": "Học tiếng Hàn",
+  "tu_khoa": [
+   "tiếng Hàn",
+   "TOPIK",
+   "ngoại ngữ",
+   "Hàn Quốc"
+  ],
+  "lo": 16
+ },
+ "hoc_tieng_trung_online": {
+  "ten": "Học tiếng Trung",
+  "tu_khoa": [
+   "tiếng Trung",
+   "TOCFL",
+   "ngoại ngữ",
+   "Đài Loan"
+  ],
+  "lo": 16
+ },
+ "lop_hoc_tieng_dong_vien": {
+  "ten": "Lớp học tiếng",
+  "tu_khoa": [
+   "lớp học",
+   "ngoại ngữ",
+   "giáo viên",
+   "học sinh"
+  ],
+  "lo": 16
+ },
+ "giao_vien_ban_ngu": {
+  "ten": "Giáo viên bản ngữ",
+  "tu_khoa": [
+   "giáo viên",
+   "bản ngữ",
+   "giao tiếp",
+   "ngoại ngữ"
+  ],
+  "lo": 16
+ },
+ "luyen_nghe_tai_nghe": {
+  "ten": "Luyện nghe bằng tai nghe",
+  "tu_khoa": [
+   "luyện nghe",
+   "tai nghe",
+   "ngoại ngữ",
+   "học tập"
+  ],
+  "lo": 17
+ },
+ "luyen_noi_cung_ban": {
+  "ten": "Luyện nói cùng bạn",
+  "tu_khoa": [
+   "luyện nói",
+   "bạn bè",
+   "hội thoại",
+   "giao tiếp"
+  ],
+  "lo": 17
+ },
+ "the_tu_vung": {
+  "ten": "Thẻ từ vựng",
+  "tu_khoa": [
+   "thẻ học",
+   "từ vựng",
+   "ghi nhớ",
+   "ngoại ngữ"
+  ],
+  "lo": 17
+ },
+ "hoc_tieng_qua_ung_dung": {
+  "ten": "Học tiếng qua ứng dụng điện thoại",
+  "tu_khoa": [
+   "ứng dụng",
+   "điện thoại",
+   "ngoại ngữ",
+   "học tập"
+  ],
+  "lo": 17
+ },
+ "phong_thi_topik": {
+  "ten": "Phòng thi TOPIK",
+  "tu_khoa": [
+   "TOPIK",
+   "tiếng Hàn",
+   "kỳ thi",
+   "phòng thi"
+  ],
+  "lo": 18
+ },
+ "thi_tocfl_may_tinh": {
+  "ten": "Thi TOCFL trên máy tính",
+  "tu_khoa": [
+   "TOCFL",
+   "tiếng Trung",
+   "máy tính",
+   "kỳ thi"
+  ],
+  "lo": 18
+ },
+ "vui_mung_xem_diem_thi": {
+  "ten": "Vui mừng khi xem điểm thi",
+  "tu_khoa": [
+   "kết quả",
+   "điểm thi",
+   "vui mừng",
+   "thành công"
+  ],
+  "lo": 18
+ },
+ "on_thi_den_khuya": {
+  "ten": "Ôn thi đến khuya",
+  "tu_khoa": [
+   "ôn thi",
+   "ban đêm",
+   "học tập",
+   "chăm chỉ"
+  ],
+  "lo": 18
+ },
+ "nhom_hoc_tieng": {
+  "ten": "Nhóm học tiếng",
+  "tu_khoa": [
+   "học nhóm",
+   "ngoại ngữ",
+   "bạn bè",
+   "hội thoại"
+  ],
+  "lo": 19
+ },
+ "ghi_chep_vao_vo": {
+  "ten": "Ghi chép vào vở",
+  "tu_khoa": [
+   "ghi chép",
+   "vở",
+   "bút",
+   "học tập"
+  ],
+  "lo": 19
+ },
+ "sach_giao_trinh_tieng": {
+  "ten": "Sách giáo trình tiếng",
+  "tu_khoa": [
+   "giáo trình",
+   "sách",
+   "ngoại ngữ",
+   "tài liệu"
+  ],
+  "lo": 19
+ },
+ "luyen_phat_am_truoc_guong": {
+  "ten": "Luyện phát âm trước gương",
+  "tu_khoa": [
+   "phát âm",
+   "gương",
+   "luyện nói",
+   "ngoại ngữ"
+  ],
+  "lo": 19
+ },
+ "tro_chuyen_nguoi_ban_xu": {
+  "ten": "Trò chuyện với người bản xứ",
+  "tu_khoa": [
+   "bản xứ",
+   "giao tiếp",
+   "hội thoại",
+   "ngoại ngữ"
+  ],
+  "lo": 20
+ },
+ "xem_phim_hoc_tieng": {
+  "ten": "Xem phim học tiếng",
+  "tu_khoa": [
+   "phim",
+   "luyện nghe",
+   "ngoại ngữ",
+   "video"
+  ],
+  "lo": 20
+ },
+ "gio_tay_phat_bieu": {
+  "ten": "Giơ tay phát biểu",
+  "tu_khoa": [
+   "phát biểu",
+   "lớp học",
+   "học sinh",
+   "tự tin"
+  ],
+  "lo": 20
+ },
+ "buon_vi_diem_thap": {
+  "ten": "Buồn vì điểm thấp",
+  "tu_khoa": [
+   "điểm thấp",
+   "buồn bã",
+   "bài thi",
+   "thất vọng"
+  ],
+  "lo": 20
+ },
+ "cong_truong_dai_hoc": {
+  "ten": "Cổng trường đại học",
+  "tu_khoa": [
+   "cổng trường",
+   "đại học",
+   "khuôn viên",
+   "trường học"
+  ],
+  "lo": 21
+ },
+ "giang_duong": {
+  "ten": "Giảng đường",
+  "tu_khoa": [
+   "giảng đường",
+   "sinh viên",
+   "bài giảng",
+   "đại học"
+  ],
+  "lo": 21
+ },
+ "thu_vien_doc_sach": {
+  "ten": "Thư viện",
+  "tu_khoa": [
+   "thư viện",
+   "sách",
+   "đọc sách",
+   "học tập"
+  ],
+  "lo": 21
+ },
+ "phong_thi_nghiem": {
+  "ten": "Phòng thí nghiệm",
+  "tu_khoa": [
+   "thí nghiệm",
+   "khoa học",
+   "kính hiển vi",
+   "nghiên cứu"
+  ],
+  "lo": 21
+ },
+ "hoc_nhom": {
+  "ten": "Học nhóm",
+  "tu_khoa": [
+   "học nhóm",
+   "sinh viên",
+   "hợp tác",
+   "học tập"
+  ],
+  "lo": 22
+ },
+ "thuyet_trinh_bieu_do": {
+  "ten": "Thuyết trình",
+  "tu_khoa": [
+   "thuyết trình",
+   "biểu đồ",
+   "trình bày",
+   "tự tin"
+  ],
+  "lo": 22
+ },
+ "giao_su_giang_bai": {
+  "ten": "Giáo sư giảng bài",
+  "tu_khoa": [
+   "giáo sư",
+   "giảng dạy",
+   "bài giảng",
+   "đại học"
+  ],
+  "lo": 22
+ },
+ "lam_bai_thi": {
+  "ten": "Làm bài thi",
+  "tu_khoa": [
+   "bài thi",
+   "kiểm tra",
+   "sinh viên",
+   "học tập"
+  ],
+  "lo": 22
  }
 }
