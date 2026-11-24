@@ -817,7 +817,7 @@ def _kho_dst(name):
 def kho_add(src, name=None):
     """Thêm ảnh vào Kho: tách nền, lưu PNG với tên (không dấu, nối bằng _)."""
     dst = _kho_dst(name or os.path.splitext(os.path.basename(src))[0])
-    remove_bg(src, max_h=1100).save(dst)
+    _save_small(remove_bg(src, max_h=1100), dst)
     CharItem._cache.clear()
     return dst
 
@@ -847,6 +847,18 @@ def split_grid(src, rows, cols):
         for c in range(cols):
             out.append(im.crop((xs[c], ys[r], xs[c + 1], ys[r + 1])))
     return out
+
+
+def _save_small(im, dst, max_side=900):
+    """Lưu PNG gọn nhẹ: thu về cạnh dài tối đa 900px, giảm còn 256 màu (hình vẽ màu phẳng nên gần như không đổi)."""
+    im = im.convert('RGBA')
+    if max(im.size) > max_side:
+        k = max_side / max(im.size)
+        im = im.resize((int(im.width * k), int(im.height * k)), Image.LANCZOS)
+    try:
+        im.quantize(256, method=Image.Quantize.FASTOCTREE).save(dst, optimize=True)
+    except Exception:
+        im.save(dst, optimize=True)
 
 
 def _drop_edge_bits(im, frac=0.02):
@@ -883,7 +895,7 @@ def kho_add_grid(src, rows, cols, names):
             tp = os.path.join(tmpd, 'c%d.png' % i)
             cell.save(tp)
             dst = _kho_dst(name)
-            _drop_edge_bits(remove_bg(tp, max_h=1100)).save(dst)
+            _save_small(_drop_edge_bits(remove_bg(tp, max_h=1100)), dst)
             saved.append(dst)
     finally:
         shutil.rmtree(tmpd, ignore_errors=True)
