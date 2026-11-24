@@ -2519,5 +2519,325 @@
    "cửa hàng"
   ],
   "lo": 67
+ },
+ "cau_lac_bo_bong_ro": {
+  "ten": "Câu lạc bộ bóng rổ",
+  "tu_khoa": [
+   "bóng rổ",
+   "câu lạc bộ",
+   "thể thao",
+   "sinh viên"
+  ],
+  "lo": 68
+ },
+ "cau_lac_bo_am_nhac": {
+  "ten": "Câu lạc bộ âm nhạc",
+  "tu_khoa": [
+   "âm nhạc",
+   "guitar",
+   "ca hát",
+   "câu lạc bộ"
+  ],
+  "lo": 68
+ },
+ "tinh_nguyen_nhat_rac": {
+  "ten": "Tình nguyện nhặt rác",
+  "tu_khoa": [
+   "tình nguyện",
+   "nhặt rác",
+   "môi trường",
+   "cộng đồng"
+  ],
+  "lo": 68
+ },
+ "hoi_sinh_vien_ao_dai": {
+  "ten": "Hội sinh viên Việt Nam mặc áo dài",
+  "tu_khoa": [
+   "áo dài",
+   "sinh viên Việt Nam",
+   "văn hóa",
+   "hội sinh viên"
+  ],
+  "lo": 68
+ },
+ "ngay_hoi_chao_tan_sinh_vien": {
+  "ten": "Ngày hội chào tân sinh viên",
+  "tu_khoa": [
+   "tân sinh viên",
+   "chào đón",
+   "ngày hội",
+   "nhập học"
+  ],
+  "lo": 69
+ },
+ "le_hoi_truong_gian_hang": {
+  "ten": "Lễ hội trường có gian hàng",
+  "tu_khoa": [
+   "lễ hội",
+   "gian hàng",
+   "trường học",
+   "sinh viên"
+  ],
+  "lo": 69
+ },
+ "thi_dau_the_thao_giua_cac_khoa": {
+  "ten": "Thi đấu thể thao giữa các khoa",
+  "tu_khoa": [
+   "thi đấu",
+   "bóng đá",
+   "thể thao",
+   "các khoa"
+  ],
+  "lo": 69
+ },
+ "giao_luu_van_hoa_quoc_te": {
+  "ten": "Giao lưu văn hóa quốc tế",
+  "tu_khoa": [
+   "giao lưu",
+   "văn hóa",
+   "quốc tế",
+   "trang phục"
+  ],
+  "lo": 69
+ },
+ "nhan_giay_khen": {
+  "ten": "Nhận giấy khen",
+  "tu_khoa": [
+   "giấy khen",
+   "thành tích",
+   "khen thưởng",
+   "học tập"
+  ],
+  "lo": 70
+ },
+ "bang_diem_cao_vui_mung": {
+  "ten": "Bảng điểm toàn điểm cao vui mừng",
+  "tu_khoa": [
+   "bảng điểm",
+   "điểm cao",
+   "vui mừng",
+   "kết quả học tập"
+  ],
+  "lo": 70
+ },
+ "nhan_cup_nhat_lop": {
+  "ten": "Nhận cúp nhất lớp",
+  "tu_khoa": [
+   "cúp",
+   "nhất lớp",
+   "chiến thắng",
+   "thành tích"
+  ],
+  "lo": 70
+ },
+ "nhan_tien_hoc_bong": {
+  "ten": "Nhận tiền học bổng vui mừng",
+  "tu_khoa": [
+   "học bổng",
+   "tiền thưởng",
+   "vui mừng",
+   "hỗ trợ học phí"
+  ],
+  "lo": 70
+ },
+ "chuyen_truong_mang_thung_do": {
+  "ten": "Chuyển trường mang thùng đồ",
+  "tu_khoa": [
+   "chuyển trường",
+   "thùng đồ",
+   "chuyển nơi học",
+   "sinh viên"
+  ],
+  "lo": 71
+ },
+ "xin_nghi_hoc_tam_thoi": {
+  "ten": "Xin nghỉ học tạm thời",
+  "tu_khoa": [
+   "nghỉ học",
+   "bảo lưu",
+   "đơn xin nghỉ",
+   "tạm thời"
+  ],
+  "lo": 71
+ },
+ "phan_van_doi_nganh_hoc": {
+  "ten": "Phân vân đổi ngành học",
+  "tu_khoa": [
+   "đổi ngành",
+   "lựa chọn",
+   "phân vân",
+   "định hướng"
+  ],
+  "lo": 71
+ },
+ "mac_ao_thac_si_hoc_len_cao": {
+  "ten": "Mặc áo thạc sĩ học lên cao",
+  "tu_khoa": [
+   "thạc sĩ",
+   "học lên cao",
+   "tốt nghiệp",
+   "lễ phục"
+  ],
+  "lo": 71
+ },
+ "leo_bac_thang_muc_tieu": {
+  "ten": "Học sinh leo bậc thang mục tiêu",
+  "tu_khoa": [
+   "bậc thang",
+   "mục tiêu",
+   "nỗ lực",
+   "tiến bộ"
+  ],
+  "lo": 72
+ },
+ "nga_re_hai_con_duong": {
+  "ten": "Đứng trước ngã rẽ hai con đường",
+  "tu_khoa": [
+   "ngã rẽ",
+   "lựa chọn",
+   "định hướng",
+   "quyết định"
+  ],
+  "lo": 72
+ },
+ "nhay_vuot_chuong_ngai_vat": {
+  "ten": "Nhảy vượt chướng ngại vật",
+  "tu_khoa": [
+   "vượt khó",
+   "chướng ngại vật",
+   "kiên trì",
+   "thử thách"
+  ],
+  "lo": 72
+ },
+ "ve_dich_gio_tay_chien_thang": {
+  "ten": "Về đích giơ tay chiến thắng",
+  "tu_khoa": [
+   "về đích",
+   "chiến thắng",
+   "thành công",
+   "mục tiêu"
+  ],
+  "lo": 72
+ },
+ "bong_den_y_tuong": {
+  "ten": "Bóng đèn ý tưởng",
+  "tu_khoa": [
+   "bóng đèn",
+   "ý tưởng",
+   "sáng tạo",
+   "phát kiến"
+  ],
+  "lo": 73
+ },
+ "chia_khoa_vang": {
+  "ten": "Chìa khóa vàng",
+  "tu_khoa": [
+   "chìa khóa",
+   "cơ hội",
+   "giải pháp",
+   "thành công"
+  ],
+  "lo": 73
+ },
+ "tam_khien_bao_ve": {
+  "ten": "Tấm khiên bảo vệ",
+  "tu_khoa": [
+   "tấm khiên",
+   "bảo vệ",
+   "an toàn",
+   "phòng ngừa"
+  ],
+  "lo": 73
+ },
+ "bia_muc_tieu_trung_tam": {
+  "ten": "Bia mục tiêu có mũi tên trúng tâm",
+  "tu_khoa": [
+   "bia mục tiêu",
+   "mũi tên",
+   "trúng tâm",
+   "chính xác"
+  ],
+  "lo": 73
+ },
+ "ong_nhom_nhin_xa": {
+  "ten": "Ống nhòm nhìn xa",
+  "tu_khoa": [
+   "ống nhòm",
+   "tầm nhìn",
+   "tương lai",
+   "quan sát"
+  ],
+  "lo": 74
+ },
+ "la_ban_dinh_huong": {
+  "ten": "La bàn định hướng",
+  "tu_khoa": [
+   "la bàn",
+   "định hướng",
+   "phương hướng",
+   "lựa chọn"
+  ],
+  "lo": 74
+ },
+ "can_hai_dia": {
+  "ten": "Cái cân hai đĩa",
+  "tu_khoa": [
+   "cái cân",
+   "cân bằng",
+   "so sánh",
+   "đánh giá"
+  ],
+  "lo": 74
+ },
+ "dong_ho_bao_thuc": {
+  "ten": "Đồng hồ báo thức",
+  "tu_khoa": [
+   "đồng hồ",
+   "báo thức",
+   "thời gian",
+   "nhắc nhở"
+  ],
+  "lo": 74
+ },
+ "tu_van_vien_vay_tay_tam_biet": {
+  "ten": "Tư vấn viên vẫy tay tạm biệt",
+  "tu_khoa": [
+   "tư vấn viên",
+   "vẫy tay",
+   "tạm biệt",
+   "chào hỏi"
+  ],
+  "lo": 75
+ },
+ "hoc_sinh_bam_thich_dien_thoai": {
+  "ten": "Học sinh bấm thích trên điện thoại",
+  "tu_khoa": [
+   "bấm thích",
+   "điện thoại",
+   "tương tác",
+   "học sinh"
+  ],
+  "lo": 75
+ },
+ "hoc_sinh_viet_binh_luan": {
+  "ten": "Học sinh viết bình luận",
+  "tu_khoa": [
+   "bình luận",
+   "điện thoại",
+   "phản hồi",
+   "tương tác"
+  ],
+  "lo": 75
+ },
+ "hoc_sinh_chia_se_video_cho_ban": {
+  "ten": "Học sinh chia sẻ video cho bạn",
+  "tu_khoa": [
+   "chia sẻ",
+   "video",
+   "bạn bè",
+   "điện thoại"
+  ],
+  "lo": 75
  }
 }
