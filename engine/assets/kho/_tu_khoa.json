@@ -1959,5 +1959,45 @@
    "lưu trú"
   ],
   "lo": 53
+ },
+ "tu_van_vien_suy_nghi": {
+  "ten": "Tư vấn viên suy nghĩ",
+  "tu_khoa": [
+   "tư vấn viên",
+   "suy nghĩ",
+   "chống cằm",
+   "cân nhắc"
+  ],
+  "lo": 57
+ },
+ "tu_van_vien_vo_tay": {
+  "ten": "Tư vấn viên vỗ tay khen",
+  "tu_khoa": [
+   "tư vấn viên",
+   "vỗ tay",
+   "khen ngợi",
+   "chúc mừng"
+  ],
+  "lo": 57
+ },
+ "tu_van_vien_xua_tay": {
+  "ten": "Tư vấn viên xua tay không nên",
+  "tu_khoa": [
+   "tư vấn viên",
+   "xua tay",
+   "từ chối",
+   "cảnh báo"
+  ],
+  "lo": 57
+ },
+ "tu_van_vien_moi_lien_he": {
+  "ten": "Tư vấn viên cầm điện thoại mời liên hệ",
+  "tu_khoa": [
+   "tư vấn viên",
+   "điện thoại",
+   "liên hệ",
+   "hỗ trợ"
+  ],
+  "lo": 57
  }
 }
