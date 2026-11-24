@@ -158,5 +158,45 @@
    "tìm hiểu"
   ],
   "lo": 4
+ },
+ "ho_chieu": {
+  "ten": "Hộ chiếu",
+  "tu_khoa": [
+   "hộ chiếu",
+   "giấy tờ",
+   "xuất nhập cảnh",
+   "du học"
+  ],
+  "lo": 5
+ },
+ "anh_the": {
+  "ten": "Ảnh thẻ",
+  "tu_khoa": [
+   "ảnh thẻ",
+   "chân dung",
+   "học sinh",
+   "hồ sơ"
+  ],
+  "lo": 5
+ },
+ "hoc_ba": {
+  "ten": "Học bạ",
+  "tu_khoa": [
+   "học bạ",
+   "kết quả học tập",
+   "hồ sơ",
+   "nhà trường"
+  ],
+  "lo": 5
+ },
+ "bang_tot_nghiep": {
+  "ten": "Bằng tốt nghiệp",
+  "tu_khoa": [
+   "bằng tốt nghiệp",
+   "văn bằng",
+   "chứng nhận",
+   "hồ sơ"
+  ],
+  "lo": 5
  }
 }
