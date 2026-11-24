@@ -278,5 +278,45 @@
    "giấy tờ"
   ],
   "lo": 7
+ },
+ "chung_chi_topik": {
+  "ten": "Chứng chỉ TOPIK",
+  "tu_khoa": [
+   "TOPIK",
+   "tiếng Hàn",
+   "chứng chỉ",
+   "năng lực"
+  ],
+  "lo": 8
+ },
+ "chung_chi_tocfl": {
+  "ten": "Chứng chỉ TOCFL",
+  "tu_khoa": [
+   "TOCFL",
+   "tiếng Trung",
+   "chứng chỉ",
+   "năng lực"
+  ],
+  "lo": 8
+ },
+ "thu_moi_nhap_hoc": {
+  "ten": "Thư mời nhập học",
+  "tu_khoa": [
+   "thư mời",
+   "nhập học",
+   "trường đại học",
+   "hồ sơ"
+  ],
+  "lo": 8
+ },
+ "ke_hoach_hoc_tap": {
+  "ten": "Kế hoạch học tập viết tay",
+  "tu_khoa": [
+   "kế hoạch",
+   "học tập",
+   "mục tiêu",
+   "viết tay"
+  ],
+  "lo": 8
  }
 }

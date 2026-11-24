@@ -785,9 +785,10 @@ def kho_keywords():
     meta = {norm(k.replace('_', ' ')): v for k, v in kho_meta().items()}
     for n in kho_index():
         extra = meta.get(n, {})
-        for kw in [extra.get('ten', '')] + list(extra.get('tu_khoa', [])):
-            kw = norm(kw)
-            if kw and len(kw.split()) >= 2 and kw not in KHO_GENERIC:   # bỏ từ lẻ 1 chữ để tránh gắn nhầm
+        for kw0 in [extra.get('ten', '')] + list(extra.get('tu_khoa', [])):
+            kw = norm(kw0)
+            acronym = kw0.strip().isupper() and len(kw0.strip()) >= 4      # TOPIK, TOCFL, VISA: giữ dù chỉ 1 chữ
+            if kw and (len(kw.split()) >= 2 or acronym) and kw not in KHO_GENERIC:   # bỏ từ lẻ 1 chữ để tránh gắn nhầm
                 out.setdefault(n, set()).add(kw)
     for n in kho_index():
         w = [x for x in n.split() if x not in KHO_STOP]
