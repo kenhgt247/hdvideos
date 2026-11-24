@@ -192,13 +192,16 @@ const AI_CONVERT = `
 - NHIỆM VỤ LẦN NÀY: CHUYỂN NỘI DUNG người dùng viết (trong tin nhắn, mục NỘI DUNG) thành kịch bản đúng định dạng PHẦN B.
 - GIỮ NGUYÊN ý, số liệu, tên trường, mốc thời gian, lời khuyên của người dùng. KHÔNG thêm thông tin, con số hay quy định mới. KHÔNG bỏ ý quan trọng.
 - Được phép: rút gọn câu cho dễ đọc, chia thành các cảnh, viết câu mở gây tò mò từ chính nội dung, gom ý thành danh sách "- " có hình, các bước thành sơ đồ " → ", thêm [1/3]..., *từ khoá*, [vẽ: ...] trong danh sách hình, câu kết rủ bình luận + mời inbox Du Học Hải Dương.
-- Nội dung quá dài thì giữ các ý chính cho video 20–45 giây. Nội dung có chỗ sai chính tả thì sửa.
+- ƯU TIÊN TUYỆT ĐỐI: Chuyển đầy đủ toàn bộ bài, không tóm tắt, không bỏ đoạn, không gộp mất chi tiết. Bỏ tất cả giới hạn tổng 60–100 chữ, 8–14 cảnh, 15–25 cảnh, một điểm kiến thức, 20–45 giây ở mọi phần trước. Số cảnh và thời lượng phụ thuộc vào bài gốc; có thể trên 25 cảnh.
+- Chỉ rút ngắn chữ trên màn hình (bên trái ||). Lời đọc bên phải || phải giữ sát nguyên văn, chỉ sửa chính tả, viết số bằng chữ hoặc điều chỉnh nhẹ để đọc tự nhiên. Nếu lời đọc dài hơn 24 chữ, chia tiếp thành nhiều cảnh, không bỏ chữ để đạt giới hạn. Giữ trình tự các đoạn, toàn bộ ví dụ, danh sách, địa danh, số liệu, điều kiện và lời khuyên.
+- Chữ Trung/Hàn trong nội dung gốc phải chuyển sang phiên âm và giải nghĩa bằng tiếng Việt vì bộ đọc không hỗ trợ ký tự gốc. Giữ các từ khóa dưới dạng phiên âm, không bỏ ý.
+- Tự đối chiếu từng đoạn với bài gốc trước khi trả lời. Không bỏ đoạn cuối hoặc CTA. Tổng lời đọc phải gần bằng độ dài bài gốc, không phải bản tóm tắt.
 - Phần NGUỒN ghi: "Nội dung do người dùng cung cấp".`;
 
 const AI_FIX = `
 - NHIỆM VỤ LẦN NÀY: SỬA kịch bản trong tin nhắn cho hết các LỖI được liệt kê, đúng định dạng PHẦN B.
 - GIỮ NGUYÊN nội dung, ý, số liệu. Chỉ sửa cách trình bày: rút ngắn chữ màn hình (dùng " / " xuống dòng, mỗi dòng ≤22 ký tự), tách cảnh dài, rút gọn câu mở, sửa danh sách, sơ đồ, thẻ.
-- Không thêm thông tin mới. Trả lời đúng PHẦN C; phần NGUỒN ghi "Nội dung do người dùng cung cấp".`;
+- Không thêm thông tin mới, không tóm tắt. Không áp dụng giới hạn tổng số cảnh, tổng số chữ hay thời lượng. Nếu cảnh dài, tách thành nhiều cảnh mà giữ lời đọc và mọi chi tiết. Không bỏ nội dung để xử lý cảnh báo thời lượng hoặc số cảnh. Trả lời đúng PHẦN C; phần NGUỒN ghi "Nội dung do người dùng cung cấp".`;
 
 function parseAi(text) {
   const m = text.match(/```[a-zA-Z]*\n?([\s\S]*?)```/);
@@ -221,7 +224,11 @@ async function aiGemini(env, sys, user) {
     if (r.ok) {
       const parts = (((d.candidates || [])[0] || {}).content || {}).parts || [];
       const text = parts.filter(x => !x.thought && x.text).map(x => x.text).join('');
-      if (text.trim()) return { text, sources: [] };
+      if (text.trim()) {
+        const finish = (d.candidates || [])[0]?.finishReason;
+        if (finish === 'MAX_TOKENS') throw new Error('AI chưa trả hết nội dung. Hãy chia bài viết thành các phần ngắn hơn.');
+        return { text, sources: [] };
+      }
       last = 'Gemini không trả về nội dung';
       continue;
     }
@@ -703,7 +710,8 @@ export default {
         const b = await req.json();
         const fix = b.task === 'fix';
         const convert = b.task === 'convert' || fix;
-        const content = String(b.content || '').trim().slice(0, 8000);
+        const content = String(b.content || '').trim();
+        if (convert && content.length > 12000) return err('Nội dung dài hơn 12.000 ký tự. Hãy chia thành các phần để AI không bỏ sót nội dung.');
         const issues = (Array.isArray(b.issues) ? b.issues : []).slice(0, 12).map(x => String(x).slice(0, 200));
         const topic = convert ? 'chuyển nội dung' : String(b.topic || '').trim().slice(0, 400);
         if (convert && content.length < 20) return err('Hãy viết nội dung (ít nhất vài câu) trước khi chuyển');
@@ -720,7 +728,8 @@ export default {
         const used = (((data.use || {})[today()] || {})[who] || {})[mode] || 0;
         const limit = cfg[mode];
         if (!admin && !fix && used >= limit) return err(`Bạn đã dùng hết ${limit} lượt "${mode === 'paid' ? 'Viết có kiểm chứng' : 'Viết nhanh'}" hôm nay. Mai dùng tiếp, hoặc nhờ admin tăng giới hạn.`, 429);
-        const sys = (await chatgptPrompt(env)) + AI_COMMON + (fix ? AI_FIX : convert ? AI_CONVERT : mode === 'paid' ? AI_PAID : AI_FREE);
+        const common = convert ? AI_COMMON.replace('- Mỗi video 1 điểm kiến thức, 8–12 dòng cảnh, lời đọc tổng khoảng 60–100 chữ.', '- Không giới hạn tổng số cảnh hoặc thời lượng; ưu tiên giữ đầy đủ lời đọc và ý của nội dung được cung cấp.') : AI_COMMON;
+        const sys = (await chatgptPrompt(env)) + common + (fix ? AI_FIX : convert ? AI_CONVERT : mode === 'paid' ? AI_PAID : AI_FREE);
         const user = fix ? `KỊCH BẢN CẦN SỬA:\n\`\`\`\n${content}\n\`\`\`\n\nCÁC LỖI CẦN SỬA:\n${issues.map((x, i) => (i + 1) + '. ' + x).join('\n')}`
           : convert ? `NỘI DUNG CỦA TÔI (chuyển thành kịch bản, giữ nguyên ý và số liệu):\n${content}`
           : `CHỦ ĐỀ: ${topic}` + (extra ? `\n\nTHÔNG TIN THÊM (của trung tâm, dùng đúng như vậy):\n${extra}` : '');
@@ -728,6 +737,7 @@ export default {
         try { out = mode === 'paid' ? await aiClaude(env, sys, user, !convert) : await aiGemini(env, sys, user); }
         catch (e) { return err(String(e.message || e), 502); }
         const res = parseAi(out.text);
+        if (convert && res.script.length > 20000) return err('Kịch bản vượt giới hạn 20.000 ký tự của bộ dựng. Hãy chia bài thành các phần.', 422);
         if (!res.script) return err('AI chưa viết được kịch bản, hãy thử lại hoặc đổi cách nói chủ đề.', 502);
         const urls = [...res.srcTxt.matchAll(/https?:\/\/[^\s)\]]+/g)].map(x => ({ url: x[0], title: '' }));
         const sources = [...out.sources];
