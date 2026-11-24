@@ -1999,5 +1999,45 @@
    "hỗ trợ"
   ],
   "lo": 57
+ },
+ "bo_me_tu_hao_xem_anh_con": {
+  "ten": "Bố mẹ tự hào xem ảnh con",
+  "tu_khoa": [
+   "bố mẹ",
+   "tự hào",
+   "ảnh con",
+   "du học"
+  ],
+  "lo": 54
+ },
+ "bo_me_lo_hoc_phi": {
+  "ten": "Bố mẹ đếm tiền lo học phí",
+  "tu_khoa": [
+   "bố mẹ",
+   "học phí",
+   "tài chính",
+   "lo lắng"
+  ],
+  "lo": 54
+ },
+ "bo_me_sang_tham_con": {
+  "ten": "Bố mẹ sang thăm con",
+  "tu_khoa": [
+   "gia đình",
+   "thăm con",
+   "sân bay",
+   "đoàn tụ"
+  ],
+  "lo": 54
+ },
+ "me_gui_thung_do_an_que": {
+  "ten": "Mẹ gửi thùng đồ ăn quê",
+  "tu_khoa": [
+   "mẹ",
+   "đồ ăn quê",
+   "gửi hàng",
+   "nhớ nhà"
+  ],
+  "lo": 54
  }
 }
