@@ -2119,5 +2119,85 @@
    "tư vấn viên"
   ],
   "lo": 56
+ },
+ "hoc_sinh_tu_tin_phong_van": {
+  "ten": "Học sinh tự tin bước vào phỏng vấn",
+  "tu_khoa": [
+   "tự tin",
+   "phỏng vấn",
+   "học sinh",
+   "chuẩn bị"
+  ],
+  "lo": 58
+ },
+ "hoc_sinh_run_so_phong_van": {
+  "ten": "Học sinh run sợ khi phỏng vấn",
+  "tu_khoa": [
+   "lo lắng",
+   "phỏng vấn",
+   "căng thẳng",
+   "học sinh"
+  ],
+  "lo": 58
+ },
+ "ban_hoc_gon_gang": {
+  "ten": "Bàn học gọn gàng",
+  "tu_khoa": [
+   "bàn học",
+   "ngăn nắp",
+   "sách vở",
+   "học tập"
+  ],
+  "lo": 58
+ },
+ "ban_hoc_bua_bon": {
+  "ten": "Bàn học bừa bộn",
+  "tu_khoa": [
+   "bừa bộn",
+   "bàn học",
+   "giấy tờ",
+   "mất tập trung"
+  ],
+  "lo": 58
+ },
+ "tha_den_troi_dai_loan": {
+  "ten": "Thả đèn trời ở Đài Loan",
+  "tu_khoa": [
+   "đèn trời",
+   "Đài Loan",
+   "du lịch",
+   "trải nghiệm"
+  ],
+  "lo": 60
+ },
+ "tau_cao_toc_dai_loan": {
+  "ten": "Tàu cao tốc Đài Loan",
+  "tu_khoa": [
+   "tàu cao tốc",
+   "Đài Loan",
+   "giao thông",
+   "di chuyển"
+  ],
+  "lo": 60
+ },
+ "tau_rung_a_ly_son": {
+  "ten": "Tàu rừng trên núi A Lý Sơn",
+  "tu_khoa": [
+   "A Lý Sơn",
+   "tàu rừng",
+   "núi",
+   "du lịch"
+  ],
+  "lo": 60
+ },
+ "ho_nhat_nguyet": {
+  "ten": "Hồ Nhật Nguyệt",
+  "tu_khoa": [
+   "Hồ Nhật Nguyệt",
+   "phong cảnh",
+   "Đài Loan",
+   "thiên nhiên"
+  ],
+  "lo": 60
  }
 }
