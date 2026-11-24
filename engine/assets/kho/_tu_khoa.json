@@ -1158,5 +1158,285 @@
    "tâm linh"
   ],
   "lo": 29
+ },
+ "troi_mua_cam_o": {
+  "ten": "Trời mưa cầm ô",
+  "tu_khoa": [
+   "mưa",
+   "ô",
+   "thời tiết",
+   "đi học"
+  ],
+  "lo": 30
+ },
+ "troi_nang_nong": {
+  "ten": "Trời nắng nóng",
+  "tu_khoa": [
+   "mùa hè",
+   "nắng nóng",
+   "mồ hôi",
+   "thời tiết"
+  ],
+  "lo": 30
+ },
+ "mua_thu_la_vang": {
+  "ten": "Mùa thu lá vàng",
+  "tu_khoa": [
+   "mùa thu",
+   "lá vàng",
+   "phong cảnh",
+   "thời tiết"
+  ],
+  "lo": 30
+ },
+ "tuyet_roi_mua_dong": {
+  "ten": "Tuyết rơi mùa đông",
+  "tu_khoa": [
+   "tuyết",
+   "mùa đông",
+   "áo khoác",
+   "trời lạnh"
+  ],
+  "lo": 30
+ },
+ "dinh_huong_truoc_khi_bay": {
+  "ten": "Buổi định hướng trước khi bay",
+  "tu_khoa": [
+   "định hướng",
+   "tư vấn",
+   "xuất cảnh",
+   "chuẩn bị"
+  ],
+  "lo": 31
+ },
+ "ky_hop_dong_tu_van": {
+  "ten": "Ký hợp đồng tư vấn",
+  "tu_khoa": [
+   "hợp đồng",
+   "ký kết",
+   "tư vấn",
+   "du học"
+  ],
+  "lo": 31
+ },
+ "bo_me_tien_con": {
+  "ten": "Bố mẹ tiễn con ở cổng nhà",
+  "tu_khoa": [
+   "bố mẹ",
+   "gia đình",
+   "chia tay",
+   "du học"
+  ],
+  "lo": 31
+ },
+ "don_hoc_sinh_tai_san_bay": {
+  "ten": "Tư vấn viên đón học sinh tại sân bay",
+  "tu_khoa": [
+   "đón học sinh",
+   "sân bay",
+   "hỗ trợ",
+   "nhập cảnh"
+  ],
+  "lo": 31
+ },
+ "hoc_sinh_dat_cau_hoi": {
+  "ten": "Học sinh đặt câu hỏi",
+  "tu_khoa": [
+   "câu hỏi",
+   "thắc mắc",
+   "học sinh",
+   "tư vấn"
+  ],
+  "lo": 32
+ },
+ "hoc_sinh_gio_ngon_cai": {
+  "ten": "Học sinh giơ ngón cái hài lòng",
+  "tu_khoa": [
+   "hài lòng",
+   "đồng ý",
+   "tích cực",
+   "vui vẻ"
+  ],
+  "lo": 32
+ },
+ "hoc_sinh_ngac_nhien": {
+  "ten": "Học sinh ngạc nhiên",
+  "tu_khoa": [
+   "bất ngờ",
+   "ngạc nhiên",
+   "biểu cảm",
+   "học sinh"
+  ],
+  "lo": 32
+ },
+ "hoc_sinh_quyet_tam": {
+  "ten": "Học sinh quyết tâm nắm tay",
+  "tu_khoa": [
+   "quyết tâm",
+   "cố gắng",
+   "tự tin",
+   "mục tiêu"
+  ],
+  "lo": 32
+ },
+ "xep_hang_len_ke": {
+  "ten": "Xếp hàng hóa lên kệ",
+  "tu_khoa": [
+   "siêu thị",
+   "hàng hóa",
+   "xếp kệ",
+   "làm thêm"
+  ],
+  "lo": 33
+ },
+ "dong_goi_trong_kho": {
+  "ten": "Đóng gói trong kho",
+  "tu_khoa": [
+   "đóng gói",
+   "kho hàng",
+   "thùng hàng",
+   "làm thêm"
+  ],
+  "lo": 33
+ },
+ "day_chuyen_nha_may": {
+  "ten": "Dây chuyền nhà máy",
+  "tu_khoa": [
+   "nhà máy",
+   "sản xuất",
+   "dây chuyền",
+   "công nhân"
+  ],
+  "lo": 33
+ },
+ "giao_do_an": {
+  "ten": "Giao đồ ăn",
+  "tu_khoa": [
+   "giao hàng",
+   "đồ ăn",
+   "xe đạp",
+   "làm thêm"
+  ],
+  "lo": 33
+ },
+ "phu_bep_nha_hang": {
+  "ten": "Phụ bếp nhà hàng",
+  "tu_khoa": [
+   "phụ bếp",
+   "nhà hàng",
+   "nấu ăn",
+   "làm thêm"
+  ],
+  "lo": 34
+ },
+ "don_phong_khach_san": {
+  "ten": "Dọn phòng khách sạn",
+  "tu_khoa": [
+   "khách sạn",
+   "dọn phòng",
+   "vệ sinh",
+   "làm thêm"
+  ],
+  "lo": 34
+ },
+ "day_kem_tieng_viet": {
+  "ten": "Dạy kèm tiếng Việt",
+  "tu_khoa": [
+   "dạy kèm",
+   "tiếng Việt",
+   "gia sư",
+   "ngôn ngữ"
+  ],
+  "lo": 34
+ },
+ "phien_dich": {
+  "ten": "Phiên dịch",
+  "tu_khoa": [
+   "phiên dịch",
+   "giao tiếp",
+   "ngoại ngữ",
+   "công việc"
+  ],
+  "lo": 34
+ },
+ "lich_ca_lam": {
+  "ten": "Lịch ca làm",
+  "tu_khoa": [
+   "lịch làm việc",
+   "ca làm",
+   "thời gian",
+   "sắp xếp"
+  ],
+  "lo": 35
+ },
+ "di_lam_dung_gio": {
+  "ten": "Đi làm đúng giờ",
+  "tu_khoa": [
+   "đúng giờ",
+   "kỷ luật",
+   "công việc",
+   "thời gian"
+  ],
+  "lo": 35
+ },
+ "giay_phep_lam_them": {
+  "ten": "Giấy phép làm thêm",
+  "tu_khoa": [
+   "giấy phép",
+   "thủ tục",
+   "hợp pháp",
+   "làm thêm"
+  ],
+  "lo": 35
+ },
+ "gioi_han_gio_lam_them": {
+  "ten": "Giới hạn giờ làm thêm",
+  "tu_khoa": [
+   "giới hạn",
+   "giờ làm",
+   "quy định",
+   "thời gian"
+  ],
+  "lo": 35
+ },
+ "quan_ly_nhac_nho": {
+  "ten": "Quản lý nhắc nhở nhân viên",
+  "tu_khoa": [
+   "quản lý",
+   "nhân viên",
+   "nhắc nhở",
+   "công việc"
+  ],
+  "lo": 36
+ },
+ "met_sau_ca_dem": {
+  "ten": "Mệt mỏi sau ca đêm",
+  "tu_khoa": [
+   "ca đêm",
+   "mệt mỏi",
+   "sức khỏe",
+   "làm thêm"
+  ],
+  "lo": 36
+ },
+ "can_bang_hoc_va_lam": {
+  "ten": "Cân bằng học và làm",
+  "tu_khoa": [
+   "học tập",
+   "làm thêm",
+   "cân bằng",
+   "thời gian"
+  ],
+  "lo": 36
+ },
+ "phong_van_xin_viec_lam_them": {
+  "ten": "Phỏng vấn xin việc làm thêm",
+  "tu_khoa": [
+   "phỏng vấn",
+   "xin việc",
+   "tuyển dụng",
+   "làm thêm"
+  ],
+  "lo": 36
  }
 }
