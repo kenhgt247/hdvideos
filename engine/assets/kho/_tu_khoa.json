@@ -38,5 +38,45 @@
    "du học"
   ],
   "lo": 1
+ },
+ "tu_van_goi_dien_phu_huynh": {
+  "ten": "Tư vấn viên gọi điện cho phụ huynh",
+  "tu_khoa": [
+   "tư vấn",
+   "gọi điện",
+   "phụ huynh",
+   "du học"
+  ],
+  "lo": 2
+ },
+ "hoc_sinh_tim_thong_tin_dien_thoai": {
+  "ten": "Học sinh tìm thông tin trên điện thoại",
+  "tu_khoa": [
+   "điện thoại",
+   "tìm kiếm",
+   "thông tin",
+   "du học"
+  ],
+  "lo": 2
+ },
+ "ban_do_han_quoc_dai_loan": {
+  "ten": "Bản đồ Hàn Quốc và Đài Loan cạnh nhau",
+  "tu_khoa": [
+   "bản đồ",
+   "Hàn Quốc",
+   "Đài Loan",
+   "so sánh"
+  ],
+  "lo": 2
+ },
+ "hoc_sinh_suy_nghi_chon_nganh": {
+  "ten": "Học sinh suy nghĩ chọn ngành",
+  "tu_khoa": [
+   "chọn ngành",
+   "định hướng",
+   "học sinh",
+   "suy nghĩ"
+  ],
+  "lo": 2
  }
 }
