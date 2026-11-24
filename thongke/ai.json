@@ -18,5 +18,10 @@
     "paid": 0
    }
   }
+ },
+ "config": {
+  "free": 20,
+  "paid": 5,
+  "paid_staff": false
  }
 }
