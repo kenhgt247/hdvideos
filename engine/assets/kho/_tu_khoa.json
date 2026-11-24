@@ -1,0 +1,42 @@
+{
+ "chon_han_quoc_dai_loan": {
+  "ten": "Phân vân chọn Hàn Quốc hay Đài Loan",
+  "tu_khoa": [
+   "chọn nước",
+   "Hàn Quốc",
+   "Đài Loan",
+   "học sinh"
+  ],
+  "lo": 1
+ },
+ "tu_van_giai_thich": {
+  "ten": "Tư vấn viên giải thích cho học sinh",
+  "tu_khoa": [
+   "tư vấn",
+   "học sinh",
+   "trường học",
+   "hướng nghiệp"
+  ],
+  "lo": 1
+ },
+ "gia_dinh_ban_du_hoc": {
+  "ten": "Phụ huynh và con bàn chuyện du học",
+  "tu_khoa": [
+   "phụ huynh",
+   "gia đình",
+   "kế hoạch",
+   "du học"
+  ],
+  "lo": 1
+ },
+ "hoi_thao_du_hoc": {
+  "ten": "Buổi hội thảo du học",
+  "tu_khoa": [
+   "hội thảo",
+   "tuyển sinh",
+   "tư vấn",
+   "du học"
+  ],
+  "lo": 1
+ }
+}

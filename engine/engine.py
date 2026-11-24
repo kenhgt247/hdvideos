@@ -769,8 +769,26 @@ def kho_has(name):
     return norm(name) in kho_index()
 
 
+KHO_TUKHOA = os.path.join(KHO_DIR, '_tu_khoa.json')   # {ten_file_khong_duoi: {"ten": "...", "tu_khoa": [...]}}
+
+
+def kho_meta():
+    try:
+        with open(KHO_TUKHOA, encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
 def kho_keywords():
     out = {}
+    meta = {norm(k.replace('_', ' ')): v for k, v in kho_meta().items()}
+    for n in kho_index():
+        extra = meta.get(n, {})
+        for kw in [extra.get('ten', '')] + list(extra.get('tu_khoa', [])):
+            kw = norm(kw)
+            if kw and len(kw.split()) >= 2 and kw not in KHO_GENERIC:   # bỏ từ lẻ 1 chữ để tránh gắn nhầm
+                out.setdefault(n, set()).add(kw)
     for n in kho_index():
         w = [x for x in n.split() if x not in KHO_STOP]
         keys = {n}
@@ -778,7 +796,7 @@ def kho_keywords():
             bg = w[i] + ' ' + w[i + 1]
             if bg not in KHO_GENERIC:
                 keys.add(bg)
-        out[n] = list(keys)
+        out[n] = list(keys | set(out.get(n, set())))
     return out
 
 
@@ -831,6 +849,28 @@ def split_grid(src, rows, cols):
     return out
 
 
+def _drop_edge_bits(im, frac=0.02):
+    """Xoá mẩu nhỏ của hình bên cạnh dính ở mép ô khi cắt lưới, rồi cắt sát phần còn lại."""
+    try:
+        from scipy import ndimage
+    except Exception:
+        return im
+    a = np.asarray(im.convert('RGBA')).copy()
+    m = a[:, :, 3] > 20
+    lab, n = ndimage.label(m)
+    if n <= 1:
+        return im
+    sizes = ndimage.sum(m, lab, range(1, n + 1))
+    big = sizes.max()
+    edge = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
+    for k in edge:
+        if sizes[k - 1] < big * frac * 10 and sizes[k - 1] < m.sum() * frac:
+            a[lab == k, 3] = 0
+    out = Image.fromarray(a)
+    bb = out.getbbox()
+    return out.crop(bb) if bb else out
+
+
 def kho_add_grid(src, rows, cols, names):
     """Cắt ảnh lưới rồi thêm từng hình vào Kho với tên tương ứng (trái→phải, trên→dưới)."""
     tmpd = tempfile.mkdtemp(prefix='luoi_')
@@ -843,7 +883,7 @@ def kho_add_grid(src, rows, cols, names):
             tp = os.path.join(tmpd, 'c%d.png' % i)
             cell.save(tp)
             dst = _kho_dst(name)
-            remove_bg(tp, max_h=1100).save(dst)
+            _drop_edge_bits(remove_bg(tp, max_h=1100)).save(dst)
             saved.append(dst)
     finally:
         shutil.rmtree(tmpd, ignore_errors=True)
