@@ -438,5 +438,45 @@
    "học sinh"
   ],
   "lo": 11
+ },
+ "lay_dau_van_tay": {
+  "ten": "Lấy dấu vân tay",
+  "tu_khoa": [
+   "vân tay",
+   "sinh trắc học",
+   "VISA",
+   "thủ tục"
+  ],
+  "lo": 12
+ },
+ "cho_ket_qua_visa_2": {
+  "ten": "Chờ kết quả visa",
+  "tu_khoa": [
+   "chờ đợi",
+   "VISA",
+   "kết quả",
+   "lo lắng"
+  ],
+  "lo": 12
+ },
+ "nhan_visa_vui_mung": {
+  "ten": "Nhận visa vui mừng",
+  "tu_khoa": [
+   "VISA",
+   "thành công",
+   "vui mừng",
+   "du học"
+  ],
+  "lo": 12
+ },
+ "visa_bi_tu_choi": {
+  "ten": "Visa bị từ chối",
+  "tu_khoa": [
+   "VISA",
+   "từ chối",
+   "buồn bã",
+   "thất vọng"
+  ],
+  "lo": 12
  }
 }
