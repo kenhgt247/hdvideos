@@ -1679,5 +1679,285 @@
    "cảm xúc"
   ],
   "lo": 46
+ },
+ "bam_may_tinh_chi_phi": {
+  "ten": "Bấm máy tính tính chi phí",
+  "tu_khoa": [
+   "máy tính",
+   "chi phí",
+   "dự toán",
+   "tài chính"
+  ],
+  "lo": 47
+ },
+ "vi_tien_gan_het": {
+  "ten": "Ví tiền gần hết lo lắng",
+  "tu_khoa": [
+   "ví tiền",
+   "hết tiền",
+   "lo lắng",
+   "sinh hoạt"
+  ],
+  "lo": 47
+ },
+ "gia_dinh_chuyen_tien": {
+  "ten": "Gia đình chuyển tiền sang cho con",
+  "tu_khoa": [
+   "gia đình",
+   "chuyển tiền",
+   "hỗ trợ",
+   "du học"
+  ],
+  "lo": 47
+ },
+ "so_chi_tieu_hang_ngay": {
+  "ten": "Ghi sổ chi tiêu hằng ngày",
+  "tu_khoa": [
+   "sổ chi tiêu",
+   "tiết kiệm",
+   "ngân sách",
+   "quản lý tiền"
+  ],
+  "lo": 47
+ },
+ "moi_gioi_hua_hen": {
+  "ten": "Người môi giới hứa hẹn quá mức",
+  "tu_khoa": [
+   "môi giới",
+   "hứa hẹn",
+   "cảnh giác",
+   "tư vấn"
+  ],
+  "lo": 48
+ },
+ "mat_tien_dat_coc": {
+  "ten": "Mất tiền đặt cọc buồn bã",
+  "tu_khoa": [
+   "đặt cọc",
+   "mất tiền",
+   "rủi ro",
+   "buồn bã"
+  ],
+  "lo": 48
+ },
+ "phat_hien_giay_to_gia": {
+  "ten": "Giấy tờ giả bị phát hiện",
+  "tu_khoa": [
+   "giấy tờ giả",
+   "kiểm tra",
+   "hồ sơ",
+   "cảnh báo"
+  ],
+  "lo": 48
+ },
+ "phu_huynh_doc_hop_dong": {
+  "ten": "Phụ huynh đọc kỹ hợp đồng trước khi ký",
+  "tu_khoa": [
+   "phụ huynh",
+   "hợp đồng",
+   "kiểm tra",
+   "ký kết"
+  ],
+  "lo": 48
+ },
+ "bo_hoc_di_lam": {
+  "ten": "Bỏ học đi làm bị nhà trường phát hiện",
+  "tu_khoa": [
+   "bỏ học",
+   "làm thêm",
+   "vi phạm",
+   "nhà trường"
+  ],
+  "lo": 49
+ },
+ "thu_canh_bao_nha_truong": {
+  "ten": "Nhận thư cảnh báo từ trường",
+  "tu_khoa": [
+   "thư cảnh báo",
+   "kỷ luật",
+   "nhà trường",
+   "học tập"
+  ],
+  "lo": 49
+ },
+ "buoc_ve_nuoc": {
+  "ten": "Học sinh buồn bã bị buộc về nước ở sân bay",
+  "tu_khoa": [
+   "sân bay",
+   "về nước",
+   "buồn bã",
+   "hành lý"
+  ],
+  "lo": 49
+ },
+ "lop_hoc_vang": {
+  "ten": "Lớp học vắng ghế trống",
+  "tu_khoa": [
+   "lớp học",
+   "ghế trống",
+   "vắng mặt",
+   "nghỉ học"
+  ],
+  "lo": 49
+ },
+ "nganh_cong_nghe_thong_tin": {
+  "ten": "Ngành công nghệ thông tin",
+  "tu_khoa": [
+   "công nghệ thông tin",
+   "lập trình",
+   "máy tính",
+   "phần mềm"
+  ],
+  "lo": 50
+ },
+ "nganh_dieu_duong": {
+  "ten": "Ngành điều dưỡng",
+  "tu_khoa": [
+   "điều dưỡng",
+   "chăm sóc",
+   "bệnh nhân",
+   "y tế"
+  ],
+  "lo": 50
+ },
+ "nganh_quan_tri_khach_san": {
+  "ten": "Ngành quản trị khách sạn",
+  "tu_khoa": [
+   "khách sạn",
+   "lễ tân",
+   "dịch vụ",
+   "quản trị"
+  ],
+  "lo": 50
+ },
+ "nganh_co_khi_ky_thuat": {
+  "ten": "Ngành cơ khí kỹ thuật",
+  "tu_khoa": [
+   "cơ khí",
+   "kỹ thuật",
+   "máy móc",
+   "thực hành"
+  ],
+  "lo": 50
+ },
+ "nganh_kinh_doanh_quoc_te": {
+  "ten": "Ngành kinh doanh quốc tế",
+  "tu_khoa": [
+   "kinh doanh",
+   "quốc tế",
+   "thương mại",
+   "hợp tác"
+  ],
+  "lo": 51
+ },
+ "nganh_lam_dep": {
+  "ten": "Ngành làm đẹp",
+  "tu_khoa": [
+   "làm đẹp",
+   "trang điểm",
+   "mỹ phẩm",
+   "thẩm mỹ"
+  ],
+  "lo": 51
+ },
+ "nganh_dau_bep": {
+  "ten": "Ngành đầu bếp",
+  "tu_khoa": [
+   "đầu bếp",
+   "nấu ăn",
+   "ẩm thực",
+   "nhà bếp"
+  ],
+  "lo": 51
+ },
+ "nganh_dien_tu_ban_dan": {
+  "ten": "Ngành điện tử bán dẫn",
+  "tu_khoa": [
+   "điện tử",
+   "bán dẫn",
+   "vi mạch",
+   "linh kiện"
+  ],
+  "lo": 51
+ },
+ "lop_hoc_tieng_mot_nam": {
+  "ten": "Lớp học tiếng một năm",
+  "tu_khoa": [
+   "học tiếng",
+   "ngôn ngữ",
+   "lớp học",
+   "giáo viên"
+  ],
+  "lo": 52
+ },
+ "sinh_vien_dai_hoc_bon_nam": {
+  "ten": "Sinh viên đại học bốn năm",
+  "tu_khoa": [
+   "đại học",
+   "sinh viên",
+   "giảng đường",
+   "học tập"
+  ],
+  "lo": 52
+ },
+ "thac_si_lam_luan_van": {
+  "ten": "Học viên thạc sĩ làm luận văn",
+  "tu_khoa": [
+   "thạc sĩ",
+   "luận văn",
+   "nghiên cứu",
+   "học thuật"
+  ],
+  "lo": 52
+ },
+ "hoc_nghe_trong_xuong": {
+  "ten": "Học nghề thực hành trong xưởng",
+  "tu_khoa": [
+   "học nghề",
+   "thực hành",
+   "xưởng",
+   "kỹ năng"
+  ],
+  "lo": 52
+ },
+ "ky_hop_dong_lao_dong": {
+  "ten": "Ký hợp đồng lao động với công ty",
+  "tu_khoa": [
+   "hợp đồng",
+   "lao động",
+   "công ty",
+   "tuyển dụng"
+  ],
+  "lo": 53
+ },
+ "ngay_dau_di_lam": {
+  "ten": "Ngày đầu đi làm văn phòng",
+  "tu_khoa": [
+   "văn phòng",
+   "việc làm",
+   "nhân viên",
+   "đồng nghiệp"
+  ],
+  "lo": 53
+ },
+ "sep_khen_thang_chuc": {
+  "ten": "Được sếp khen thăng chức",
+  "tu_khoa": [
+   "thăng chức",
+   "khen thưởng",
+   "sự nghiệp",
+   "công việc"
+  ],
+  "lo": 53
+ },
+ "the_cu_tru_sau_tot_nghiep": {
+  "ten": "Nhận thẻ cư trú mới sau tốt nghiệp",
+  "tu_khoa": [
+   "thẻ cư trú",
+   "tốt nghiệp",
+   "việc làm",
+   "lưu trú"
+  ],
+  "lo": 53
  }
 }
