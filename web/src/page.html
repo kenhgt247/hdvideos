@@ -219,9 +219,9 @@ details.opt>summary{font-weight:700;padding:12px 0;cursor:pointer;color:var(--bl
   </div>
   <div class="card only-self" id="cvCard">
     <h2>📝 Viết bình thường, AI chuyển thành kịch bản</h2>
-    <div class="hint">Cứ viết như nhắn tin hay viết bài Facebook, không cần lo định dạng. AI giữ nguyên ý và số liệu của bạn, chỉ chia cảnh, thêm câu mở, danh sách có hình, câu kết.</div>
+    <div class="hint">Dán toàn bộ bài viết của bạn. AI giữ đầy đủ nội dung và số liệu, chỉ chia cảnh, rút ngắn chữ trên màn hình và chỉnh lời đọc cho tự nhiên. Không giới hạn số cảnh theo video ngắn.</div>
     <textarea id="cvText" rows="6" style="min-height:0" placeholder="Ví dụ: Nhiều bạn hỏi đi Đài Loan cần chuẩn bị gì. Đầu tiên là hộ chiếu, học bạ, bằng tốt nghiệp. Bằng phải dịch rồi hợp pháp hoá. Sau đó khám sức khoẻ ở bệnh viện được chỉ định..."></textarea>
-    <div class="hint">Dùng Gemini miễn phí. Còn lỗi định dạng thì máy tự gửi lại cho Gemini sửa thêm.</div>
+    <div class="hint">Giữ đầy đủ lời đọc theo nội dung gốc. Video dài hay ngắn tùy bài viết. Nếu còn lỗi định dạng, AI chỉ sửa cách trình bày.</div>
     <button class="btn main" id="cvGo" style="margin-top:10px">🪄 CHUYỂN THÀNH KỊCH BẢN</button>
     <div class="hint" id="cvInfo"></div>
     <div id="cvSrc"></div>
@@ -658,7 +658,7 @@ function fixScript(t) {
   }
   return out.join('\n');
 }
-function checkScript(text) {
+function checkScript(text, preserve = false) {
   const E = [], W = [], lines = String(text || '').replace(/\r/g, '').split('\n');
   let scene = 0, lead = null, items = [], nScene = 0, hasList = false, secs = 0;
   const where = () => 'Cảnh ' + scene;
@@ -728,11 +728,11 @@ function checkScript(text) {
   });
   endList();
   if (nScene && nScene < 4) W.push('Kịch bản chỉ có ' + nScene + ' cảnh, hơi ngắn.');
-  if (nScene > 25) W.push('Kịch bản có ' + nScene + ' cảnh, dài quá (nên 8–14).');
+  if (!preserve && nScene > 25) W.push('Kịch bản có ' + nScene + ' cảnh, dài quá (nên 8–14).');
   const last = lines.filter(x => x.trim() && !/^\s*[-+]\s/.test(x)).pop() || '';
   if (nScene >= 4 && !/inbox|nhắn tin|liên hệ|hải dương/i.test(last)) W.push('Cảnh cuối nên mời inbox Du Học Hải Dương.');
   if (nScene >= 8 && !hasList) W.push('Nên có ít nhất 1 danh sách để máy vẽ hình theo lời đọc.');
-  if (secs > 75) W.push('Video dự kiến dài khoảng ' + Math.round(secs) + ' giây. TikTok/Reels đẹp nhất 20–35 giây, nên cắt bớt hoặc tách thành 2 video.');
+  if (!preserve && secs > 75) W.push('Video dự kiến dài khoảng ' + Math.round(secs) + ' giây. TikTok/Reels đẹp nhất 20–35 giây, nên cắt bớt hoặc tách thành 2 video.');
   const tail = lines.filter(x => x.trim()).slice(-2).join(' ');
   if (nScene >= 4 && !/\?|comment|bình luận|lưu|chia sẻ|share/i.test(tail)) W.push('Câu cuối nên rủ người xem bình luận hoặc lưu video (vd: "Bạn đang mắc lỗi số mấy? Comment nhé").');
   return { E, W, secs, nScene };
@@ -740,7 +740,7 @@ function checkScript(text) {
 function runCheck() {
   const t = $('script').value, box = $('chk');
   if (!t.trim()) { box.innerHTML = ''; return { E: [], W: [] }; }
-  const r = checkScript(t), fixed = fixScript(t), canFix = fixed !== t.trim();
+  const r = checkScript(t, TPL_USED === 'ai_convert'), fixed = fixScript(t), canFix = fixed !== t.trim();
   $('count').textContent = r.nScene + ' cảnh · khoảng ' + Math.max(1, Math.round(r.secs)) + ' giây';
   if (!r.E.length && !r.W.length && !canFix) box.innerHTML = '<div class="ok">✓ Kịch bản đúng định dạng</div>';
   else {
@@ -1046,7 +1046,7 @@ $('bHook').onclick = () => {
 
 
 /* ===== CHẾ ĐỘ & AI VIẾT KỊCH BẢN ===== */
-const tplName = k => k === 'ai_free' ? '⚡ AI viết nhanh' : k === 'ai_paid' ? '🔎 AI kiểm chứng' : (TPLS[k] ? TPLS[k].name : '');
+const tplName = k => k === 'ai_free' ? '⚡ AI viết nhanh' : k === 'ai_paid' ? '🔎 AI kiểm chứng' : k === 'ai_convert' ? '🪄 AI chuyển định dạng' : (TPLS[k] ? TPLS[k].name : '');
 function setMode(m) {
   document.body.classList.toggle('mode-ai', m === 'ai'); document.body.classList.toggle('mode-self', m !== 'ai');
   $('mAI').classList.toggle('on', m === 'ai'); $('mSelf').classList.toggle('on', m !== 'ai');
@@ -1191,16 +1191,22 @@ $('cfSave').onclick = async () => {
 
 /* ===== VÒNG TỰ SỬA: còn lỗi thì gửi lại Gemini kèm danh sách lỗi ===== */
 const SOFT = /Nên có ít nhất 1 danh sách|không có hình tên|hơi ngắn/;
-function issuesOf(text) { const r = checkScript(text); return [...r.E, ...r.W.filter(x => !SOFT.test(x))]; }
-async function autoFix(btn) {
-  const before = $('script').value, list = issuesOf(before);
+function narrationWords(text, formatted = false) {
+  const lines = String(text || '').split('\n');
+  const spoken = formatted ? lines.filter(l => !/^\s*[-+]\s/.test(l)).map(l => l.includes('||') ? l.split('||').slice(1).join(' ') : l).join(' ') : lines.join(' ');
+  return spoken.replace(/\[[^\]]*\]/g, '').split(/\s+/).filter(x => /[\p{L}\p{N}]/u.test(x)).length;
+}
+function issuesOf(text, preserve = false) { const r = checkScript(text, preserve); return [...r.E, ...r.W.filter(x => !SOFT.test(x) && (!preserve || !/Câu mở dài|Câu cuối nên|Cảnh cuối nên|Đừng mở đầu|Câu mở nên/.test(x)))]; }
+async function autoFix(btn, preserve = false) {
+  const before = $('script').value, list = issuesOf(before, preserve);
   if (!list.length) return 0;
   if (btn) btn.textContent = `🔧 Đang tự sửa ${list.length} lỗi...`;
   try {
     const d = await api('/api/ai/script', { task: 'fix', content: before, issues: list, mode: 'free', by: $('by').value });
     const after = fixScript(d.script);
-    const left = issuesOf(after);
-    if (left.length < list.length) { $('script').value = after; afterEdit(); return list.length - left.length; }
+    const left = issuesOf(after, preserve);
+    if (preserve && narrationWords(after, true) < narrationWords(before, true) * 0.97) return 0;
+    if (left.length < list.length && $('script').value === before) { $('script').value = after; afterEdit(); return list.length - left.length; }
   } catch (e) { /* giữ bản cũ */ }
   return 0;
 }
@@ -1220,14 +1226,20 @@ async function aiConvert(content, mode, btn, label, info) {
   let sec = 0; const tick = setInterval(() => { sec++; btn.textContent = `⏳ AI đang chuyển... ${sec}s`; }, 1000);
   try {
     const d = await api('/api/ai/script', { task: 'convert', content, mode, by: $('by').value });
-    $('script').value = fixScript(d.script);
+    const converted = fixScript(d.script);
+    const inputWords = narrationWords(content, btn.id === 'bFixAi');
+    const outputWords = narrationWords(converted, true);
+    if (inputWords >= 80 && outputWords < inputWords * 0.9) {
+      throw new Error('AI đã rút ngắn quá nhiều (' + outputWords + '/' + inputWords + ' chữ). Nội dung gốc vẫn được giữ. Hãy thử chuyển lại hoặc chia bài thành các phần.');
+    }
+    $('script').value = converted;
     if (!$('name').value.trim()) $('name').value = ($('script').value.split('\n')[0] || '').split('||')[0].replace(/\[[^\]]*\]/g, '').replace(/\s\/\s/g, ' ').replace(/\*/g, '').trim().slice(0, 50);
-    TPL_USED = 'ai_' + mode; store.set('tpl_used', TPL_USED);
+    TPL_USED = 'ai_convert'; store.set('tpl_used', TPL_USED);
     afterEdit();
     if (info) info.textContent = d.limit ? `Đã dùng ${d.used}/${d.limit} lượt hôm nay.` : '';
     if (d.caption) showAiSources({ ...d, sources: [], mode: 'convert' }, document.body.classList.contains('mode-ai') ? $('aiSrc') : $('cvSrc'));
     clearInterval(tick);
-    const fixed = await autoFix(btn);
+    const fixed = await autoFix(btn, true);
     if (fixed) toast('Đã tự sửa thêm ' + fixed + ' lỗi định dạng', 2500);
     const r = runCheck();
     $('scriptCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
