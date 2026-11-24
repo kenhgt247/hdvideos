@@ -2439,5 +2439,45 @@
    "tôn trọng"
   ],
   "lo": 66
+ },
+ "dong_ho_cat_sap_het": {
+  "ten": "Đồng hồ cát sắp hết",
+  "tu_khoa": [
+   "đồng hồ cát",
+   "hết giờ",
+   "thời gian",
+   "gấp rút"
+  ],
+  "lo": 59
+ },
+ "lich_khoanh_han_chot": {
+  "ten": "Lịch khoanh đỏ hạn chót",
+  "tu_khoa": [
+   "hạn chót",
+   "lịch",
+   "deadline",
+   "ngày hẹn"
+  ],
+  "lo": 59
+ },
+ "tiec_nuoi_vi_tre_han": {
+  "ten": "Tiếc nuối vì trễ hạn",
+  "tu_khoa": [
+   "trễ hạn",
+   "tiếc nuối",
+   "lỡ hẹn",
+   "buồn bã"
+  ],
+  "lo": 59
+ },
+ "len_ke_hoach_giay_lon": {
+  "ten": "Lên kế hoạch trên tờ giấy lớn",
+  "tu_khoa": [
+   "lên kế hoạch",
+   "lộ trình",
+   "từng bước",
+   "chuẩn bị"
+  ],
+  "lo": 59
  }
 }
