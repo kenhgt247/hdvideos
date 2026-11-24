@@ -181,6 +181,17 @@ Bạn đang được phần mềm gọi tự động, không có người chat v
 - Trả lời đúng 3 phần của PHẦN C: (1) MỘT khối \`\`\` chỉ chứa kịch bản, (2) CAPTION, (3) NGUỒN.
 - Mỗi video 1 điểm kiến thức, 8–12 dòng cảnh, lời đọc tổng khoảng 60–100 chữ.
 - Nếu THÔNG TIN THÊM có số liệu của trung tâm thì dùng đúng, không sửa.`;
+const AI_LENGTHS = Object.freeze({
+  quick: '30–60 giây, khoảng 65–140 chữ lời đọc, một điểm kiến thức',
+  short: '1–3 phút, khoảng 140–420 chữ lời đọc, giải thích có ví dụ',
+  medium: '3–10 phút, khoảng 420–1400 chữ lời đọc, phân tích nhiều khía cạnh',
+  long: '10–15 phút, khoảng 1400–2100 chữ lời đọc, bài giảng hoặc chuyên đề có trình tự',
+});
+const AI_CONVERT_TIMED = `
+- CHUYỂN bài viết thành kịch bản theo thời lượng người dùng đã chọn. Được biên tập, chọn lọc ý chính để phù hợp với thời lượng; giữ đúng các số liệu, điều kiện và lời khuyên thiết yếu, không thêm hoặc bịa thông tin.
+- Nếu bài gốc ngắn hơn thời lượng mong muốn, không lặp ý hoặc tự thêm dữ kiện để kéo dài.
+- Viết chữ màn hình ngắn, lời đọc tự nhiên; tách cảnh dài thành nhiều cảnh. Chữ Trung/Hàn chuyển sang phiên âm và giải nghĩa tiếng Việt.
+- Phần NGUỒN ghi "Nội dung do người dùng cung cấp".`;
 const AI_FREE = `
 - Bạn KHÔNG có công cụ tra web. TUYỆT ĐỐI không viết con số, mức phí, mốc thời gian, số tháng, điều kiện visa, quy định cụ thể nào (trừ khi có trong THÔNG TIN THÊM). Chỉ chia sẻ kinh nghiệm và kiến thức chung, ví dụ "tùy trường", "xem thông báo mới nhất".
 - Phần NGUỒN ghi đúng: "Chưa kiểm chứng trên web".`;
@@ -710,6 +721,7 @@ export default {
         const b = await req.json();
         const fix = b.task === 'fix';
         const convert = b.task === 'convert' || fix;
+        const duration = fix ? 'full' : Object.prototype.hasOwnProperty.call(AI_LENGTHS, b.duration) ? b.duration : convert ? 'full' : 'quick';
         const content = String(b.content || '').trim();
         if (convert && content.length > 12000) return err('Nội dung dài hơn 12.000 ký tự. Hãy chia thành các phần để AI không bỏ sót nội dung.');
         const issues = (Array.isArray(b.issues) ? b.issues : []).slice(0, 12).map(x => String(x).slice(0, 200));
@@ -728,8 +740,11 @@ export default {
         const used = (((data.use || {})[today()] || {})[who] || {})[mode] || 0;
         const limit = cfg[mode];
         if (!admin && !fix && used >= limit) return err(`Bạn đã dùng hết ${limit} lượt "${mode === 'paid' ? 'Viết có kiểm chứng' : 'Viết nhanh'}" hôm nay. Mai dùng tiếp, hoặc nhờ admin tăng giới hạn.`, 429);
-        const common = convert ? AI_COMMON.replace('- Mỗi video 1 điểm kiến thức, 8–12 dòng cảnh, lời đọc tổng khoảng 60–100 chữ.', '- Không giới hạn tổng số cảnh hoặc thời lượng; ưu tiên giữ đầy đủ lời đọc và ý của nội dung được cung cấp.') : AI_COMMON;
-        const sys = (await chatgptPrompt(env)) + common + (fix ? AI_FIX : convert ? AI_CONVERT : mode === 'paid' ? AI_PAID : AI_FREE);
+        const common = AI_COMMON.replace('- Mỗi video 1 điểm kiến thức, 8–12 dòng cảnh, lời đọc tổng khoảng 60–100 chữ.', '- Số cảnh và tổng lời đọc tuân theo chế độ thời lượng ở cuối câu lệnh.');
+        const durationRule = duration === 'full'
+          ? '\n- CHẾ ĐỘ GIỮ NGUYÊN: Không áp dụng bất kỳ giới hạn tổng số cảnh, tổng số chữ, một điểm kiến thức hoặc thời lượng video ngắn nào ở trên. Giữ nội dung đầy đủ.'
+          : '\n- THỜI LƯỢNG ĐƯỢC CHỌN (ưu tiên hơn giới hạn video ngắn ở trên): ' + AI_LENGTHS[duration] + '. Không ép 8–14 hoặc 15–25 cảnh, không giới hạn 60–100 chữ. Chia số cảnh linh hoạt theo lời đọc. Không cố kéo dài khi thiếu thông tin đáng tin cậy.';
+        const sys = (await chatgptPrompt(env)) + common + (fix ? AI_FIX : convert ? (duration === 'full' ? AI_CONVERT : AI_CONVERT_TIMED) : mode === 'paid' ? AI_PAID : AI_FREE) + durationRule;
         const user = fix ? `KỊCH BẢN CẦN SỬA:\n\`\`\`\n${content}\n\`\`\`\n\nCÁC LỖI CẦN SỬA:\n${issues.map((x, i) => (i + 1) + '. ' + x).join('\n')}`
           : convert ? `NỘI DUNG CỦA TÔI (chuyển thành kịch bản, giữ nguyên ý và số liệu):\n${content}`
           : `CHỦ ĐỀ: ${topic}` + (extra ? `\n\nTHÔNG TIN THÊM (của trung tâm, dùng đúng như vậy):\n${extra}` : '');
@@ -737,7 +752,7 @@ export default {
         try { out = mode === 'paid' ? await aiClaude(env, sys, user, !convert) : await aiGemini(env, sys, user); }
         catch (e) { return err(String(e.message || e), 502); }
         const res = parseAi(out.text);
-        if (convert && res.script.length > 20000) return err('Kịch bản vượt giới hạn 20.000 ký tự của bộ dựng. Hãy chia bài thành các phần.', 422);
+        if (res.script.length > 20000) return err('Kịch bản vượt giới hạn 20.000 ký tự của bộ dựng. Hãy chia bài thành các phần.', 422);
         if (!res.script) return err('AI chưa viết được kịch bản, hãy thử lại hoặc đổi cách nói chủ đề.', 502);
         const urls = [...res.srcTxt.matchAll(/https?:\/\/[^\s)\]]+/g)].map(x => ({ url: x[0], title: '' }));
         const sources = [...out.sources];
@@ -746,7 +761,7 @@ export default {
           const rec = aiRecord(env, admin ? 'admin' : who, mode);
           if (ctx && ctx.waitUntil) ctx.waitUntil(rec); else await rec;
         }
-        return json({ script: res.script, caption: res.caption, sources: convert ? [] : sources.slice(0, 8), mode, convert,
+        return json({ script: res.script, caption: res.caption, sources: convert ? [] : sources.slice(0, 8), mode, convert, duration,
           verified: !convert && mode === 'paid' && sources.length > 0, used: used + 1, limit: admin ? null : limit });
       }
       if (p === '/api/names') {
