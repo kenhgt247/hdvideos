@@ -245,6 +245,7 @@ details.opt>summary{font-weight:700;padding:12px 0;cursor:pointer;color:var(--bl
       <button class="btn sm" id="bHook">💡 Gợi ý câu mở</button>
       <button class="btn sm only-self" id="bSample">Ví dụ</button>
       <button class="btn sm red" id="bClear">Xoá</button>
+      <button class="btn sm hide" id="bRestoreDraft" type="button">↶ Dùng lại kịch bản vừa gửi</button>
     </div>
     <textarea id="script" placeholder="Mỗi dòng là một cảnh.&#10;Chữ trên màn hình / dòng 2 || lời đọc đầy đủ&#10;- gạch đầu dòng&#10;[vẽ: tên hình]"></textarea>
     <div class="ins">
@@ -1270,11 +1271,49 @@ function swapHook(script, hook) {
   ls[i] = hook.trim() + (tags ? ' ' + tags : '');
   return ls.join('\n');
 }
+function submittedDraftSnapshot() {
+  return { script: $('script').value, name: $('name').value, tpl: TPL_USED,
+    topic: $('aiTopic').value, extra: $('aiExtra').value, content: $('cvText').value,
+    abHook: $('abBox').classList.contains('hide') ? '' : $('abHook').value };
+}
+function updateRestoreDraftButton() {
+  $('bRestoreDraft').classList.toggle('hide', !store.get('last_submitted_draft', null)?.script);
+}
+function clearSubmittedDraft() {
+  $('script').value = ''; $('name').value = ''; TPL_USED = ''; store.set('tpl_used', '');
+  $('aiTopic').value = ''; store.set('ai_topic', '');
+  $('aiExtra').value = '';
+  $('cvText').value = ''; store.set('cv_text', '');
+  ['aiSrc', 'cvSrc', 'aiInfo', 'cvInfo', 'hookBox'].forEach(id => { $(id).textContent = ''; });
+  $('abOff').onclick();
+  $('pvCard').classList.add('hide'); $('kpCard').classList.add('hide');
+  clearTimeout(pvTimer); PV = null; kpTarget = -1;
+  afterEdit();
+}
+$('bRestoreDraft').onclick = () => {
+  const d = store.get('last_submitted_draft', null);
+  if (!d || !d.script) return;
+  if ($('script').value.trim() && !confirm('Thay kịch bản đang viết bằng kịch bản vừa gửi?')) return;
+  clearSubmittedDraft();
+  $('script').value = d.script; $('name').value = d.name || '';
+  TPL_USED = d.tpl || ''; store.set('tpl_used', TPL_USED);
+  $('aiTopic').value = d.topic || ''; store.set('ai_topic', $('aiTopic').value);
+  $('aiExtra').value = d.extra || '';
+  $('cvText').value = d.content || ''; store.set('cv_text', $('cvText').value);
+  if (d.abHook) {
+    $('abHook').value = d.abHook;
+    $('abBox').classList.remove('hide'); $('abOn').classList.add('hide');
+  }
+  afterEdit(); toast('Đã lấy lại kịch bản vừa gửi');
+};
+updateRestoreDraftButton();
 async function makeVideo() {
+  if ($('bGo').disabled) return;
   const script = $('script').value.trim();
   if (!script) { toast('Hãy dán kịch bản trước'); return; }
   if (!gateCheck()) return;
   const body = jobBody(false), name = body.name;
+  const submittedDraft = submittedDraftSnapshot();
   const bHook = !$('abBox').classList.contains('hide') ? $('abHook').value.trim() : '';
   const bodies = [body];
   if (bHook) {
@@ -1288,7 +1327,14 @@ async function makeVideo() {
       const d = await api('/api/jobs', bd);
       const jobs = store.get('jobs', []); jobs.unshift({ id: d.id, name: bd.name, t: Date.now() }); store.set('jobs', jobs.slice(0, 10));
     }
-    toast(bodies.length > 1 ? 'Đã gửi 2 bản A và B!' : 'Đã gửi! Video đang được dựng.');
+    // Chỉ dọn bản nháp sau khi mọi lệnh dựng (kể cả A/B) được máy chủ chấp nhận.
+    // Nếu người dùng đã bắt đầu chỉnh nội dung khác trong lúc gửi, giữ nguyên nội dung mới.
+    store.set('last_submitted_draft', { ...submittedDraft, name });
+    updateRestoreDraftButton();
+    const unchanged = JSON.stringify(submittedDraftSnapshot()) === JSON.stringify(submittedDraft);
+    if (unchanged) clearSubmittedDraft();
+    toast(unchanged ? 'Đã gửi dựng video! Bạn có thể viết kịch bản mới.' :
+      bodies.length > 1 ? 'Đã gửi 2 bản A và B!' : 'Đã gửi! Video đang được dựng.');
     renderJobs(); pollJobs(); window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) { toast(e.message, 5000); }
   $('bGo').disabled = false; $('bGo').textContent = 'TẠO VIDEO';
