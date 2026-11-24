@@ -2039,5 +2039,85 @@
    "nhớ nhà"
   ],
   "lo": 54
+ },
+ "tu_van_vien_livestream": {
+  "ten": "Tư vấn viên livestream trả lời câu hỏi",
+  "tu_khoa": [
+   "livestream",
+   "tư vấn trực tuyến",
+   "giải đáp",
+   "tuyển sinh"
+  ],
+  "lo": 55
+ },
+ "hoc_sinh_dang_ky_dien_thoai": {
+  "ten": "Học sinh đăng ký trên điện thoại",
+  "tu_khoa": [
+   "đăng ký",
+   "điện thoại",
+   "hồ sơ",
+   "trực tuyến"
+  ],
+  "lo": 55
+ },
+ "le_xuat_canh_tap_the": {
+  "ten": "Lễ xuất cảnh tập thể nhiều học sinh",
+  "tu_khoa": [
+   "xuất cảnh",
+   "sân bay",
+   "du học sinh",
+   "tập thể"
+  ],
+  "lo": 55
+ },
+ "tu_van_vien_goi_video_ho_tro": {
+  "ten": "Tư vấn viên gọi video hỗ trợ học sinh ở nước ngoài",
+  "tu_khoa": [
+   "gọi video",
+   "hỗ trợ",
+   "du học sinh",
+   "tư vấn"
+  ],
+  "lo": 55
+ },
+ "tu_van_vien_chi_tay_sang_ben": {
+  "ten": "Tư vấn viên chỉ tay sang bên",
+  "tu_khoa": [
+   "chỉ tay",
+   "giải thích",
+   "tư vấn viên",
+   "hướng dẫn"
+  ],
+  "lo": 56
+ },
+ "tu_van_vien_gio_ngon_tro_canh_bao": {
+  "ten": "Tư vấn viên giơ ngón trỏ cảnh báo",
+  "tu_khoa": [
+   "cảnh báo",
+   "ngón trỏ",
+   "lưu ý",
+   "tư vấn viên"
+  ],
+  "lo": 56
+ },
+ "tu_van_vien_cam_bang_trang": {
+  "ten": "Tư vấn viên cầm bảng trắng trống",
+  "tu_khoa": [
+   "bảng trắng",
+   "minh họa",
+   "trình bày",
+   "tư vấn viên"
+  ],
+  "lo": 56
+ },
+ "tu_van_vien_mim_cuoi_chao": {
+  "ten": "Tư vấn viên mỉm cười chào",
+  "tu_khoa": [
+   "vẫy tay",
+   "chào hỏi",
+   "mỉm cười",
+   "tư vấn viên"
+  ],
+  "lo": 56
  }
 }
