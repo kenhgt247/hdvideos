@@ -465,6 +465,14 @@ export default {
         await putFile(env, 'engine/assets/logo.png', b.data, 'Đổi logo');
         return json({ ok: true });
       }
+      if (p === '/api/names') {
+        const [hv, kho] = await Promise.all([
+          gh(env, '/contents/engine/TEN_HINH.txt', { headers: { accept: 'application/vnd.github.raw' } }).then(r => r.ok ? r.text() : ''),
+          listDir(env, 'engine/assets/kho'),
+        ]);
+        const khoNames = kho.filter(x => x.name.endsWith('.png') && !x.name.startsWith('_')).map(x => x.name.slice(0, -4).replace(/_/g, ' '));
+        return json({ hv: hv.split('\n').map(s => s.trim()).filter(Boolean), kho: khoNames });
+      }
       if (p === '/api/text') {
         const f = { chatgpt: 'engine/LENH_CHATGPT.txt', anh: 'engine/KHO_HINH_CAU_LENH.txt', luoi: 'engine/KHO_HINH_LUOI.txt' }[url.searchParams.get('f')];
         if (!f) return err('Không có');

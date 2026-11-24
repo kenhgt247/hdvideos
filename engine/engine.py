@@ -1072,7 +1072,7 @@ def _wrap_words(words, maxc=22):
 def split_display(sentence, maxc=22, maxlines=4):
     """Cắt 1 câu nói thành vài dòng chữ ngắn để hiện trên màn hình."""
     s = sentence.strip()
-    parts = [x.strip() for x in re.findall(r'[^,.;:!?…]+[,.;:!?…]*', s)] or [s]
+    parts = [x.strip() for x in re.findall(r'(?:\d[.,:]\d|[^,.;:!?…])+[,.;:!?…]*', s)] or [s]
     # gộp mẩu quá ngắn vào mẩu kế tiếp
     chunks = []
     for part in parts:
@@ -1091,6 +1091,7 @@ def split_display(sentence, maxc=22, maxlines=4):
     return lines
 
 
+PLACEHOLDER_RE = re.compile(r'^(so lieu|can kiem tra|chua kiem chung|dien|\.\.\.|x+|\?+)\b')
 KEEP_TAGS = ('tiep', 'giu bang', 'giu', 'tiep bang', 'noi tiep')
 FLOW_RE = re.compile(r'\s*(?:→|->|=>|⇒)\s*')
 
@@ -1105,6 +1106,21 @@ def flow_say(steps):
     return ' '.join(out)
 
 
+AUTO_LIST_RE = re.compile(r'^\s*([^:]*[^\W\d_][^:]{0,40}?)\s*:\s+(.+?)\s*[.!]?\s*$')
+
+
+def auto_list(show):
+    """'Lead: a, b và c' (2–5 mục ngắn) -> (lead, [A, B, C]); không khớp thì None."""
+    m = AUTO_LIST_RE.match(show)
+    if not m or ' / ' in show:
+        return None
+    parts = [x.strip(' .') for x in re.split(r'\s*,\s*|\s+(?:và|hoặc|với)\s+', m.group(2)) if x.strip(' .')]
+    if not 2 <= len(parts) <= 5 or len(m.group(1).split()) > 6 or any(
+            len(x.split()) > 4 or len(x) > 22 or re.search(r'\d', x) for x in parts):
+        return None
+    return m.group(1).strip(), [x[:1].upper() + x[1:] for x in parts]
+
+
 def parse_simple(text):
     """Kiểu viết đơn giản: mỗi dòng = 1 cảnh, app đọc nguyên câu và tự cắt chữ hiện lên màn hình.
     Dòng bắt đầu bằng '- ' thuộc cảnh ngay trên (gạch đầu dòng).
@@ -1115,15 +1131,20 @@ def parse_simple(text):
         if not line:
             continue
         tags = [norm(t) for t in TAG.findall(line)]
+        bad = [t for t in tags if PLACEHOLDER_RE.match(t)]
+        if bad:
+            raise VideoError('Kịch bản còn chỗ chưa điền: [%s] ở dòng "%s". Hãy thay bằng thông tin đã kiểm chứng '
+                             'hoặc xoá câu đó.' % (TAG.findall(line)[tags.index(bad[0])], line[:60]))
         noicon = any(t in ('khong hinh', 've: khong', 've:khong', 've: -') for t in tags)
         body = TAG.sub('', line).strip()
         icon_tags = [t for t in tags if t.startswith('ve:') or t.startswith('ve :')]
         tags = [t for t in tags if t not in icon_tags]
         icon_tags = [t for t in icon_tags if icon_known(t.split(':', 1)[1].strip())]
         if body[:2] in ('- ', '+ ') and scenes:
-            item = body[2:].strip()
+            item = body[2:].strip().rstrip('.,;')
             scenes[-1]['lines'].append(('- ' + item, tags + icon_tags))
-            scenes[-1]['say'].append(item + ',')
+            if not scenes[-1].get('own_say'):      # dòng dẫn đã có '|| lời đọc' thì không đọc lặp lại từng mục
+                scenes[-1]['say'].append(item + ',')
             scenes[-1]['src'].append(line)
             continue
         if not body and tags:
@@ -1134,6 +1155,16 @@ def parse_simple(text):
         keep = any(t in KEEP_TAGS for t in tags)  # [tiếp]: cảnh trước thu nhỏ lên trên, vẽ tiếp bên dưới
         tags = [t for t in tags if t not in KEEP_TAGS]
         show_part = body.split('||', 1)[0]
+        auto = auto_list(show_part)
+        if auto and not FLOW_RE.search(show_part):   # 'Hồ sơ gồm: hộ chiếu, học bạ, ảnh thẻ' -> danh sách có hình
+            lead, items = auto
+            say = body.split('||', 1)[1].strip() if '||' in body else (lead + ' ' + ', '.join(i[:1].lower() + i[1:] for i in items[:-1]) + ' và ' + items[-1][:1].lower() + items[-1][1:] + '.')
+            sc = {'title': '', 'lines': [('', [t]) for t in icon_tags] + [(lead + ':', tags)], 'say': [say], 'src': [line],
+                  'noicon': noicon, 'keep': keep, 'own_say': True}
+            for it in items:
+                sc['lines'].append(('- ' + it, []))
+            scenes.append(sc)
+            continue
         if FLOW_RE.search(show_part):             # sơ đồ: A → B → C
             steps = [x.strip() for x in FLOW_RE.split(show_part) if x.strip()]
             say = body.split('||', 1)[1].strip() if '||' in body else flow_say(steps)
@@ -1148,7 +1179,7 @@ def parse_simple(text):
             say = body
             shown = split_display(body)
         sc = {'title': '', 'lines': [('', [t]) for t in icon_tags], 'say': [say], 'src': [line], 'noicon': noicon,
-              'keep': keep}
+              'keep': keep, 'own_say': '||' in body}
         for i, t in enumerate(shown):
             sc['lines'].append((t, tags if i == len(shown) - 1 else []))
         scenes.append(sc)
@@ -1186,7 +1217,7 @@ def clean_pasted(text):
             if k >= 0:
                 line = (line[:k] + line[k + 1:]).strip()
         low = norm(line)
-        if re.match(r'^(caption|hashtag|ghi chu|luu y|kich ban)\s*[:：]', low):
+        if re.match(r'^(caption|hashtag|nguon|kich ban)\s*[:：]', low) and '||' not in line:
             continue
         if line:
             out.append(line)

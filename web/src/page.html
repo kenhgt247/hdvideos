@@ -140,6 +140,17 @@ body:not(.admin) .adm{display:none!important}
 body.admin .staff{display:none!important}
 details summary{cursor:pointer;color:var(--blue);font-weight:600;font-size:14px;margin-top:10px}
 pre.fmt{white-space:pre-wrap;font-size:13px;background:#fafbfe;border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0 0}
+.chk{margin-top:8px;border-radius:10px;font-size:13.5px;line-height:1.45}
+.chk:empty{display:none}
+.chk .ok{background:#e8f6ec;color:#1d6b35;padding:8px 10px;border-radius:10px}
+.chk .box{background:#fff6f0;border:1px solid #f3c9a8;padding:8px 10px;border-radius:10px}
+.chk .e{color:#c0392b}.chk .w{color:#a15c00}
+.chk ul{margin:4px 0 0;padding-left:18px}.chk li{margin:2px 0}
+.chk .src{background:#eef4ff;border:1px solid #c9d8f5;padding:8px 10px;border-radius:10px;margin-top:8px;word-break:break-word}
+.chk .src a{color:#1f5fbf}
+.ins{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.ins .btn{flex:1 1 auto;min-width:0}
+.ins select{flex:1 1 100%;padding:10px;border-radius:10px;border:1px solid var(--line,#ddd);font-size:15px;background:#fff}
 </style>
 </head>
 <body>
@@ -176,19 +187,31 @@ pre.fmt{white-space:pre-wrap;font-size:13px;background:#fafbfe;border:1px solid 
       <button class="btn sm red" id="bClear">Xoá</button>
     </div>
     <textarea id="script" placeholder="Mỗi dòng là một cảnh.&#10;Chữ trên màn hình / dòng 2 || lời đọc đầy đủ&#10;- gạch đầu dòng&#10;[vẽ: tên hình]"></textarea>
+    <div class="ins">
+      <button class="btn sm" id="iList" type="button">＋ Liệt kê</button>
+      <button class="btn sm" id="iFlow" type="button">＋ Các bước</button>
+      <button class="btn sm" id="iKeep" type="button">↪ Nối tiếp</button>
+      <select id="iImg"><option value="">🖼 Chèn hình vào dòng đang viết…</option></select>
+    </div>
     <div class="hint" id="count">0 cảnh</div>
+    <div class="chk" id="chk"></div>
     <details><summary>Cách viết kịch bản</summary>
-<pre class="fmt">• Mỗi dòng = 1 cảnh.
-• Chữ ngắn trên màn hình, lời đọc dài hơn:
-  Trống 2 năm / du học Hàn được không? || Tốt nghiệp được hai năm rồi có đi được không?
-• " / " (có cách 2 bên) = xuống dòng chữ.
-• Dòng bắt đầu bằng "- " = gạch đầu dòng.
-• [vẽ: tiền]  [vẽ: hộ chiếu mở] = chọn hình minh hoạ.
-• Gạch đầu dòng ngắn (Hộ chiếu, Học bạ...) → máy tự vẽ hình cho từng ý, đúng lúc lời đọc nhắc tới.
-• Các bước nối bằng → thành sơ đồ:  Nộp hồ sơ → Phỏng vấn → Nhận visa
-• Thêm [tiếp] cuối dòng = vẽ tiếp trên bảng cũ (cảnh trước thu nhỏ lên trên).
-• Không cần tô màu: máy tự tô số đỏ, từ khoá xanh, gạch chân ý chính.
-Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi chủ đề, rồi copy kịch bản về dán vào đây.</pre>
+<pre class="fmt">VIẾT TAY RẤT ĐƠN GIẢN — mỗi dòng 1 câu = 1 cảnh:
+Du học Đài Loan cần chuẩn bị gì?
+Hồ sơ gồm: hộ chiếu, học bạ, ảnh thẻ và sổ tiết kiệm
+Nộp hồ sơ → Phỏng vấn → Nhận visa
+Inbox Du Học Hải Dương để được tư vấn nhé!
+
+• Câu thường: máy tự cắt chữ lên bảng và tự chọn hình.
+• Liệt kê "Tên: a, b và c" (2–5 mục ngắn) → máy vẽ danh sách, mỗi mục 1 hình, hiện đúng lúc đọc.
+• Các bước nối bằng → (hoặc gõ ->) → máy vẽ sơ đồ mũi tên.
+• Muốn chọn hình: đặt con trỏ vào dòng rồi chọn ở ô "Chèn hình".
+• ↪ Nối tiếp: viết tiếp trên bảng cũ thay vì xoá bảng.
+
+NÂNG CAO (không bắt buộc):
+• Chữ trên bảng ngắn hơn lời đọc:  chữ ngắn / dòng 2 || lời đọc đầy đủ
+• Dưới ô có dòng xanh "✓ đúng định dạng" là được; có chữ đỏ thì sửa theo gợi ý hoặc bấm "Tự sửa".
+• Đừng để ngoặc vuông kiểu [số liệu] — máy sẽ không cho tạo video.</pre>
     </details>
   </div>
 
@@ -432,27 +455,26 @@ function countScenes() {
   $('count').textContent = n + ' cảnh';
 }
 countScenes();
-$('script').addEventListener('input', () => { countScenes(); store.set('draft', $('script').value); });
+$('script').addEventListener('input', () => afterEdit());
 
 $('bPaste').onclick = async () => {
-  try { const t = await navigator.clipboard.readText(); if (!t) throw 0; $('script').value = cleanPasted(t); countScenes(); store.set('draft', $('script').value); toast('Đã dán kịch bản'); }
+  try { const t = await navigator.clipboard.readText(); if (!t) throw 0; takePasted(t); toast('Đã dán kịch bản'); }
   catch { $('script').focus(); toast('Hãy nhấn giữ vào ô kịch bản rồi chọn Dán'); }
 };
 function cleanPasted(t) {
   const m = t.match(/```[a-zA-Z]*\n([\s\S]*?)```/);
   return (m ? m[1] : t).replace(/\r/g, '').trim();
 }
-$('bClear').onclick = () => { if (!$('script').value || confirm('Xoá kịch bản đang viết?')) { $('script').value = ''; $('name').value = ''; countScenes(); store.set('draft', ''); } };
+$('bClear').onclick = () => { if (!$('script').value || confirm('Xoá kịch bản đang viết?')) { $('script').value = ''; $('name').value = ''; afterEdit(); } };
 $('bSample').onclick = () => {
   if ($('script').value.trim() && !confirm('Thay kịch bản đang viết bằng kịch bản mẫu?')) return;
-  $('script').value = `Hồ sơ du học Đài Loan / cần những gì? || Hồ sơ du học Đài Loan gồm những gì, chuẩn bị sao cho nhanh? [vẽ: bộ hồ sơ xếp chồng]
-Giấy tờ cá nhân: || Đầu tiên là giấy tờ cá nhân: hộ chiếu, học bạ và ảnh thẻ.
-- Hộ chiếu
-- Học bạ
-- Ảnh thẻ
-Chứng minh tài chính / là phần quan trọng nhất || Chứng minh tài chính là phần quan trọng nhất, cần có sổ tiết kiệm. [vẽ: ống tiết kiệm]
-Dịch thuật → Công chứng → Nộp hồ sơ → Phỏng vấn || Quy trình là dịch thuật, công chứng, nộp hồ sơ rồi phỏng vấn.
-Inbox Du Học Hải Dương / để nhận checklist! || Inbox Du Học Hải Dương để nhận checklist hồ sơ đầy đủ nhé!`;
+  $('script').value = `Hồ sơ visa Đài Loan cần lưu ý gì?
+Hồ sơ cá nhân gồm: hộ chiếu, học bạ và ảnh thẻ
+Bằng cấp phải được dịch và hợp pháp hoá, không chỉ dịch là xong. [vẽ: bộ hồ sơ xếp chồng]
+Dịch tư pháp → Sở Ngoại vụ → Nộp hồ sơ
+Giấy khám sức khoẻ phải khám ở bệnh viện được chỉ định. [vẽ: tích]
+Phí visa tại Văn phòng Đài Bắc nộp bằng đô la Mỹ. [tiếp]
+Inbox Du Học Hải Dương để nhận checklist hồ sơ đầy đủ nhé!`;
   $('name').value = 'Hồ sơ du học Đài Loan'; countScenes(); store.set('draft', $('script').value);
 };
 $('bPrompt').onclick = () => copyFile('chatgpt', 'Đã copy câu lệnh. Mở ChatGPT, dán vào rồi gửi chủ đề video.');
@@ -465,6 +487,178 @@ async function copyFile(f, msg) {
     toast(await copyText(textCache[f]) ? msg : 'Không copy được, hãy thử lại');
   } catch { toast('Không tải được câu lệnh'); }
 }
+
+
+/* ===== KIỂM TRA KỊCH BẢN ===== */
+const vnNorm = x => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'd').toLowerCase().replace(/[_\s]+/g, ' ').trim();
+let NAMES = null;
+fetch('/api/names').then(r => r.ok ? r.json() : null).then(d => {
+  if (!d) return;
+  NAMES = new Set([...d.hv, ...d.kho].map(vnNorm)); runCheck();
+  const sel = $('iImg');
+  [['Ảnh trong kho', d.kho], ['Hình máy vẽ', d.hv]].forEach(([lab, arr]) => {
+    const g = document.createElement('optgroup'); g.label = lab;
+    [...arr].sort((x, y) => x.localeCompare(y, 'vi')).forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; g.appendChild(o); });
+    sel.appendChild(g);
+  });
+}).catch(() => {});
+function curLine() {
+  const ta = $('script'), v = ta.value, p = ta.selectionStart ?? v.length;
+  const a = v.lastIndexOf('\n', p - 1) + 1, b0 = v.indexOf('\n', p), b = b0 < 0 ? v.length : b0;
+  return { ta, v, a, b, text: v.slice(a, b) };
+}
+function setLine(c, text) {
+  c.ta.value = c.v.slice(0, c.a) + text + c.v.slice(c.b);
+  const end = c.a + text.length; c.ta.focus(); c.ta.setSelectionRange(end, end); afterEdit();
+}
+function addLine(text, selFrom, selTo) {
+  const c = curLine(), ta = c.ta;
+  let at, pre;
+  if (!c.v.trim()) { at = 0; pre = ''; ta.value = text; }
+  else if (!c.text.trim()) { at = c.a; pre = ''; ta.value = c.v.slice(0, c.a) + text + c.v.slice(c.b); }
+  else { at = c.b + 1; pre = '\n'; ta.value = c.v.slice(0, c.b) + '\n' + text + c.v.slice(c.b); }
+  ta.focus(); ta.setSelectionRange(at + selFrom, at + selTo); afterEdit();
+}
+$('iList').onclick = () => { const t = 'Hồ sơ gồm: hộ chiếu, học bạ và ảnh thẻ'; addLine(t, 0, t.length); toast('Sửa lại tiêu đề và các mục (2–5 mục, cách nhau dấu phẩy)', 3500); };
+$('iFlow').onclick = () => { const t = 'Nộp hồ sơ → Phỏng vấn → Nhận visa'; addLine(t, 0, t.length); toast('Sửa lại các bước, giữ dấu → giữa các bước', 3500); };
+$('iKeep').onclick = () => {
+  const c = curLine();
+  if (!c.text.trim()) { toast('Đặt con trỏ vào dòng muốn nối tiếp trước'); return; }
+  if (/\[tiếp\]/i.test(c.text)) { toast('Dòng này đã có [tiếp]'); return; }
+  setLine(c, c.text.replace(/\s+$/, '') + ' [tiếp]'); toast('Cảnh này sẽ viết tiếp trên bảng cũ');
+};
+$('iImg').onchange = e => {
+  const n = e.target.value; e.target.value = '';
+  if (!n) return;
+  const c = curLine();
+  if (!c.text.trim()) { toast('Đặt con trỏ vào dòng muốn thêm hình trước'); return; }
+  setLine(c, c.text.replace(/\s*\[v[ẽe]\s*:[^\]]*\]/gi, '').replace(/\s+$/, '') + ' [vẽ: ' + n + ']'); toast('Đã thêm hình: ' + n);
+};
+const KNOWN_TAGS = ['tiep', 'giu bang', 'giu', 'tiep bang', 'noi tiep', 'khong hinh'];
+const COLOR_TAGS = ['do', 'xanh', 'xanh la', 'cam', 'vang', 'tim', 'den', 'hong', 'nau'];
+function fixScript(t) {
+  t = String(t || '').replace(/\r/g, '');
+  const m = t.match(/```[a-zA-Z]*\n([\s\S]*?)```/);
+  if (m) t = m[1];
+  const out = [];
+  for (let raw of t.split('\n')) {
+    let l = raw.trim();
+    if (!l || /^```/.test(l) || /^#/.test(l)) continue;
+    if ((/^(caption|hashtag|nguồn|nguon)\s*[:：]?\s*$/i.test(l) || /^(caption|nguồn|nguon)\s*[:：]/i.test(l)) && !l.includes('||')) break;
+    l = l.replace(/\*\*|__/g, '').replace(/\p{Extended_Pictographic}|️/gu, '');
+    l = l.replace(/^>\s*/, '').replace(/^(cảnh|canh|scene|dòng)\s*\d+\s*[:.)\-–]\s*/i, '').replace(/^\d{1,2}\s*[.)]\s+/, '');
+    l = l.replace(/^[•*–]\s+/, '- ').replace(/^-(?=\S)/, '- ');
+    if (/^["“]/.test(l) && /["”]$/.test(l)) l = l.slice(1, -1);
+    l = l.replace(/\s*(->|=>|⇒)\s*/g, ' → ').replace(/\s*→\s*/g, ' → ');
+    l = l.replace(/\s+\|\s+(?!\|)/g, ' || ').replace(/\s*\|\|\s*/g, ' || ');
+    const sayM = l.match(/^(lời đọc|loi doc|đọc|doc|giọng|giong)\s*:\s*(.*)$/i);
+    if (sayM) {
+      if (out.length && !out[out.length - 1].includes('||') && !/^- /.test(out[out.length - 1])) out[out.length - 1] += ' || ' + sayM[2].trim();
+      else if (sayM[2].trim()) out.push(sayM[2].trim());
+      continue;
+    }
+    l = l.replace(/\s{2,}/g, ' ').trim();
+    if (l) out.push(l);
+  }
+  return out.join('\n');
+}
+function checkScript(text) {
+  const E = [], W = [], lines = String(text || '').replace(/\r/g, '').split('\n');
+  let scene = 0, lead = null, items = [], nScene = 0, hasList = false;
+  const where = () => 'Cảnh ' + scene;
+  const endList = () => {
+    if (!lead) return;
+    if (items.length === 1) W.push(lead.where + ': danh sách chỉ có 1 mục, nên có 2–5 mục.');
+    if (items.length > 5) W.push(lead.where + ': danh sách có ' + items.length + ' mục, tối đa 5.');
+    if (items.length >= 2) {
+      hasList = true;
+      if (lead.say) {
+        const sn = vnNorm(lead.say), miss = items.filter(x => !sn.includes(vnNorm(x)));
+        if (miss.length) W.push(lead.where + ': lời đọc chưa nhắc tới "' + miss.join('", "') + '" nên hình sẽ không hiện đúng lúc.');
+      }
+    }
+    lead = null; items = [];
+  };
+  lines.forEach((raw, idx) => {
+    const l = raw.trim();
+    if (!l) return;
+    if (/\*\*|^#|^```|\p{Extended_Pictographic}/u.test(l) || /^(cảnh|canh|scene)\s*\d/i.test(l) || /^\d{1,2}\s*[.)]\s/.test(l)) W.push('Dòng ' + (idx + 1) + ': có ký hiệu thừa (**, #, số thứ tự, emoji...). Bấm "Tự sửa".');
+    if (/^(lời đọc|loi doc|đọc|doc|giọng|giong)\s*:/i.test(l)) E.push('Dòng ' + (idx + 1) + ': không viết "Lời đọc:" ở đầu dòng. Bấm "Tự sửa" để gộp vào cảnh trên.');
+    if (/^===/.test(l)) E.push('Dòng ' + (idx + 1) + ': không dùng "===".');
+    if (/[぀-ヿ㐀-鿿가-힯ᄀ-ᇿ]/.test(l)) E.push('Dòng ' + (idx + 1) + ': có chữ Trung/Hàn, máy không đọc được. Hãy viết tiếng Việt.');
+    for (const m of l.matchAll(/\[([^\]]*)\]/g)) {
+      const tg = vnNorm(m[1]);
+      if (/^v[e]\s*:/.test(tg)) {
+        const nm = tg.split(':').slice(1).join(':').trim();
+        if (NAMES && nm && !NAMES.has(nm) && !['khong', '-'].includes(nm)) W.push('Dòng ' + (idx + 1) + ': không có hình tên "' + m[1].split(':').slice(1).join(':').trim() + '" trong kho, máy sẽ bỏ qua hình này.');
+      } else if (!KNOWN_TAGS.includes(tg) && !COLOR_TAGS.includes(tg)) {
+        E.push('Dòng ' + (idx + 1) + ': còn chỗ chưa điền [' + m[1] + ']. Hãy thay bằng thông tin đã kiểm chứng hoặc xoá câu đó.');
+      }
+    }
+    const body = l.replace(/\[[^\]]*\]/g, '').trim();
+    if (/^[-+]\s/.test(body)) {
+      const it = body.slice(2).trim();
+      if (!lead) { if (!scene) E.push('Dòng ' + (idx + 1) + ': gạch đầu dòng phải nằm dưới một dòng dẫn.'); else W.push('Dòng ' + (idx + 1) + ': gạch đầu dòng nên đứng ngay dưới dòng dẫn có dấu ":".'); }
+      if (body.includes('||')) W.push('Dòng ' + (idx + 1) + ': gạch đầu dòng không cần "||".');
+      if (it.split(/\s+/).length > 4 || it.length > 22) W.push('Dòng ' + (idx + 1) + ': mục "' + it + '" dài quá, nên 1–4 chữ.');
+      items.push(it.replace(/[.,;]$/, ''));
+      return;
+    }
+    endList();
+    scene++; nScene++;
+    if ((body.match(/\|\|/g) || []).length > 1) E.push(where() + ': có nhiều hơn một dấu "||".');
+    const [show, say = ''] = body.split('||').map(x => x.trim());
+    if (/→/.test(show)) {
+      const st = show.split('→').map(x => x.trim()).filter(Boolean);
+      if (st.length > 5) W.push(where() + ': sơ đồ có ' + st.length + ' bước, tối đa 5.');
+      st.forEach(x => { if (x.length > 18) W.push(where() + ': bước "' + x + '" dài quá, nên dưới 16 ký tự.'); });
+      if (show.includes(' / ')) W.push(where() + ': dòng sơ đồ không dùng " / ".');
+    } else if (body.includes('||')) {
+      const sl = show.split(/\s+\/\s+/);
+      if (sl.length > 2) W.push(where() + ': chữ màn hình có ' + sl.length + ' dòng, nên tối đa 2.');
+      sl.forEach(x => { if (x.length > 24) W.push(where() + ': dòng chữ "' + x + '" dài ' + x.length + ' ký tự, nên dưới 22.'); });
+    }
+    const words = (say || show).split(/\s+/).length;
+    if (words > 45) W.push(where() + ': lời đọc dài ' + words + ' chữ, nên dưới 35 (tách thành 2 cảnh).');
+    if (/:\s*$/.test(show) || /:\s*\|\|/.test(body)) lead = { where: where(), say };
+    if (/^[^:]{2,40}:\s+[^\d]+(,|\svà\s)/.test(show) && !/→/.test(show)) hasList = true;
+  });
+  endList();
+  if (nScene && nScene < 4) W.push('Kịch bản chỉ có ' + nScene + ' cảnh, hơi ngắn.');
+  if (nScene > 25) W.push('Kịch bản có ' + nScene + ' cảnh, dài quá (nên 8–14).');
+  const last = lines.filter(x => x.trim() && !/^\s*[-+]\s/.test(x)).pop() || '';
+  if (nScene >= 4 && !/inbox|nhắn tin|liên hệ|hải dương/i.test(last)) W.push('Cảnh cuối nên mời inbox Du Học Hải Dương.');
+  if (nScene >= 6 && !hasList) W.push('Nên có ít nhất 1 danh sách "- " để máy vẽ hình theo lời đọc.');
+  return { E, W };
+}
+function runCheck() {
+  const t = $('script').value, box = $('chk');
+  if (!t.trim()) { box.innerHTML = ''; return { E: [], W: [] }; }
+  const r = checkScript(t), fixed = fixScript(t), canFix = fixed !== t.trim();
+  if (!r.E.length && !r.W.length && !canFix) box.innerHTML = '<div class="ok">✓ Kịch bản đúng định dạng</div>';
+  else {
+    let h = '<div class="box">';
+    if (r.E.length) h += '<b class="e">Lỗi cần sửa (' + r.E.length + '):</b><ul>' + r.E.slice(0, 8).map(x => '<li class="e">' + esc(x) + '</li>').join('') + '</ul>';
+    if (r.W.length) h += '<b class="w">Nên sửa (' + r.W.length + '):</b><ul>' + r.W.slice(0, 8).map(x => '<li class="w">' + esc(x) + '</li>').join('') + '</ul>';
+    if (canFix) h += '<button class="btn sm" id="bFix" style="margin-top:6px">✨ Tự sửa định dạng</button>';
+    box.innerHTML = h + '</div>';
+    if (canFix) $('bFix').onclick = () => { $('script').value = fixScript($('script').value); afterEdit(); toast('Đã sửa định dạng'); };
+  }
+  return r;
+}
+let chkT = 0;
+function afterEdit() { countScenes(); store.set('draft', $('script').value); clearTimeout(chkT); chkT = setTimeout(runCheck, 300); }
+function takePasted(t) { $('script').value = fixScript(t); afterEdit(); }
+$('script').addEventListener('paste', e => {
+  const t = (e.clipboardData || window.clipboardData).getData('text');
+  if (t && /```/.test(t) && !$('script').value.trim()) { e.preventDefault(); takePasted(t); toast('Đã lấy kịch bản từ ChatGPT'); }
+});
+function gateCheck() {
+  const r = runCheck();
+  if (r.E.length) { toast('Kịch bản còn ' + r.E.length + ' lỗi, xem ô đỏ dưới kịch bản', 4000); $('chk').scrollIntoView({ behavior: 'smooth', block: 'center' }); return false; }
+  return true;
+}
+setTimeout(runCheck, 0);
 
 function jobBody(preview) {
   const script = $('script').value.trim();
@@ -487,6 +681,7 @@ $('bGo').onclick = async () => {
 async function makeVideo() {
   const script = $('script').value.trim();
   if (!script) { toast('Hãy dán kịch bản trước'); return; }
+  if (!gateCheck()) return;
   const body = jobBody(false), name = body.name;
   $('bGo').disabled = true; $('bGo').textContent = 'Đang gửi...';
   try {
@@ -506,6 +701,7 @@ $('pvAgain').onclick = () => { applyEdits(); startPreview(); };
 $('pvMake').onclick = () => { applyEdits(); $('pvCard').classList.add('hide'); makeVideo(); };
 async function startPreview() {
   if (!$('script').value.trim()) { toast('Hãy dán kịch bản trước'); return; }
+  if (!gateCheck()) return;
   $('pvCard').classList.remove('hide'); $('pvFoot').classList.add('hide');
   $('pvList').innerHTML = '<div class="bar"><i></i></div>';
   $('pvHint').textContent = 'Đang vẽ ảnh xem trước (khoảng 30–60 giây)...';
