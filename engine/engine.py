@@ -2339,6 +2339,7 @@ class Renderer:
                 hgt = min(hgt, feet_ - TOP_AREA + 40)
                 ch = CharItem(char_path(gender, pose), cx_, feet_, hgt)
                 ch.gap = 0.1
+                ch.presenter = True
                 items = [ch] + items
             lcx = LCX
             LCX, LMAXW = LAY['col_full']
@@ -2384,7 +2385,7 @@ class Renderer:
         for it, s_, e_ in pl['sch']:
             if isinstance(it, Badge):
                 continue
-            if not isinstance(it, (Fill, CharItem)) or (isinstance(it, CharItem) and it.x > W * 0.3):
+            if not isinstance(it, (Fill, CharItem)) or (isinstance(it, CharItem) and not getattr(it, 'presenter', False)):
                 it.draw(layer, 1.0)
         bb = layer.getbbox()
         if not bb:

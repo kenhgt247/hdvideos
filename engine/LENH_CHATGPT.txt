@@ -37,9 +37,16 @@ B5. Thêm [tiếp] ở cuối dòng khi muốn viết nối tiếp trên bảng 
 
 B6. Hình minh họa: thêm [vẽ: tên hình] ở cuối dòng, tối đa 1 hình mỗi cảnh, không bắt buộc (máy tự chọn hình nếu không ghi). CHỈ dùng tên có trong "DANH SÁCH HÌNH" và "ẢNH TRONG KHO" ở cuối câu lệnh này, chép đúng từng chữ. Không tự đặt tên mới.
 
-B7. KHÔNG dùng ngoặc vuông cho việc khác (không viết [số liệu], [điền], [tên trường]). Chỗ nào thiếu thông tin thì viết câu chung chung theo A2.
+B7. Ngoài [vẽ: ...], [tiếp], [1/3] thì KHÔNG dùng ngoặc vuông (không viết [số liệu], [điền], [tên trường]). Chỗ nào thiếu thông tin thì viết câu chung chung theo A2.
 
-B8. Dòng 1 là câu mở đầu (hook): một câu hỏi hoặc một sự thật gây tò mò trong 3 giây. Dòng cuối là lời mời inbox Du Học Hải Dương.
+B8. GIỮ NGƯỜI XEM (rất quan trọng):
+  - Mỗi video chỉ nói 1 điểm kiến thức.
+  - Dòng 1 (câu mở): dưới 12 chữ, nói với "bạn", là câu hỏi hoặc điều gây tò mò/sợ làm sai. KHÔNG chào hỏi, KHÔNG giới thiệu trung tâm, KHÔNG trả lời luôn ở dòng 1.
+    Mẫu tốt: "Sai 1 điều này là hồ sơ bị trả về?", "Du học Hàn phải giỏi tiếng Hàn: đúng hay sai?", "3 thứ phải có trước khi bay sang Đài".
+  - Khi liệt kê "3 sai lầm", "4 bước"... thêm [1/3], [2/3], [3/3] ở cuối dòng mở đầu mỗi ý để hiện bộ đếm.
+  - Từ khoá quan trọng nhất của cảnh đặt giữa 2 dấu * (ví dụ: Sai lầm 1: *dịch giấy tờ ở ngoài*), máy sẽ tô bút dạ vàng đúng lúc đọc tới. Mỗi cảnh tối đa 1 cụm.
+  - Dòng cuối: rủ bình luận hoặc lưu video, nối lại câu mở (ví dụ: "Bạn đang mắc lỗi số mấy? Comment nhé"), rồi mời inbox Du Học Hải Dương.
+  - Tổng độ dài lời đọc khoảng 60–100 chữ (20–35 giây).
 
 B9. Độ dài: 8 đến 14 dòng cảnh (không tính dòng "- "). Nếu tôi nói "kịch bản dài" thì 15 đến 25 dòng. Mỗi video nên có ít nhất 1 danh sách, và 1 sơ đồ " → " nếu chủ đề có các bước.
 
@@ -62,7 +69,8 @@ Trước khi gửi, TỰ KIỂM TRA từng mục, sai thì sửa rồi mới g�
 [ ] Sơ đồ " → " có 2 đến 5 bước ngắn.
 [ ] Tên hình trong [vẽ: ...] có đúng trong danh sách.
 [ ] Không đánh số, không **, không emoji, không "Cảnh 1".
-[ ] Dòng đầu là hook, dòng cuối mời inbox Du Học Hải Dương.
+[ ] Dòng đầu dưới 12 chữ, gây tò mò, không chào hỏi; dòng cuối rủ bình luận/lưu và mời inbox Du Học Hải Dương.
+[ ] Có *từ khoá* bút dạ ở cảnh quan trọng, có [1/3]... nếu liệt kê nhiều ý.
 
 ====================================================
 PHẦN D. VÍ DỤ
