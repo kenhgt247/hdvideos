@@ -398,5 +398,45 @@
    "bổ sung"
   ],
   "lo": 10
+ },
+ "nop_ho_so_visa": {
+  "ten": "Nộp hồ sơ visa ở quầy",
+  "tu_khoa": [
+   "VISA",
+   "nộp hồ sơ",
+   "giấy tờ",
+   "thủ tục"
+  ],
+  "lo": 11
+ },
+ "xep_hang_van_phong": {
+  "ten": "Xếp hàng ở văn phòng",
+  "tu_khoa": [
+   "xếp hàng",
+   "chờ đợi",
+   "văn phòng",
+   "thủ tục"
+  ],
+  "lo": 11
+ },
+ "luyen_phong_van_visa": {
+  "ten": "Luyện phỏng vấn với tư vấn viên",
+  "tu_khoa": [
+   "luyện tập",
+   "phỏng vấn",
+   "tư vấn",
+   "chuẩn bị"
+  ],
+  "lo": 11
+ },
+ "phong_van_visa_can_bo": {
+  "ten": "Phỏng vấn visa với cán bộ",
+  "tu_khoa": [
+   "VISA",
+   "phỏng vấn",
+   "câu hỏi",
+   "học sinh"
+  ],
+  "lo": 11
  }
 }
