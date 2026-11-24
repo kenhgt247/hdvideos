@@ -217,6 +217,18 @@ details.opt>summary{font-weight:700;padding:12px 0;cursor:pointer;color:var(--bl
     <div class="hint" id="aiInfo"></div>
     <div id="aiSrc"></div>
   </div>
+  <div class="card only-self" id="cvCard">
+    <h2>📝 Viết bình thường, AI chuyển thành kịch bản</h2>
+    <div class="hint">Cứ viết như nhắn tin hay viết bài Facebook, không cần lo định dạng. AI giữ nguyên ý và số liệu của bạn, chỉ chia cảnh, thêm câu mở, danh sách có hình, câu kết.</div>
+    <textarea id="cvText" rows="6" style="min-height:0" placeholder="Ví dụ: Nhiều bạn hỏi đi Đài Loan cần chuẩn bị gì. Đầu tiên là hộ chiếu, học bạ, bằng tốt nghiệp. Bằng phải dịch rồi hợp pháp hoá. Sau đó khám sức khoẻ ở bệnh viện được chỉ định..."></textarea>
+    <label class="f">Dùng AI nào</label>
+    <label class="aim" id="cvFree"><input type="radio" name="cvmode" value="free" checked><div><b>⚡ Gemini (miễn phí)</b><span>Đủ dùng cho hầu hết nội dung.</span></div></label>
+    <label class="aim" id="cvPaid"><input type="radio" name="cvmode" value="paid"><div><b>✨ Claude (khoảng 300–400đ/lần)</b><span>Câu chữ mượt, chia cảnh khéo hơn. Không tra web.</span></div></label>
+    <button class="btn main" id="cvGo" style="margin-top:10px">🪄 CHUYỂN THÀNH KỊCH BẢN</button>
+    <div class="hint" id="cvInfo"></div>
+    <div id="cvSrc"></div>
+    <div class="hint">Hoặc dùng: <a href="#" id="cvOpenTpl" style="color:var(--blue);font-weight:600">🧩 Mẫu kịch bản điền sẵn</a></div>
+  </div>
   <div class="card hide only-self" id="tplCard">
     <div class="hd"><h2>🧩 Mẫu kịch bản</h2><button class="btn sm red" id="tplClose">Đóng</button></div>
     <div class="hint">Chọn khung, điền vài ô ngắn, máy ráp thành kịch bản chuẩn: câu mở gây tò mò, bộ đếm 1/3, bút dạ đánh dấu, câu kết mời bình luận. <b>Mỗi video chỉ nói 1 điểm kiến thức.</b></div>
@@ -231,6 +243,7 @@ details.opt>summary{font-weight:700;padding:12px 0;cursor:pointer;color:var(--bl
       <button class="btn sm" id="bPaste">Dán</button>
       <button class="btn sm only-self" id="bPrompt">Copy câu lệnh ChatGPT</button>
       <button class="btn sm only-self" id="bTpl">🧩 Mẫu kịch bản</button>
+      <button class="btn sm" id="bFixAi">🪄 AI sửa định dạng</button>
       <button class="btn sm" id="bHook">💡 Gợi ý câu mở</button>
       <button class="btn sm only-self" id="bSample">Ví dụ</button>
       <button class="btn sm red" id="bClear">Xoá</button>
@@ -1064,13 +1077,13 @@ fetch('/api/ai/config').then(r => r.ok ? r.json() : Promise.reject()).then(c => 
   if (!c.paid_staff && !c.admin) { $('aimPaid').querySelector('span').innerHTML += ' <b class="w">(chỉ admin)</b>'; }
   drawAiCfg();
 }).catch(() => {});
-function showAiSources(d) {
-  const box = $('aiSrc'); box.innerHTML = '';
+function showAiSources(d, box = $('aiSrc')) {
+  box.innerHTML = '';
   const div = document.createElement('div'); div.className = 'chk';
   const inner = document.createElement('div');
-  inner.style.cssText = 'padding:8px 10px;border-radius:10px;margin-top:8px;' + (d.verified ? 'background:#eef4ff;border:1px solid #c9d8f5' : 'background:#fff6f0;border:1px solid #f3c9a8');
+  inner.style.cssText = 'padding:8px 10px;border-radius:10px;margin-top:8px;' + (d.verified || d.mode === 'convert' ? 'background:#eef4ff;border:1px solid #c9d8f5' : 'background:#fff6f0;border:1px solid #f3c9a8');
   const h = document.createElement('b');
-  h.textContent = d.mode === 'paid' ? (d.sources.length ? '🔎 Nguồn Claude đã tra (bấm để đối chiếu):' : '⚠ Claude không tìm được nguồn chính thức, hãy kiểm tra kỹ trước khi đăng.')
+  h.textContent = d.mode === 'convert' ? '🪄 Đã chuyển từ nội dung của bạn (giữ nguyên ý và số liệu bạn viết).' : d.mode === 'paid' ? (d.sources.length ? '🔎 Nguồn Claude đã tra (bấm để đối chiếu):' : '⚠ Claude không tìm được nguồn chính thức, hãy kiểm tra kỹ trước khi đăng.')
     : '⚡ Viết nhanh: chưa kiểm chứng trên web. Nếu có số liệu, quy định, hãy kiểm tra lại trước khi đăng.';
   inner.appendChild(h);
   if (d.sources.length) {
@@ -1130,6 +1143,49 @@ function drawAiCfg() {
 $('cfSave').onclick = async () => {
   try { const d = await api('/api/ai/config', { free: $('cfFree').value, paid: $('cfPaid').value, paid_staff: $('cfStaff').checked }); Object.assign(AI_CFG, d); toast('Đã lưu cài đặt AI'); }
   catch (e) { toast(e.message); }
+};
+
+
+/* ===== VIẾT BÌNH THƯỜNG -> AI CHUYỂN ĐỊNH DẠNG ===== */
+$('cvText').value = store.get('cv_text', '');
+$('cvText').oninput = () => store.set('cv_text', $('cvText').value);
+const cvMode = () => (document.querySelector('input[name=cvmode]:checked') || {}).value || 'free';
+function drawCv() { $('cvFree').classList.toggle('on', cvMode() === 'free'); $('cvPaid').classList.toggle('on', cvMode() === 'paid'); store.set('cv_mode', cvMode()); }
+document.querySelectorAll('input[name=cvmode]').forEach(r => { r.checked = r.value === store.get('cv_mode', 'free'); r.onchange = drawCv; });
+drawCv();
+$('cvOpenTpl').onclick = e => { e.preventDefault(); $('tplCard').classList.remove('hide'); drawTpl(); $('tplCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+async function aiConvert(content, mode, btn, label, info) {
+  if (content.trim().length < 20) { toast('Hãy viết nội dung (ít nhất vài câu) trước'); return; }
+  if (!$('by').value.trim()) {
+    const n = prompt('Tên của bạn là gì? (để tính lượt dùng AI)');
+    if (!n || !n.trim()) return;
+    $('by').value = n.trim(); store.set('by', n.trim());
+  }
+  btn.disabled = true;
+  let sec = 0; const tick = setInterval(() => { sec++; btn.textContent = `⏳ AI đang chuyển... ${sec}s`; }, 1000);
+  try {
+    const d = await api('/api/ai/script', { task: 'convert', content, mode, by: $('by').value });
+    $('script').value = fixScript(d.script);
+    if (!$('name').value.trim()) $('name').value = ($('script').value.split('\n')[0] || '').split('||')[0].replace(/\[[^\]]*\]/g, '').replace(/\s\/\s/g, ' ').replace(/\*/g, '').trim().slice(0, 50);
+    TPL_USED = 'ai_' + mode; store.set('tpl_used', TPL_USED);
+    afterEdit();
+    if (info) info.textContent = d.limit ? `Đã dùng ${d.used}/${d.limit} lượt hôm nay.` : '';
+    if (d.caption) showAiSources({ ...d, sources: [], mode: 'convert' }, document.body.classList.contains('mode-ai') ? $('aiSrc') : $('cvSrc'));
+    const r = runCheck();
+    $('scriptCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    toast(r.E.length ? 'Đã chuyển, còn vài lỗi nhỏ: xem ô đỏ' : 'Đã chuyển xong! Xem lại, sửa nếu cần rồi bấm TẠO VIDEO', 4000);
+  } catch (e) { toast(e.message, 6000); }
+  clearInterval(tick); btn.disabled = false; btn.textContent = label;
+}
+$('cvGo').onclick = () => {
+  if ($('script').value.trim() && !confirm('Thay kịch bản đang có bằng kịch bản mới?')) return;
+  aiConvert($('cvText').value, cvMode(), $('cvGo'), '🪄 CHUYỂN THÀNH KỊCH BẢN', $('cvInfo'));
+};
+$('bFixAi').onclick = () => {
+  const t = $('script').value.trim();
+  if (!t) { toast('Ô kịch bản đang trống. Hãy viết hoặc dán nội dung vào trước'); return; }
+  const paid = confirm('Dùng Claude (khoảng 300–400đ, câu chữ mượt hơn)?\n\nBấm "Huỷ" để dùng Gemini miễn phí.');
+  aiConvert(t, paid ? 'paid' : 'free', $('bFixAi'), '🪄 AI sửa định dạng', null);
 };
 
 function jobBody(preview) {

@@ -188,6 +188,13 @@ const AI_PAID = `
 - Hãy dùng công cụ web_search (tối đa 3 lần) để tìm trên trang CHÍNH THỨC trước khi viết. Mọi con số, quy định, giấy tờ đưa vào kịch bản phải thấy trên trang đã tìm. Không tìm thấy thì nói chung chung, không bịa.
 - Phần NGUỒN liệt kê 1–3 đường link chính thức bạn đã dùng.`;
 
+const AI_CONVERT = `
+- NHIỆM VỤ LẦN NÀY: CHUYỂN NỘI DUNG người dùng viết (trong tin nhắn, mục NỘI DUNG) thành kịch bản đúng định dạng PHẦN B.
+- GIỮ NGUYÊN ý, số liệu, tên trường, mốc thời gian, lời khuyên của người dùng. KHÔNG thêm thông tin, con số hay quy định mới. KHÔNG bỏ ý quan trọng.
+- Được phép: rút gọn câu cho dễ đọc, chia thành các cảnh, viết câu mở gây tò mò từ chính nội dung, gom ý thành danh sách "- " có hình, các bước thành sơ đồ " → ", thêm [1/3]..., *từ khoá*, [vẽ: ...] trong danh sách hình, câu kết rủ bình luận + mời inbox Du Học Hải Dương.
+- Nội dung quá dài thì giữ các ý chính cho video 20–45 giây. Nội dung có chỗ sai chính tả thì sửa.
+- Phần NGUỒN ghi: "Nội dung do người dùng cung cấp".`;
+
 function parseAi(text) {
   const m = text.match(/```[a-zA-Z]*\n?([\s\S]*?)```/);
   const script = (m ? m[1] : text).trim();
@@ -220,7 +227,7 @@ async function aiGemini(env, sys, user) {
   }
   throw new Error(last);
 }
-async function aiClaude(env, sys, user) {
+async function aiClaude(env, sys, user, search = true) {
   const tool = { type: 'web_search_20250305', name: 'web_search', max_uses: 4, allowed_domains: OFFICIAL };
   let useDomains = true, stop = '', diag = [];
   const blocks = [];                                   // toàn bộ nội dung trợ lý (kể cả các lượt tạm dừng)
@@ -230,7 +237,7 @@ async function aiClaude(env, sys, user) {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-api-key': env.CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 8000, system: sys, messages,
-          tools: [useDomains ? tool : { type: tool.type, name: tool.name, max_uses: tool.max_uses }], ...extra }),
+          ...(search ? { tools: [useDomains ? tool : { type: tool.type, name: tool.name, max_uses: tool.max_uses }], ...extra } : {}) }),
       });
       const d = await r.json().catch(() => ({}));
       if (r.ok) return d;
@@ -253,7 +260,7 @@ async function aiClaude(env, sys, user) {
   }
   const textOf = arr => arr.filter(b => b.type === 'text').map(b => b.text).join('');
   let text = textOf(blocks);
-  if (!/```/.test(text)) {                             // tra xong nhưng chưa viết: bảo viết ngay, không tra thêm
+  if (search && !/```/.test(text)) {                   // tra xong nhưng chưa viết: bảo viết ngay, không tra thêm
     const d = await call([{ role: 'user', content: user }, { role: 'assistant', content: blocks },
       { role: 'user', content: 'Bạn đã tra đủ. Hãy viết NGAY kịch bản theo đúng PHẦN C (khối ``` kịch bản, CAPTION, NGUỒN), không tìm thêm.' }],
       { tool_choice: { type: 'none' } });
@@ -689,7 +696,10 @@ export default {
       }
       if (p === '/api/ai/script' && req.method === 'POST') {
         const b = await req.json();
-        const topic = String(b.topic || '').trim().slice(0, 400);
+        const convert = b.task === 'convert';
+        const content = String(b.content || '').trim().slice(0, 8000);
+        const topic = convert ? 'chuyển nội dung' : String(b.topic || '').trim().slice(0, 400);
+        if (convert && content.length < 20) return err('Hãy viết nội dung (ít nhất vài câu) trước khi chuyển');
         const extra = String(b.extra || '').trim().slice(0, 2500);
         const mode = b.mode === 'paid' ? 'paid' : 'free';
         if (topic.length < 4) return err('Hãy nhập chủ đề video');
@@ -697,16 +707,17 @@ export default {
         const cfg = { ...AI_DEF, ...(data.config || {}) };
         if (mode === 'paid' && !env.CLAUDE_KEY) return err('Chưa gắn khoá Claude. Admin xem hướng dẫn trong mục Cài đặt.');
         if (mode === 'free' && !env.GEMINI_KEY) return err('Chưa gắn khoá Gemini. Admin xem hướng dẫn trong mục Cài đặt.');
-        if (mode === 'paid' && !admin && !cfg.paid_staff) return err('Chế độ "Viết có kiểm chứng" hiện chỉ dành cho admin.', 403);
+        if (mode === 'paid' && !admin && !cfg.paid_staff) return err('Chế độ dùng Claude (trả phí) hiện chỉ dành cho admin.', 403);
         const ip = req.headers.get('cf-connecting-ip') || 'ip';
         const who = (slug(b.by || '') || 'khong_ten') + '@' + ip.replace(/[^0-9a-f.:]/gi, '').slice(-20);
         const used = (((data.use || {})[today()] || {})[who] || {})[mode] || 0;
         const limit = cfg[mode];
         if (!admin && used >= limit) return err(`Bạn đã dùng hết ${limit} lượt "${mode === 'paid' ? 'Viết có kiểm chứng' : 'Viết nhanh'}" hôm nay. Mai dùng tiếp, hoặc nhờ admin tăng giới hạn.`, 429);
-        const sys = (await chatgptPrompt(env)) + AI_COMMON + (mode === 'paid' ? AI_PAID : AI_FREE);
-        const user = `CHỦ ĐỀ: ${topic}` + (extra ? `\n\nTHÔNG TIN THÊM (của trung tâm, dùng đúng như vậy):\n${extra}` : '');
+        const sys = (await chatgptPrompt(env)) + AI_COMMON + (convert ? AI_CONVERT : mode === 'paid' ? AI_PAID : AI_FREE);
+        const user = convert ? `NỘI DUNG CỦA TÔI (chuyển thành kịch bản, giữ nguyên ý và số liệu):\n${content}`
+          : `CHỦ ĐỀ: ${topic}` + (extra ? `\n\nTHÔNG TIN THÊM (của trung tâm, dùng đúng như vậy):\n${extra}` : '');
         let out;
-        try { out = mode === 'paid' ? await aiClaude(env, sys, user) : await aiGemini(env, sys, user); }
+        try { out = mode === 'paid' ? await aiClaude(env, sys, user, !convert) : await aiGemini(env, sys, user); }
         catch (e) { return err(String(e.message || e), 502); }
         const res = parseAi(out.text);
         if (!res.script) return err('AI chưa viết được kịch bản, hãy thử lại hoặc đổi cách nói chủ đề.', 502);
@@ -715,8 +726,8 @@ export default {
         for (const u of urls) if (!sources.some(x => x.url === u.url)) sources.push(u);
         const rec = aiRecord(env, admin ? 'admin' : who, mode);
         if (ctx && ctx.waitUntil) ctx.waitUntil(rec); else await rec;
-        return json({ script: res.script, caption: res.caption, sources: sources.slice(0, 8), mode,
-          verified: mode === 'paid' && sources.length > 0, used: used + 1, limit: admin ? null : limit });
+        return json({ script: res.script, caption: res.caption, sources: convert ? [] : sources.slice(0, 8), mode, convert,
+          verified: !convert && mode === 'paid' && sources.length > 0, used: used + 1, limit: admin ? null : limit });
       }
       if (p === '/api/names') {
         const [hv, kho] = await Promise.all([
