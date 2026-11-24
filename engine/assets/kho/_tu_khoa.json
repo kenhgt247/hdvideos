@@ -198,5 +198,45 @@
    "hồ sơ"
   ],
   "lo": 5
+ },
+ "bang_diem": {
+  "ten": "Bảng điểm",
+  "tu_khoa": [
+   "điểm số",
+   "học tập",
+   "kết quả",
+   "hồ sơ"
+  ],
+  "lo": 6
+ },
+ "giay_khai_sinh": {
+  "ten": "Giấy khai sinh",
+  "tu_khoa": [
+   "khai sinh",
+   "giấy tờ",
+   "nhân thân",
+   "hồ sơ"
+  ],
+  "lo": 6
+ },
+ "can_cuoc_cong_dan": {
+  "ten": "Căn cước công dân",
+  "tu_khoa": [
+   "căn cước",
+   "định danh",
+   "giấy tờ",
+   "cá nhân"
+  ],
+  "lo": 6
+ },
+ "so_tiet_kiem_ngan_hang": {
+  "ten": "Sổ tiết kiệm ngân hàng",
+  "tu_khoa": [
+   "tiết kiệm",
+   "ngân hàng",
+   "tài chính",
+   "số dư"
+  ],
+  "lo": 6
  }
 }
