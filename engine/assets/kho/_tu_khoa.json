@@ -118,5 +118,45 @@
    "chuẩn bị"
   ],
   "lo": 3
+ },
+ "tu_van_dua_danh_sach_viec_can_lam": {
+  "ten": "Tư vấn viên đưa danh sách việc cần làm",
+  "tu_khoa": [
+   "tư vấn",
+   "danh sách",
+   "chuẩn bị",
+   "du học"
+  ],
+  "lo": 4
+ },
+ "phu_huynh_ky_giay_dong_y": {
+  "ten": "Phụ huynh ký giấy đồng ý",
+  "tu_khoa": [
+   "phụ huynh",
+   "ký giấy",
+   "đồng ý",
+   "hồ sơ"
+  ],
+  "lo": 4
+ },
+ "hoc_sinh_viet_muc_tieu": {
+  "ten": "Học sinh viết mục tiêu lên bảng",
+  "tu_khoa": [
+   "học sinh",
+   "mục tiêu",
+   "kế hoạch",
+   "định hướng"
+  ],
+  "lo": 4
+ },
+ "hoc_sinh_xem_gioi_thieu_truong": {
+  "ten": "Học sinh xem giới thiệu trường trên laptop",
+  "tu_khoa": [
+   "học sinh",
+   "laptop",
+   "trường học",
+   "tìm hiểu"
+  ],
+  "lo": 4
  }
 }
