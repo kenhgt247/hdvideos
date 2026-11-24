@@ -229,7 +229,7 @@ async function aiGemini(env, sys, user) {
     const r = await aiFetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': env.GEMINI_KEY },
       body: JSON.stringify({ systemInstruction: { parts: [{ text: sys }] }, contents: [{ role: 'user', parts: [{ text: user }] }],
-        generationConfig: { maxOutputTokens: 8192 } }),
+        generationConfig: { maxOutputTokens: 32768 } }),
     });
     const d = await r.json().catch(() => ({}));
     if (r.ok) {
@@ -259,7 +259,7 @@ async function aiClaude(env, sys, user, search = true) {
       const r = await aiFetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-api-key': env.CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 8000, system: sys, messages,
+        body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 16000, system: sys, messages,
           ...(search ? { tools: [useDomains ? tool : { type: tool.type, name: tool.name, max_uses: tool.max_uses }], ...extra } : {}) }),
       });
       const d = await r.json().catch(() => ({}));

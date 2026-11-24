@@ -1196,7 +1196,7 @@ $('aiGo').onclick = async () => {
     TPL_USED = 'ai_' + mode; store.set('tpl_used', TPL_USED); setDraftLength(duration);
     afterEdit(); showAiSources(d);
     $('aiInfo').textContent = d.limit ? `Đã dùng ${d.used}/${d.limit} lượt hôm nay.` : '';
-    if (mode === 'free') { clearInterval(tick); const fixed = await autoFix(btn, true); if (fixed) toast('Đã tự sửa thêm ' + fixed + ' lỗi định dạng', 2500); }
+    if (mode === 'free') { clearInterval(tick); const fixed = await autoFix(btn, duration !== 'quick'); if (fixed) toast('Đã tự sửa thêm ' + fixed + ' lỗi định dạng', 2500); }
     const r = runCheck();
     if ($('aiAuto').checked && !r.E.length && !lengthNote(r)) { toast('Đã viết xong, đang gửi tạo video...'); makeVideo(); }
     else { $('scriptCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); toast(r.E.length ? 'Kịch bản còn lỗi, xem ô đỏ để sửa' : 'Xong! Xem lại kịch bản rồi bấm TẠO VIDEO'); }
