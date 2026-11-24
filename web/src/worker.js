@@ -134,6 +134,31 @@ async function saveStats(env, id, rec) {
 
 
 // ===================== AI VIẾT KỊCH BẢN =====================
+// Gemini/Claude chặn yêu cầu từ vài nơi (vd máy chủ Hồng Kông gần Việt Nam) -> gọi qua Durable Object đặt ở Mỹ
+export class AiProxy {
+  constructor(state, env) { this.state = state; this.env = env; }
+  async fetch(req) {
+    const { url, headers, body } = await req.json();
+    if (!/^https:\/\/(generativelanguage\.googleapis\.com|api\.anthropic\.com)\//.test(url)) return new Response('bad', { status: 400 });
+    const h = { ...headers };
+    if (url.includes('googleapis')) h['x-goog-api-key'] = this.env.GEMINI_KEY;
+    else h['x-api-key'] = this.env.CLAUDE_KEY;
+    const r = await fetch(url, { method: 'POST', headers: h, body });
+    return new Response(await r.text(), { status: r.status, headers: { 'content-type': 'application/json' } });
+  }
+}
+let _ENV = null;
+async function aiFetch(url, init) {
+  const env = _ENV;
+  if (env && env.AIPROXY) {
+    const hint = (env.AI_REGION || 'wnam');
+    const stub = env.AIPROXY.get(env.AIPROXY.idFromName('ai-' + hint), { locationHint: hint });
+    const headers = { ...(init.headers || {}) };
+    delete headers['x-goog-api-key']; delete headers['x-api-key'];
+    return stub.fetch('https://proxy/', { method: 'POST', body: JSON.stringify({ url, headers, body: init.body }) });
+  }
+  return fetch(url, init);
+}
 const AI_FILE = 'thongke/ai.json';
 const AI_DEF = { free: 20, paid: 5, paid_staff: true };
 const OFFICIAL = ['roc-taiwan.org', 'studyintaiwan.org', 'edu.tw', 'gov.tw', 'go.kr', 'ac.kr', 'gov.vn', 'mofa.go.kr'];
@@ -175,7 +200,7 @@ function parseAi(text) {
 async function aiGemini(env, sys, user) {
   let last = '';
   for (const model of ['gemini-flash-latest', 'gemini-3.5-flash-lite']) {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    const r = await aiFetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': env.GEMINI_KEY },
       body: JSON.stringify({ systemInstruction: { parts: [{ text: sys }] }, contents: [{ role: 'user', parts: [{ text: user }] }],
         generationConfig: { maxOutputTokens: 8192 } }),
@@ -189,6 +214,7 @@ async function aiGemini(env, sys, user) {
       continue;
     }
     last = (d.error && d.error.message) || ('Gemini lỗi ' + r.status);
+    if (/location is not supported/i.test(last)) last = 'Gemini chưa hỗ trợ vị trí máy chủ hiện tại. Báo admin kiểm tra cài đặt vùng (AI_REGION).';
     if (r.status === 429) last = 'Gemini miễn phí đã hết lượt hôm nay (hoặc gọi quá nhanh). Thử lại sau ít phút, hoặc dùng "Viết có kiểm chứng".';
     if (![404, 429, 500, 503].includes(r.status)) break;
   }
@@ -199,7 +225,7 @@ async function aiClaude(env, sys, user) {
   let messages = [{ role: 'user', content: user }], useDomains = true;
   const blocks = [];
   for (let step = 0; step < 4; step++) {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
+    const r = await aiFetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-api-key': env.CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 4096, system: sys, messages,
@@ -358,6 +384,7 @@ if(r.ok)location.href='/';else document.getElementById('e').textContent='Sai m�
 
 export default {
   async fetch(req, env, ctx) {
+    _ENV = env;
     const url = new URL(req.url);
     const p = url.pathname;
     try {

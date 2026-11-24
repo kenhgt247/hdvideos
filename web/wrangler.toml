@@ -5,3 +5,12 @@ workers_dev = true
 
 [vars]
 REPO = "kenhgt247/hdvideos"
+
+# Máy chủ trung gian gọi AI đặt ở Mỹ (Gemini/Claude không nhận yêu cầu từ một số nơi như Hồng Kông)
+[[durable_objects.bindings]]
+name = "AIPROXY"
+class_name = "AiProxy"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["AiProxy"]
