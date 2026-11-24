@@ -238,5 +238,45 @@
    "số dư"
   ],
   "lo": 6
+ },
+ "giay_xac_nhan_so_du": {
+  "ten": "Giấy xác nhận số dư ngân hàng",
+  "tu_khoa": [
+   "ngân hàng",
+   "số dư",
+   "tài chính",
+   "xác nhận"
+  ],
+  "lo": 7
+ },
+ "giay_kham_suc_khoe": {
+  "ten": "Giấy khám sức khỏe",
+  "tu_khoa": [
+   "sức khỏe",
+   "bác sĩ",
+   "khám bệnh",
+   "hồ sơ"
+  ],
+  "lo": 7
+ },
+ "dich_thuat_tu_phap": {
+  "ten": "Dịch thuật tư pháp",
+  "tu_khoa": [
+   "dịch thuật",
+   "công chứng",
+   "ngôn ngữ",
+   "giấy tờ"
+  ],
+  "lo": 7
+ },
+ "con_dau_hop_phap_hoa": {
+  "ten": "Con dấu hợp pháp hóa",
+  "tu_khoa": [
+   "con dấu",
+   "hợp pháp hóa",
+   "lãnh sự",
+   "giấy tờ"
+  ],
+  "lo": 7
  }
 }
