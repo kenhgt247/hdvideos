@@ -1640,11 +1640,6 @@
   ],
   "lo": 45
  },
- "lo_46": {
-  "ten": "LO 46",
-  "tu_khoa": [],
-  "lo": 46
- },
  "hoc_sinh_hao_huc": {
   "ten": "Háo hức",
   "tu_khoa": [
@@ -1671,6 +1666,16 @@
    "nhớ nhà",
    "gia đình",
    "xa quê",
+   "cảm xúc"
+  ],
+  "lo": 46
+ },
+ "hoc_sinh_co_don": {
+  "ten": "Cô đơn",
+  "tu_khoa": [
+   "cô đơn",
+   "buồn bã",
+   "một mình",
    "cảm xúc"
   ],
   "lo": 46
