@@ -358,5 +358,45 @@
    "hồ sơ"
   ],
   "lo": 9
+ },
+ "photo_cong_chung": {
+  "ten": "Photo công chứng giấy tờ",
+  "tu_khoa": [
+   "photocopy",
+   "công chứng",
+   "giấy tờ",
+   "hồ sơ"
+  ],
+  "lo": 10
+ },
+ "gui_ho_so_online": {
+  "ten": "Chụp và gửi hồ sơ online",
+  "tu_khoa": [
+   "hồ sơ",
+   "trực tuyến",
+   "tải lên",
+   "internet"
+  ],
+  "lo": 10
+ },
+ "ho_so_con_thieu": {
+  "ten": "Hồ sơ còn thiếu",
+  "tu_khoa": [
+   "thiếu giấy tờ",
+   "kiểm tra",
+   "bổ sung",
+   "hồ sơ"
+  ],
+  "lo": 10
+ },
+ "ho_so_bi_tra_lai": {
+  "ten": "Hồ sơ bị trả lại",
+  "tu_khoa": [
+   "trả lại",
+   "sai sót",
+   "hồ sơ",
+   "bổ sung"
+  ],
+  "lo": 10
  }
 }
