@@ -449,16 +449,6 @@
   ],
   "lo": 12
  },
- "cho_ket_qua_visa_2": {
-  "ten": "Chờ kết quả visa",
-  "tu_khoa": [
-   "chờ đợi",
-   "VISA",
-   "kết quả",
-   "lo lắng"
-  ],
-  "lo": 12
- },
  "nhan_visa_vui_mung": {
   "ten": "Nhận visa vui mừng",
   "tu_khoa": [
@@ -476,6 +466,16 @@
    "từ chối",
    "buồn bã",
    "thất vọng"
+  ],
+  "lo": 12
+ },
+ "cho_ket_qua_visa_lo_lang": {
+  "ten": "Lo lắng chờ kết quả visa",
+  "tu_khoa": [
+   "chờ đợi",
+   "VISA",
+   "kết quả",
+   "lo lắng"
   ],
   "lo": 12
  }
