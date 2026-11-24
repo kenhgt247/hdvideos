@@ -2479,5 +2479,45 @@
    "chuẩn bị"
   ],
   "lo": 59
+ },
+ "hoc_online_may_tinh": {
+  "ten": "Học online qua máy tính",
+  "tu_khoa": [
+   "học online",
+   "máy tính",
+   "lớp trực tuyến",
+   "bài giảng"
+  ],
+  "lo": 67
+ },
+ "nop_bai_he_thong_truong": {
+  "ten": "Nộp bài trên hệ thống của trường",
+  "tu_khoa": [
+   "nộp bài",
+   "tải lên",
+   "hệ thống trường",
+   "bài tập"
+  ],
+  "lo": 67
+ },
+ "tra_tu_dien_dien_thoai": {
+  "ten": "Tra từ điển trên điện thoại",
+  "tu_khoa": [
+   "từ điển",
+   "điện thoại",
+   "tra từ",
+   "học ngoại ngữ"
+  ],
+  "lo": 67
+ },
+ "in_tai_lieu_cua_hang": {
+  "ten": "In tài liệu ở cửa hàng",
+  "tu_khoa": [
+   "in tài liệu",
+   "photocopy",
+   "máy in",
+   "cửa hàng"
+  ],
+  "lo": 67
  }
 }
