@@ -4,6 +4,10 @@
    "ma_bac@c2:d33a:263c::3cf:10": {
     "free": 1,
     "paid": 0
+   },
+   "ma_bac@c2:d33e:2e1e::498:2e": {
+    "free": 0,
+    "paid": 1
    }
   }
  }
