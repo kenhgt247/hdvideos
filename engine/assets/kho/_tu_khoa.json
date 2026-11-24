@@ -1438,5 +1438,206 @@
    "làm thêm"
   ],
   "lo": 36
+ },
+ "mac_dong_phuc_lam_viec": {
+  "ten": "Mặc đồng phục làm việc",
+  "tu_khoa": [
+   "đồng phục",
+   "công việc",
+   "làm thêm",
+   "sinh viên"
+  ],
+  "lo": 37
+ },
+ "do_bao_ho_lao_dong": {
+  "ten": "Đồ bảo hộ lao động",
+  "tu_khoa": [
+   "bảo hộ",
+   "an toàn",
+   "nhà máy",
+   "làm thêm"
+  ],
+  "lo": 37
+ },
+ "lam_cung_dong_nghiep_ban_xu": {
+  "ten": "Làm cùng đồng nghiệp người bản xứ",
+  "tu_khoa": [
+   "đồng nghiệp",
+   "bản xứ",
+   "hợp tác",
+   "làm thêm"
+  ],
+  "lo": 37
+ },
+ "phong_tro": {
+  "ten": "Phòng trọ",
+  "tu_khoa": [
+   "phòng trọ",
+   "thuê trọ",
+   "chỗ ở",
+   "du học"
+  ],
+  "lo": 38
+ },
+ "dap_xe": {
+  "ten": "Đạp xe",
+  "tu_khoa": [
+   "xe đạp",
+   "đi lại",
+   "sinh hoạt",
+   "du học"
+  ],
+  "lo": 40
+ },
+ "ket_noi_wifi": {
+  "ten": "Kết nối wifi",
+  "tu_khoa": [
+   "wifi",
+   "internet",
+   "laptop",
+   "sinh hoạt"
+  ],
+  "lo": 40
+ },
+ "an_toi_cung_ban": {
+  "ten": "Ăn tối cùng bạn",
+  "tu_khoa": [
+   "bạn bè",
+   "ăn tối",
+   "sinh hoạt",
+   "du học"
+  ],
+  "lo": 41
+ },
+ "sinh_nhat_xa_nha": {
+  "ten": "Sinh nhật xa nhà",
+  "tu_khoa": [
+   "sinh nhật",
+   "xa nhà",
+   "bạn bè",
+   "cảm xúc"
+  ],
+  "lo": 41
+ },
+ "don_tet_li_xi": {
+  "ten": "Đón Tết xa nhà lì xì",
+  "tu_khoa": [
+   "Tết",
+   "lì xì",
+   "xa nhà",
+   "lễ hội",
+   "du học"
+  ],
+  "lo": 41
+ },
+ "om_mot_minh": {
+  "ten": "Ốm một mình",
+  "tu_khoa": [
+   "ốm đau",
+   "một mình",
+   "sức khỏe",
+   "xa nhà"
+  ],
+  "lo": 41
+ },
+ "mua_do_mua_dong": {
+  "ten": "Mua đồ mùa đông",
+  "tu_khoa": [
+   "mua sắm",
+   "áo ấm",
+   "mùa đông",
+   "sinh hoạt"
+  ],
+  "lo": 43
+ },
+ "phan_loai_rac": {
+  "ten": "Phân loại rác",
+  "tu_khoa": [
+   "môi trường",
+   "phân loại rác",
+   "sinh hoạt",
+   "cộng đồng"
+  ],
+  "lo": 43
+ },
+ "chao_hang_xom": {
+  "ten": "Chào hàng xóm",
+  "tu_khoa": [
+   "hàng xóm",
+   "giao tiếp",
+   "cộng đồng",
+   "thân thiện"
+  ],
+  "lo": 43
+ },
+ "du_lich_cuoi_tuan": {
+  "ten": "Du lịch cuối tuần",
+  "tu_khoa": [
+   "cuối tuần",
+   "du lịch",
+   "khám phá",
+   "nghỉ ngơi"
+  ],
+  "lo": 44
+ },
+ "chup_anh_ky_niem": {
+  "ten": "Chụp ảnh kỷ niệm",
+  "tu_khoa": [
+   "chụp ảnh",
+   "kỷ niệm",
+   "du lịch",
+   "bạn bè"
+  ],
+  "lo": 44
+ },
+ "tap_the_duc": {
+  "ten": "Tập thể dục",
+  "tu_khoa": [
+   "thể dục",
+   "sức khỏe",
+   "vận động",
+   "sinh hoạt"
+  ],
+  "lo": 44
+ },
+ "ngu_du_giac": {
+  "ten": "Ngủ đủ giấc",
+  "tu_khoa": [
+   "ngủ nghỉ",
+   "sức khỏe",
+   "sinh hoạt",
+   "thời gian"
+  ],
+  "lo": 45
+ },
+ "quan_ly_thoi_gian": {
+  "ten": "Quản lý thời gian",
+  "tu_khoa": [
+   "kế hoạch",
+   "thời gian",
+   "lịch học",
+   "sinh hoạt"
+  ],
+  "lo": 45
+ },
+ "keo_vali_ve_nuoc": {
+  "ten": "Kéo vali về nước",
+  "tu_khoa": [
+   "về nước",
+   "hành lý",
+   "sân bay",
+   "du học"
+  ],
+  "lo": 45
+ },
+ "gui_qua_ve_nha": {
+  "ten": "Gửi quà về nhà",
+  "tu_khoa": [
+   "quà tặng",
+   "gia đình",
+   "bưu kiện",
+   "du học"
+  ],
+  "lo": 45
  }
 }
