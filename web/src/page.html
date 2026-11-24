@@ -163,6 +163,15 @@ pre.fmt{white-space:pre-wrap;font-size:13px;background:#fafbfe;border:1px solid 
 .stat{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.stat input{width:88px;padding:8px}
 table.st{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}table.st td,table.st th{border-bottom:1px solid #eee;padding:6px 4px;text-align:left}
 table.st th{color:#666;font-weight:600}.win{color:#1d7a3a;font-weight:700}
+.modes{display:flex;gap:8px;margin:0 0 12px}
+.modes button{flex:1;border:2px solid #d9dce5;background:#fff;border-radius:14px;padding:12px 8px;font-size:16px;font-weight:700;line-height:1.3}
+.modes button small{font-weight:400;font-size:12.5px;color:#777}
+.modes button.on{border-color:var(--blue);background:#eef3ff;color:var(--blue)}
+body.mode-ai .only-self, body.mode-self .only-ai{display:none!important}
+.aim{display:flex;gap:8px;align-items:flex-start;padding:10px;border:1px solid #e3e5ec;border-radius:12px;margin-top:6px;background:#fff}
+.aim input{margin-top:4px}.aim b{display:block}.aim span{font-size:12.5px;color:#666}
+.aim.on{border-color:var(--blue);background:#f4f7ff}
+details.opt>summary{font-weight:700;padding:12px 0;cursor:pointer;color:var(--blue)}
 </style>
 </head>
 <body>
@@ -190,7 +199,25 @@ table.st th{color:#666;font-weight:600}.win{color:#1d7a3a;font-weight:700}
     <input type="text" id="kpQ" placeholder="Tìm hình: visa, tiền, ký túc xá...">
     <div class="grid" id="kpGrid" style="margin-top:10px"></div>
   </div>
-  <div class="card hide" id="tplCard">
+  <div class="modes">
+    <button type="button" id="mAI">✨ Nhập chủ đề<br><small>AI viết kịch bản cho bạn</small></button>
+    <button type="button" id="mSelf">✍️ Tự viết<br><small>có mẫu &amp; hướng dẫn</small></button>
+  </div>
+  <div class="card only-ai" id="aiCard">
+    <h2>✨ Video về chủ đề gì?</h2>
+    <textarea id="aiTopic" rows="2" style="min-height:0" placeholder="Ví dụ: Hồ sơ visa du học Đài Loan cần lưu ý gì"></textarea>
+    <div class="chips" id="aiIdeas"></div>
+    <details><summary class="hint" style="cursor:pointer">➕ Thêm thông tin chính xác (học phí, học bổng, thông báo của trường...)</summary>
+      <textarea id="aiExtra" rows="3" style="min-height:0" placeholder="Dán thông tin của trung tâm/trường. AI sẽ dùng đúng như vậy, không tự sửa."></textarea></details>
+    <label class="f">Cách viết</label>
+    <label class="aim" id="aimFree"><input type="radio" name="aimode" value="free" checked><div><b>⚡ Viết nhanh (miễn phí)</b><span>Gemini viết kinh nghiệm, kiến thức chung. Không tra web nên không tự đưa số liệu, quy định cụ thể.</span></div></label>
+    <label class="aim" id="aimPaid"><input type="radio" name="aimode" value="paid"><div><b>🔎 Viết có kiểm chứng</b><span>Claude tra trang chính thức (Văn phòng Đài Bắc, Study in Korea...) rồi mới viết, kèm nguồn. Dùng cho video về visa, hồ sơ, học phí.</span></div></label>
+    <label class="chk"><input type="checkbox" id="aiAuto"> Viết xong tạo video luôn (không cần duyệt kịch bản)</label>
+    <button class="btn main" id="aiGo" style="margin-top:10px">✨ VIẾT KỊCH BẢN</button>
+    <div class="hint" id="aiInfo"></div>
+    <div id="aiSrc"></div>
+  </div>
+  <div class="card hide only-self" id="tplCard">
     <div class="hd"><h2>🧩 Mẫu kịch bản</h2><button class="btn sm red" id="tplClose">Đóng</button></div>
     <div class="hint">Chọn khung, điền vài ô ngắn, máy ráp thành kịch bản chuẩn: câu mở gây tò mò, bộ đếm 1/3, bút dạ đánh dấu, câu kết mời bình luận. <b>Mỗi video chỉ nói 1 điểm kiến thức.</b></div>
     <div class="tplc" id="tplChips"></div>
@@ -198,14 +225,14 @@ table.st th{color:#666;font-weight:600}.win{color:#1d7a3a;font-weight:700}
     <div id="tplHooks"></div>
     <button class="btn main" id="tplMake" style="margin-top:12px">Ráp thành kịch bản</button>
   </div>
-  <div class="card">
-    <h2>Kịch bản</h2>
+  <div class="card" id="scriptCard">
+    <h2><span class="only-self">Kịch bản</span><span class="only-ai">Kịch bản (xem lại &amp; sửa nếu cần)</span></h2>
     <div class="tools">
       <button class="btn sm" id="bPaste">Dán</button>
-      <button class="btn sm" id="bPrompt">Copy câu lệnh ChatGPT</button>
-      <button class="btn sm" id="bTpl">🧩 Mẫu kịch bản</button>
+      <button class="btn sm only-self" id="bPrompt">Copy câu lệnh ChatGPT</button>
+      <button class="btn sm only-self" id="bTpl">🧩 Mẫu kịch bản</button>
       <button class="btn sm" id="bHook">💡 Gợi ý câu mở</button>
-      <button class="btn sm" id="bSample">Ví dụ</button>
+      <button class="btn sm only-self" id="bSample">Ví dụ</button>
       <button class="btn sm red" id="bClear">Xoá</button>
     </div>
     <textarea id="script" placeholder="Mỗi dòng là một cảnh.&#10;Chữ trên màn hình / dòng 2 || lời đọc đầy đủ&#10;- gạch đầu dòng&#10;[vẽ: tên hình]"></textarea>
@@ -218,7 +245,7 @@ table.st th{color:#666;font-weight:600}.win{color:#1d7a3a;font-weight:700}
     <div class="hint" id="count">0 cảnh</div>
     <div class="chk" id="chk"></div>
     <div id="hookBox"></div>
-    <details><summary>Cách viết kịch bản</summary>
+    <details class="only-self"><summary>Cách viết kịch bản</summary>
 <pre class="fmt">VIẾT TAY RẤT ĐƠN GIẢN — mỗi dòng 1 câu = 1 cảnh:
 Du học Đài Loan cần chuẩn bị gì?
 Hồ sơ gồm: hộ chiếu, học bạ, ảnh thẻ và sổ tiết kiệm
@@ -246,12 +273,13 @@ BÍ QUYẾT GIỮ NGƯỜI XEM:
   </div>
 
   <div class="card">
-    <h2>Tuỳ chọn</h2>
+    <h2>Xuất video</h2>
     <label class="f">Khung hình (đăng ở đâu?)</label>
     <input type="hidden" id="fmt">
     <div class="fmts" id="fmts"></div>
     <label class="f" for="name">Tên video</label>
     <input type="text" id="name" placeholder="Ví dụ: Trống năm đi Hàn">
+    <details class="opt" id="optMore"><summary>⚙️ Tuỳ chỉnh: giọng đọc, nhạc, nền, nhân vật, kiểu vẽ… <span class="hint" style="font-weight:400">(không bắt buộc)</span></summary>
     <label class="f" for="voice">Giọng đọc</label>
     <select id="voice"></select>
     <div class="hint"><a href="#" id="goRec" style="color:var(--blue);font-weight:600">🎙 Ghi âm giọng của bạn (giọng nhân bản)</a> · <a href="#" id="goMusic" style="color:var(--blue);font-weight:600">🎵 Thêm nhạc nền</a></div>
@@ -302,6 +330,7 @@ BÍ QUYẾT GIỮ NGƯỜI XEM:
     <select id="pen"><option value="0">Tắt</option><option value="1" selected>Nhỏ</option><option value="1.8">Vừa</option></select>
     <label class="chk"><input type="checkbox" id="auto" checked> Tự trang trí (tô màu, gạch chân, hình minh hoạ)</label>
     <label class="chk"><input type="checkbox" id="logo" checked> Hiện logo</label>
+    </details>
     <label class="f" for="by">Người tạo</label>
     <input type="text" id="by" placeholder="Tên của bạn">
     <button class="btn" id="bPrev" style="width:100%;margin-top:16px;padding:14px;font-size:16px">👁 Xem trước & sửa từng cảnh</button>
@@ -351,6 +380,18 @@ BÍ QUYẾT GIỮ NGƯỜI XEM:
 
 <!-- ===== CÀI ĐẶT ===== -->
 <section id="tab-cai" class="hide">
+  <div class="card adm" id="aiCfgCard">
+    <h2>🤖 AI viết kịch bản</h2>
+    <div id="aiKeys" class="hint"></div>
+    <div class="row">
+      <div><label class="f" for="cfFree">⚡ Viết nhanh: lượt/người/ngày</label><input type="number" id="cfFree" min="0" max="500"></div>
+      <div><label class="f" for="cfPaid">🔎 Kiểm chứng: lượt/người/ngày</label><input type="number" id="cfPaid" min="0" max="200"></div>
+    </div>
+    <label class="chk"><input type="checkbox" id="cfStaff"> Cho nhân viên dùng "Viết có kiểm chứng" (tốn phí)</label>
+    <button class="btn" id="cfSave" style="width:100%;margin-top:8px">Lưu cài đặt AI</button>
+    <div class="hint">Admin không bị giới hạn lượt. Giới hạn tính theo tên người tạo + mạng đang dùng. Để chắc chắn không tốn quá tiền, hãy đặt <b>mức trần chi tiêu</b> trong trang quản lý Claude.</div>
+    <div id="aiToday"></div>
+  </div>
   <div class="card">
     <h2>Nhân vật của tôi</h2>
     <div class="hint" id="nvWho"></div>
@@ -991,6 +1032,106 @@ $('bHook').onclick = () => {
   };
 };
 
+
+/* ===== CHẾ ĐỘ & AI VIẾT KỊCH BẢN ===== */
+const tplName = k => k === 'ai_free' ? '⚡ AI viết nhanh' : k === 'ai_paid' ? '🔎 AI kiểm chứng' : (TPLS[k] ? TPLS[k].name : '');
+function setMode(m) {
+  document.body.classList.toggle('mode-ai', m === 'ai'); document.body.classList.toggle('mode-self', m !== 'ai');
+  $('mAI').classList.toggle('on', m === 'ai'); $('mSelf').classList.toggle('on', m !== 'ai');
+  store.set('mode', m);
+}
+$('mAI').onclick = () => setMode('ai');
+$('mSelf').onclick = () => setMode('self');
+setMode(store.get('mode', 'ai'));
+const IDEAS = ['Hồ sơ visa Đài Loan cần lưu ý gì', 'TOPIK cấp mấy thì đi Hàn được', 'Chi phí năm đầu du học Hàn gồm những gì',
+  'Làm thêm ở Đài Loan: điều cần biết', 'Chọn ngành theo sở thích hay cơ hội việc làm', 'Phỏng vấn visa Hàn thường hỏi gì',
+  'Học bổng Đài Loan có những loại nào', 'Sai lầm khi chọn trường du học'];
+$('aiIdeas').innerHTML = IDEAS.map(x => `<button type="button" class="btn sm">${esc(x)}</button>`).join('');
+$('aiIdeas').querySelectorAll('button').forEach(b => b.onclick = () => { $('aiTopic').value = b.textContent; $('aiTopic').focus(); });
+$('aiTopic').value = store.get('ai_topic', '');
+$('aiTopic').oninput = () => store.set('ai_topic', $('aiTopic').value);
+$('aiAuto').checked = store.get('ai_auto', false);
+$('aiAuto').onchange = () => store.set('ai_auto', $('aiAuto').checked);
+const aiMode = () => (document.querySelector('input[name=aimode]:checked') || {}).value || 'free';
+function drawAim() { $('aimFree').classList.toggle('on', aiMode() === 'free'); $('aimPaid').classList.toggle('on', aiMode() === 'paid'); store.set('ai_mode', aiMode()); }
+document.querySelectorAll('input[name=aimode]').forEach(r => { r.checked = r.value === store.get('ai_mode', 'free'); r.onchange = drawAim; });
+drawAim();
+let AI_CFG = null;
+fetch('/api/ai/config').then(r => r.ok ? r.json() : Promise.reject()).then(c => {
+  AI_CFG = c;
+  if (!c.has_free) $('aimFree').querySelector('span').innerHTML += ' <b class="w">(chưa gắn khoá)</b>';
+  if (!c.has_paid) $('aimPaid').querySelector('span').innerHTML += ' <b class="w">(chưa gắn khoá)</b>';
+  if (!c.paid_staff && !c.admin) { $('aimPaid').querySelector('span').innerHTML += ' <b class="w">(chỉ admin)</b>'; }
+  drawAiCfg();
+}).catch(() => {});
+function showAiSources(d) {
+  const box = $('aiSrc'); box.innerHTML = '';
+  const div = document.createElement('div'); div.className = 'chk';
+  const inner = document.createElement('div');
+  inner.style.cssText = 'padding:8px 10px;border-radius:10px;margin-top:8px;' + (d.verified ? 'background:#eef4ff;border:1px solid #c9d8f5' : 'background:#fff6f0;border:1px solid #f3c9a8');
+  const h = document.createElement('b');
+  h.textContent = d.mode === 'paid' ? (d.sources.length ? '🔎 Nguồn Claude đã tra (bấm để đối chiếu):' : '⚠ Claude không tìm được nguồn chính thức, hãy kiểm tra kỹ trước khi đăng.')
+    : '⚡ Viết nhanh: chưa kiểm chứng trên web. Nếu có số liệu, quy định, hãy kiểm tra lại trước khi đăng.';
+  inner.appendChild(h);
+  if (d.sources.length) {
+    const ul = document.createElement('ul');
+    d.sources.forEach(sx => {
+      const li = document.createElement('li'), a = document.createElement('a');
+      a.href = sx.url; a.target = '_blank'; a.rel = 'noopener';
+      let host = sx.url; try { host = new URL(sx.url).hostname; } catch {}
+      a.textContent = sx.title ? sx.title.slice(0, 70) + ' — ' + host : host;
+      li.appendChild(a); ul.appendChild(li);
+    });
+    inner.appendChild(ul);
+  }
+  if (d.caption) {
+    const c = document.createElement('div'); c.style.marginTop = '6px';
+    const t = document.createElement('div'); t.className = 'hint'; t.style.whiteSpace = 'pre-wrap'; t.textContent = d.caption;
+    const btn = document.createElement('button'); btn.className = 'btn sm'; btn.textContent = 'Copy caption'; btn.type = 'button';
+    btn.onclick = () => copyText(d.caption).then(() => toast('Đã copy caption'));
+    c.appendChild(document.createTextNode('Caption gợi ý: ')); c.appendChild(btn); c.appendChild(t); inner.appendChild(c);
+  }
+  div.appendChild(inner); box.appendChild(div);
+}
+$('aiGo').onclick = async () => {
+  const topic = $('aiTopic').value.trim();
+  if (topic.length < 4) { toast('Hãy nhập chủ đề video'); $('aiTopic').focus(); return; }
+  if (!$('by').value.trim()) {
+    const n = prompt('Tên của bạn là gì? (để tính lượt dùng AI)');
+    if (!n || !n.trim()) return;
+    $('by').value = n.trim(); store.set('by', n.trim());
+  }
+  if ($('script').value.trim() && !confirm('Thay kịch bản đang có bằng kịch bản AI viết?')) return;
+  const mode = aiMode(), btn = $('aiGo');
+  btn.disabled = true;
+  let sec = 0; const tick = setInterval(() => { sec++; btn.textContent = `⏳ AI đang ${mode === 'paid' ? 'tra nguồn và ' : ''}viết... ${sec}s`; }, 1000);
+  $('aiInfo').textContent = mode === 'paid' ? 'Claude đang tra trang chính thức, thường mất 20–60 giây.' : 'Thường mất 5–20 giây.';
+  try {
+    const d = await api('/api/ai/script', { topic, extra: $('aiExtra').value, mode, by: $('by').value });
+    $('script').value = fixScript(d.script);
+    if (!$('name').value.trim()) $('name').value = topic.slice(0, 50);
+    TPL_USED = 'ai_' + mode; store.set('tpl_used', TPL_USED);
+    afterEdit(); showAiSources(d);
+    $('aiInfo').textContent = d.limit ? `Đã dùng ${d.used}/${d.limit} lượt hôm nay.` : '';
+    const r = runCheck();
+    if ($('aiAuto').checked && !r.E.length) { toast('Đã viết xong, đang gửi tạo video...'); makeVideo(); }
+    else { $('scriptCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); toast(r.E.length ? 'Kịch bản còn lỗi, xem ô đỏ để sửa' : 'Xong! Xem lại kịch bản rồi bấm TẠO VIDEO'); }
+  } catch (e) { $('aiInfo').textContent = ''; toast(e.message, 6000); }
+  clearInterval(tick); btn.disabled = false; btn.textContent = '✨ VIẾT KỊCH BẢN';
+};
+function drawAiCfg() {
+  const c = AI_CFG; if (!c || !c.admin) return;
+  $('aiKeys').innerHTML = `Khoá Gemini (viết nhanh): <b>${c.has_free ? '✅ đã gắn' : '❌ chưa gắn'}</b> · Khoá Claude (kiểm chứng): <b>${c.has_paid ? '✅ đã gắn' : '❌ chưa gắn'}</b>`;
+  $('cfFree').value = c.free; $('cfPaid').value = c.paid; $('cfStaff').checked = !!c.paid_staff;
+  const t = c.today || {}, rows = Object.entries(t);
+  $('aiToday').innerHTML = rows.length ? '<b style="display:block;margin-top:10px">Lượt dùng hôm nay</b><table class="st"><tr><th>Người</th><th>⚡ Nhanh</th><th>🔎 Kiểm chứng</th></tr>' +
+    rows.map(([k, u]) => `<tr><td>${esc(k.split('@')[0])}</td><td>${u.free || 0}</td><td>${u.paid || 0}</td></tr>`).join('') + '</table>' : '';
+}
+$('cfSave').onclick = async () => {
+  try { const d = await api('/api/ai/config', { free: $('cfFree').value, paid: $('cfPaid').value, paid_staff: $('cfStaff').checked }); Object.assign(AI_CFG, d); toast('Đã lưu cài đặt AI'); }
+  catch (e) { toast(e.message); }
+};
+
 function jobBody(preview) {
   const script = $('script').value.trim();
   FIELDS.forEach(k => k !== 'name' && store.set(k, $(k).value));
@@ -1246,7 +1387,7 @@ async function loadList() {
     $('vlist').innerHTML = d.items.map((v, i) => `<div class="card"><div class="vid"><div class="meta">
       <div class="n">${v.ok ? '' : '✗ '}${esc(v.name)}</div>
       <div class="d">${when(v.created)}${v.by ? ' · ' + esc(v.by) : ''}${v.voice ? ' · ' + esc(v.voice) : ''}</div>
-      <div>${v.tpl && TPLS[v.tpl] ? `<span class="badge">${esc(TPLS[v.tpl].name)}</span>` : ''}${v.ab ? `<span class="badge ab">Bản ${esc(v.ab)}</span>` : ''}${statLine(window._stats[v.id])}</div>
+      <div>${tplName(v.tpl) ? `<span class="badge">${esc(tplName(v.tpl))}</span>` : ''}${v.ab ? `<span class="badge ab">Bản ${esc(v.ab)}</span>` : ''}${statLine(window._stats[v.id])}</div>
       ${v.ok ? '' : `<span class="tag e">${esc(v.error || 'Lỗi')}</span>`}
       ${v.fallback ? '<span class="tag">Giọng dự phòng</span>' : ''}
       ${v.credit ? `<div class="hint">Ghi nguồn nhạc: ${esc(v.credit)} <a href="#" onclick="event.preventDefault();copyText(${esc(JSON.stringify(v.credit))}).then(()=>toast('Đã copy'))">Copy</a></div>` : ''}
@@ -1306,7 +1447,7 @@ $('bStat').onclick = () => {
   }
   // theo mẫu
   const by = {};
-  withS.forEach(v => { const k = v.tpl && TPLS[v.tpl] ? TPLS[v.tpl].name : '✍ Tự viết / ChatGPT'; (by[k] = by[k] || []).push(st[v.id]); });
+  withS.forEach(v => { const k = tplName(v.tpl) || '✍ Tự viết / ChatGPT'; (by[k] = by[k] || []).push(st[v.id]); });
   h += '<b style="display:block;margin-top:10px">🧩 Mẫu kịch bản nào hiệu quả?</b><table class="st"><tr><th>Mẫu</th><th>Số video</th><th>Xem TB</th><th>Tương tác TB</th></tr>';
   const rows = Object.entries(by).map(([k, arr]) => [k, arr.length, arr.reduce((x, r) => x + r.views, 0) / arr.length, arr.reduce((x, r) => x + rate(r), 0) / arr.length]).sort((x, y) => y[2] - x[2]);
   rows.forEach(([k, n, av, ar], j) => { h += `<tr><td>${j === 0 && rows.length > 1 ? '🏆 ' : ''}${esc(k)}</td><td>${n}</td><td class="${j === 0 ? 'win' : ''}">${fmtN(Math.round(av))}</td><td>${ar.toFixed(1)}%</td></tr>`; });

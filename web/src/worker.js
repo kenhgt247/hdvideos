@@ -132,6 +132,117 @@ async function saveStats(env, id, rec) {
   return false;
 }
 
+
+// ===================== AI VIẾT KỊCH BẢN =====================
+const AI_FILE = 'thongke/ai.json';
+const AI_DEF = { free: 20, paid: 5, paid_staff: true };
+const OFFICIAL = ['roc-taiwan.org', 'studyintaiwan.org', 'edu.tw', 'gov.tw', 'go.kr', 'ac.kr', 'gov.vn', 'mofa.go.kr'];
+async function chatgptPrompt(env) {
+  const [txt, kho] = await Promise.all([
+    gh(env, '/contents/engine/LENH_CHATGPT.txt', { headers: { accept: 'application/vnd.github.raw' } }).then(r => r.text()),
+    listDir(env, 'engine/assets/kho'),
+  ]);
+  const names = kho.filter(x => x.name.endsWith('.png') && !x.name.startsWith('_')).map(x => x.name.slice(0, -4).replace(/_/g, ' '));
+  const extra = names.length ? `\n\nẢNH TRONG KHO (ưu tiên dùng, viết có dấu cũng được, ví dụ [vẽ: hồ sơ du học]):\n${names.join(', ')}\n` : '';
+  return txt.replace(/^﻿/, '') + extra;
+}
+const AI_COMMON = `
+
+====================================================
+CHẾ ĐỘ TỰ ĐỘNG (QUAN TRỌNG NHẤT, ĐÈ LÊN MỌI DÒNG Ở TRÊN)
+====================================================
+Bạn đang được phần mềm gọi tự động, không có người chat với bạn.
+- KHÔNG trả lời "Sẵn sàng". Viết NGAY kịch bản cho CHỦ ĐỀ trong tin nhắn.
+- Trả lời đúng 3 phần của PHẦN C: (1) MỘT khối \`\`\` chỉ chứa kịch bản, (2) CAPTION, (3) NGUỒN.
+- Mỗi video 1 điểm kiến thức, 8–12 dòng cảnh, lời đọc tổng khoảng 60–100 chữ.
+- Nếu THÔNG TIN THÊM có số liệu của trung tâm thì dùng đúng, không sửa.`;
+const AI_FREE = `
+- Bạn KHÔNG có công cụ tra web. TUYỆT ĐỐI không viết con số, mức phí, mốc thời gian, số tháng, điều kiện visa, quy định cụ thể nào (trừ khi có trong THÔNG TIN THÊM). Chỉ chia sẻ kinh nghiệm và kiến thức chung, ví dụ "tùy trường", "xem thông báo mới nhất".
+- Phần NGUỒN ghi đúng: "Chưa kiểm chứng trên web".`;
+const AI_PAID = `
+- Hãy dùng công cụ web_search (tối đa 3 lần) để tìm trên trang CHÍNH THỨC trước khi viết. Mọi con số, quy định, giấy tờ đưa vào kịch bản phải thấy trên trang đã tìm. Không tìm thấy thì nói chung chung, không bịa.
+- Phần NGUỒN liệt kê 1–3 đường link chính thức bạn đã dùng.`;
+
+function parseAi(text) {
+  const m = text.match(/```[a-zA-Z]*\n?([\s\S]*?)```/);
+  const script = (m ? m[1] : text).trim();
+  const rest = m ? text.slice(text.indexOf(m[0]) + m[0].length) : '';
+  const si = rest.search(/^\s*\**\s*(NGUỒN|Nguồn|\(3\))/m);
+  const caption = (si >= 0 ? rest.slice(0, si) : rest).replace(/^\s*\**\s*(CAPTION|\(2\))[^\n]*\n?/im, '').trim();
+  const srcTxt = si >= 0 ? rest.slice(si) : '';
+  return { script, caption, srcTxt };
+}
+async function aiGemini(env, sys, user) {
+  let last = '';
+  for (const model of ['gemini-flash-latest', 'gemini-3.5-flash-lite']) {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': env.GEMINI_KEY },
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: sys }] }, contents: [{ role: 'user', parts: [{ text: user }] }],
+        generationConfig: { maxOutputTokens: 8192 } }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok) {
+      const parts = (((d.candidates || [])[0] || {}).content || {}).parts || [];
+      const text = parts.filter(x => !x.thought && x.text).map(x => x.text).join('');
+      if (text.trim()) return { text, sources: [] };
+      last = 'Gemini không trả về nội dung';
+      continue;
+    }
+    last = (d.error && d.error.message) || ('Gemini lỗi ' + r.status);
+    if (r.status === 429) last = 'Gemini miễn phí đã hết lượt hôm nay (hoặc gọi quá nhanh). Thử lại sau ít phút, hoặc dùng "Viết có kiểm chứng".';
+    if (![404, 429, 500, 503].includes(r.status)) break;
+  }
+  throw new Error(last);
+}
+async function aiClaude(env, sys, user) {
+  const tool = { type: 'web_search_20250305', name: 'web_search', max_uses: 4, allowed_domains: OFFICIAL };
+  let messages = [{ role: 'user', content: user }], useDomains = true;
+  const blocks = [];
+  for (let step = 0; step < 4; step++) {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': env.CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 4096, system: sys, messages,
+        tools: [useDomains ? tool : { type: tool.type, name: tool.name, max_uses: tool.max_uses }] }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const msg = (d.error && d.error.message) || ('Claude lỗi ' + r.status);
+      if (r.status === 400 && useDomains && /domain/i.test(msg)) { useDomains = false; step--; continue; }
+      if (/web search/i.test(msg) && /enable|disabled|not enabled/i.test(msg)) throw new Error('Cần bật Web search trong trang quản lý Claude (Console → Settings → Privacy/Web search).');
+      if (/credit|balance/i.test(msg)) throw new Error('Tài khoản Claude đã hết tiền nạp. Admin hãy nạp thêm trong Claude Console.');
+      throw new Error(msg);
+    }
+    blocks.push(...(d.content || []));
+    if (d.stop_reason === 'pause_turn') { messages = [{ role: 'user', content: user }, { role: 'assistant', content: d.content }]; continue; }
+    break;
+  }
+  const text = blocks.filter(b => b.type === 'text').map(b => b.text).join('');
+  const seen = new Map();
+  for (const b of blocks) {
+    if (b.type === 'text') for (const c of (b.citations || [])) if (c.url && !seen.has(c.url)) seen.set(c.url, c.title || c.url);
+  }
+  return { text, sources: [...seen].map(([url, title]) => ({ url, title })) };
+}
+function today() { return new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10); }
+async function aiRecord(env, who, mode) {
+  for (let i = 0; i < 3; i++) {
+    const { data, sha } = await readJson(env, AI_FILE);
+    const d = today();
+    data.use = data.use || {};
+    for (const k of Object.keys(data.use)) if (k < new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10)) delete data.use[k];
+    const day = data.use[d] = data.use[d] || {};
+    const u = day[who] = day[who] || { free: 0, paid: 0 };
+    u[mode] = (u[mode] || 0) + 1;
+    const bytes = new TextEncoder().encode(JSON.stringify(data, null, 1));
+    let bin = ''; bytes.forEach(b => { bin += String.fromCharCode(b); });
+    const body = { message: 'Ghi lượt dùng AI', content: btoa(bin), branch: 'main' };
+    if (sha) body.sha = sha;
+    const r = await gh(env, `/contents/${AI_FILE}`, { method: 'PUT', body: JSON.stringify(body) });
+    if (r.ok) return;
+  }
+}
+
 async function rawFile(env, path, type) {
   const r = await gh(env, `/contents/${path}`, { headers: { accept: 'application/vnd.github.raw' } });
   if (!r.ok) return new Response('Không tìm thấy', { status: 404 });
@@ -246,7 +357,7 @@ const r=await fetch('/api/login',{method:'POST',body:JSON.stringify({password:do
 if(r.ok)location.href='/';else document.getElementById('e').textContent='Sai mật khẩu';}</script></body></html>`;
 
 export default {
-  async fetch(req, env) {
+  async fetch(req, env, ctx) {
     const url = new URL(req.url);
     const p = url.pathname;
     try {
@@ -505,6 +616,59 @@ export default {
         if (!b.data) return err('Thiếu ảnh');
         await putFile(env, 'engine/assets/logo.png', b.data, 'Đổi logo');
         return json({ ok: true });
+      }
+
+      // ---- AI viết kịch bản từ chủ đề
+      if (p === '/api/ai/config' && req.method === 'GET') {
+        const { data } = await readJson(env, AI_FILE);
+        const cfg = { ...AI_DEF, ...(data.config || {}) };
+        return json({ ...cfg, has_free: !!env.GEMINI_KEY, has_paid: !!env.CLAUDE_KEY, admin, today: admin ? (data.use || {})[today()] || {} : undefined });
+      }
+      if (p === '/api/ai/config' && req.method === 'POST') {
+        if (!admin) return err(ADMIN_ONLY, 403);
+        const b = await req.json();
+        for (let i = 0; i < 3; i++) {
+          const { data, sha } = await readJson(env, AI_FILE);
+          data.config = { free: Math.max(0, Math.min(500, parseInt(b.free, 10) || 0)), paid: Math.max(0, Math.min(200, parseInt(b.paid, 10) || 0)), paid_staff: !!b.paid_staff };
+          const bytes = new TextEncoder().encode(JSON.stringify(data, null, 1));
+          let bin = ''; bytes.forEach(x => { bin += String.fromCharCode(x); });
+          const body = { message: 'Cài đặt AI', content: btoa(bin), branch: 'main' };
+          if (sha) body.sha = sha;
+          const r = await gh(env, `/contents/${AI_FILE}`, { method: 'PUT', body: JSON.stringify(body) });
+          if (r.ok) return json({ ok: true, ...data.config });
+        }
+        return err('Không lưu được, thử lại', 502);
+      }
+      if (p === '/api/ai/script' && req.method === 'POST') {
+        const b = await req.json();
+        const topic = String(b.topic || '').trim().slice(0, 400);
+        const extra = String(b.extra || '').trim().slice(0, 2500);
+        const mode = b.mode === 'paid' ? 'paid' : 'free';
+        if (topic.length < 4) return err('Hãy nhập chủ đề video');
+        const { data } = await readJson(env, AI_FILE);
+        const cfg = { ...AI_DEF, ...(data.config || {}) };
+        if (mode === 'paid' && !env.CLAUDE_KEY) return err('Chưa gắn khoá Claude. Admin xem hướng dẫn trong mục Cài đặt.');
+        if (mode === 'free' && !env.GEMINI_KEY) return err('Chưa gắn khoá Gemini. Admin xem hướng dẫn trong mục Cài đặt.');
+        if (mode === 'paid' && !admin && !cfg.paid_staff) return err('Chế độ "Viết có kiểm chứng" hiện chỉ dành cho admin.', 403);
+        const ip = req.headers.get('cf-connecting-ip') || 'ip';
+        const who = (slug(b.by || '') || 'khong_ten') + '@' + ip.replace(/[^0-9a-f.:]/gi, '').slice(-20);
+        const used = (((data.use || {})[today()] || {})[who] || {})[mode] || 0;
+        const limit = cfg[mode];
+        if (!admin && used >= limit) return err(`Bạn đã dùng hết ${limit} lượt "${mode === 'paid' ? 'Viết có kiểm chứng' : 'Viết nhanh'}" hôm nay. Mai dùng tiếp, hoặc nhờ admin tăng giới hạn.`, 429);
+        const sys = (await chatgptPrompt(env)) + AI_COMMON + (mode === 'paid' ? AI_PAID : AI_FREE);
+        const user = `CHỦ ĐỀ: ${topic}` + (extra ? `\n\nTHÔNG TIN THÊM (của trung tâm, dùng đúng như vậy):\n${extra}` : '');
+        let out;
+        try { out = mode === 'paid' ? await aiClaude(env, sys, user) : await aiGemini(env, sys, user); }
+        catch (e) { return err(String(e.message || e), 502); }
+        const res = parseAi(out.text);
+        if (!res.script) return err('AI chưa viết được kịch bản, hãy thử lại hoặc đổi cách nói chủ đề.', 502);
+        const urls = [...res.srcTxt.matchAll(/https?:\/\/[^\s)\]]+/g)].map(x => ({ url: x[0], title: '' }));
+        const sources = [...out.sources];
+        for (const u of urls) if (!sources.some(x => x.url === u.url)) sources.push(u);
+        const rec = aiRecord(env, admin ? 'admin' : who, mode);
+        if (ctx && ctx.waitUntil) ctx.waitUntil(rec); else await rec;
+        return json({ script: res.script, caption: res.caption, sources: sources.slice(0, 8), mode,
+          verified: mode === 'paid' && sources.length > 0, used: used + 1, limit: admin ? null : limit });
       }
       if (p === '/api/names') {
         const [hv, kho] = await Promise.all([
