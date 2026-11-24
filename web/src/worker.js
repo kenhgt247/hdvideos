@@ -222,28 +222,49 @@ async function aiGemini(env, sys, user) {
 }
 async function aiClaude(env, sys, user) {
   const tool = { type: 'web_search_20250305', name: 'web_search', max_uses: 4, allowed_domains: OFFICIAL };
-  let messages = [{ role: 'user', content: user }], useDomains = true;
-  const blocks = [];
-  for (let step = 0; step < 4; step++) {
-    const r = await aiFetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-api-key': env.CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 4096, system: sys, messages,
-        tools: [useDomains ? tool : { type: tool.type, name: tool.name, max_uses: tool.max_uses }] }),
-    });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok) {
+  let useDomains = true, stop = '', diag = [];
+  const blocks = [];                                   // toàn bộ nội dung trợ lý (kể cả các lượt tạm dừng)
+  const call = async (messages, extra = {}) => {
+    for (let k = 0; k < 2; k++) {
+      const r = await aiFetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-api-key': env.CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 8000, system: sys, messages,
+          tools: [useDomains ? tool : { type: tool.type, name: tool.name, max_uses: tool.max_uses }], ...extra }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) return d;
       const msg = (d.error && d.error.message) || ('Claude lỗi ' + r.status);
-      if (r.status === 400 && useDomains && /domain/i.test(msg)) { useDomains = false; step--; continue; }
-      if (/web search/i.test(msg) && /enable|disabled|not enabled/i.test(msg)) throw new Error('Cần bật Web search trong trang quản lý Claude (Console → Settings → Privacy/Web search).');
+      if (r.status === 400 && useDomains && /domain/i.test(msg)) { useDomains = false; continue; }
+      if (/web search/i.test(msg) && /enable|disabled|not enabled/i.test(msg)) throw new Error('Cần bật Web search trong trang quản lý Claude (Console → Settings).');
       if (/credit|balance/i.test(msg)) throw new Error('Tài khoản Claude đã hết tiền nạp. Admin hãy nạp thêm trong Claude Console.');
+      if (/location is not supported|not available in your/i.test(msg)) throw new Error('Claude chưa hỗ trợ vị trí máy chủ hiện tại.');
       throw new Error(msg);
     }
+    throw new Error('Claude từ chối danh sách trang chính thức');
+  };
+  for (let step = 0; step < 5; step++) {
+    const msgs = blocks.length ? [{ role: 'user', content: user }, { role: 'assistant', content: blocks }] : [{ role: 'user', content: user }];
+    const d = await call(msgs);
     blocks.push(...(d.content || []));
-    if (d.stop_reason === 'pause_turn') { messages = [{ role: 'user', content: user }, { role: 'assistant', content: d.content }]; continue; }
-    break;
+    stop = d.stop_reason || '';
+    diag.push(stop);
+    if (stop !== 'pause_turn') break;
   }
-  const text = blocks.filter(b => b.type === 'text').map(b => b.text).join('');
+  const textOf = arr => arr.filter(b => b.type === 'text').map(b => b.text).join('');
+  let text = textOf(blocks);
+  if (!/```/.test(text)) {                             // tra xong nhưng chưa viết: bảo viết ngay, không tra thêm
+    const d = await call([{ role: 'user', content: user }, { role: 'assistant', content: blocks },
+      { role: 'user', content: 'Bạn đã tra đủ. Hãy viết NGAY kịch bản theo đúng PHẦN C (khối ``` kịch bản, CAPTION, NGUỒN), không tìm thêm.' }],
+      { tool_choice: { type: 'none' } });
+    blocks.push(...(d.content || []));
+    diag.push('retry:' + (d.stop_reason || ''));
+    text = textOf(blocks);
+  }
+  if (!text.trim()) {
+    const errs = blocks.filter(b => b.type === 'web_search_tool_result' && b.content && b.content.error_code).map(b => b.content.error_code);
+    throw new Error('Claude chưa trả về chữ (mã: ' + diag.join(',') + (errs.length ? '; tra web: ' + errs.join(',') : '') + '; khối: ' + [...new Set(blocks.map(b => b.type))].join(',') + ')');
+  }
   const seen = new Map();
   for (const b of blocks) {
     if (b.type === 'text') for (const c of (b.citations || [])) if (c.url && !seen.has(c.url)) seen.set(c.url, c.title || c.url);
