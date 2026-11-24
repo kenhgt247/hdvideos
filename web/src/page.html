@@ -210,8 +210,8 @@ details.opt>summary{font-weight:700;padding:12px 0;cursor:pointer;color:var(--bl
     <details><summary class="hint" style="cursor:pointer">➕ Thêm thông tin chính xác (học phí, học bổng, thông báo của trường...)</summary>
       <textarea id="aiExtra" rows="3" style="min-height:0" placeholder="Dán thông tin của trung tâm/trường. AI sẽ dùng đúng như vậy, không tự sửa."></textarea></details>
     <label class="f">Cách viết</label>
-    <label class="aim" id="aimFree"><input type="radio" name="aimode" value="free" checked><div><b>⚡ Viết nhanh (miễn phí)</b><span>Gemini viết kinh nghiệm, kiến thức chung. Không tra web nên không tự đưa số liệu, quy định cụ thể.</span></div></label>
-    <label class="aim" id="aimPaid"><input type="radio" name="aimode" value="paid"><div><b>🔎 Viết có kiểm chứng</b><span>Claude tra trang chính thức (Văn phòng Đài Bắc, Study in Korea...) rồi mới viết, kèm nguồn. Dùng cho video về visa, hồ sơ, học phí.</span></div></label>
+    <label class="aim" id="aimFree"><input type="radio" name="aimode" value="free" checked><div><b>⚡ Viết nhanh</b><span>Gemini viết kinh nghiệm, kiến thức chung. Không tra web nên không tự đưa số liệu, quy định cụ thể.</span></div></label>
+    <label class="aim" id="aimPaid" style="display:none"><input type="radio" name="aimode" value="paid" disabled><div><b>🔎 Viết có kiểm chứng</b><span>Claude tra trang chính thức (Văn phòng Đài Bắc, Study in Korea...) rồi mới viết, kèm nguồn. Dùng cho video về visa, hồ sơ, học phí.</span></div></label>
     <label class="chk"><input type="checkbox" id="aiAuto"> Viết xong tạo video luôn (không cần duyệt kịch bản)</label>
     <button class="btn main" id="aiGo" style="margin-top:10px">✨ VIẾT KỊCH BẢN</button>
     <div class="hint" id="aiInfo"></div>
@@ -398,7 +398,7 @@ BÍ QUYẾT GIỮ NGƯỜI XEM:
       <div><label class="f" for="cfFree">⚡ Viết nhanh: lượt/người/ngày</label><input type="number" id="cfFree" min="0" max="500"></div>
       <div><label class="f" for="cfPaid">🔎 Kiểm chứng: lượt/người/ngày</label><input type="number" id="cfPaid" min="0" max="200"></div>
     </div>
-    <label class="chk"><input type="checkbox" id="cfStaff"> Cho nhân viên dùng "Viết có kiểm chứng" (tốn phí)</label>
+    <label class="chk"><input type="checkbox" id="cfStaff"> Cho nhân viên dùng "Viết có kiểm chứng" (tắt để ẩn khỏi giao diện nhân viên)</label>
     <button class="btn" id="cfSave" style="width:100%;margin-top:8px">Lưu cài đặt AI</button>
     <div class="hint">Admin không bị giới hạn lượt. Giới hạn tính theo tên người tạo + mạng đang dùng. Để chắc chắn không tốn quá tiền, hãy đặt <b>mức trần chi tiêu</b> trong trang quản lý Claude.</div>
     <div id="aiToday"></div>
@@ -1063,18 +1063,52 @@ $('aiTopic').value = store.get('ai_topic', '');
 $('aiTopic').oninput = () => store.set('ai_topic', $('aiTopic').value);
 $('aiAuto').checked = store.get('ai_auto', false);
 $('aiAuto').onchange = () => store.set('ai_auto', $('aiAuto').checked);
-const aiMode = () => (document.querySelector('input[name=aimode]:checked') || {}).value || 'free';
-function drawAim() { $('aimFree').classList.toggle('on', aiMode() === 'free'); $('aimPaid').classList.toggle('on', aiMode() === 'paid'); store.set('ai_mode', aiMode()); }
-document.querySelectorAll('input[name=aimode]').forEach(r => { r.checked = r.value === store.get('ai_mode', 'free'); r.onchange = drawAim; });
-drawAim();
+const aiFreeRadio = $('aimFree').querySelector('input');
+const aiPaidRadio = $('aimPaid').querySelector('input');
+const aiMode = () => aiPaidRadio.checked && !aiPaidRadio.disabled ? 'paid' : 'free';
+function drawAim(save = true) {
+  $('aimFree').classList.toggle('on', aiMode() === 'free');
+  $('aimPaid').classList.toggle('on', aiMode() === 'paid');
+  if (save) store.set('ai_mode', aiMode());
+}
 let AI_CFG = null;
-fetch('/api/ai/config').then(r => r.ok ? r.json() : Promise.reject()).then(c => {
-  AI_CFG = c;
-  if (!c.has_free) $('aimFree').querySelector('span').innerHTML += ' <b class="w">(chưa gắn khoá)</b>';
-  if (!c.has_paid) $('aimPaid').querySelector('span').innerHTML += ' <b class="w">(chưa gắn khoá)</b>';
-  if (!c.paid_staff && !c.admin) { $('aimPaid').querySelector('span').innerHTML += ' <b class="w">(chỉ admin)</b>'; }
-  drawAiCfg();
-}).catch(() => {});
+let preferredAiMode = store.get('ai_mode', 'free');
+document.querySelectorAll('input[name=aimode]').forEach(r => { r.onchange = () => { preferredAiMode = aiMode(); drawAim(); }; });
+drawAim(false);
+function applyAiPermissions(c) {
+  const allowed = !!(c && (c.admin || c.paid_staff));
+  $('aimPaid').style.display = allowed ? '' : 'none';
+  aiPaidRadio.disabled = !allowed;
+  if (!allowed) preferredAiMode = 'free';
+  aiPaidRadio.checked = allowed && preferredAiMode === 'paid';
+  aiFreeRadio.checked = !aiPaidRadio.checked;
+  drawAim();
+}
+let aiCfgPending = null;
+function refreshAiCfg() {
+  if (aiCfgPending) return aiCfgPending;
+  aiCfgPending = fetch('/api/ai/config', { cache: 'no-store' }).then(r => {
+    if (!r.ok) throw new Error('Không đọc được cài đặt AI');
+    return r.json();
+  }).then(c => {
+    const first = !AI_CFG;
+    AI_CFG = c;
+    applyAiPermissions(c);
+    if (first) {
+      if (!c.has_free) $('aimFree').querySelector('span').innerHTML += ' <b class="w">(chưa gắn khoá)</b>';
+      if (!c.has_paid) $('aimPaid').querySelector('span').innerHTML += ' <b class="w">(chưa gắn khoá)</b>';
+      drawAiCfg();
+    }
+    return c;
+  }).catch(() => {
+    applyAiPermissions(null);
+    return null;
+  }).finally(() => { aiCfgPending = null; });
+  return aiCfgPending;
+}
+refreshAiCfg();
+window.addEventListener('focus', () => refreshAiCfg());
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshAiCfg(); });
 function showAiSources(d, box = $('aiSrc')) {
   box.innerHTML = '';
   const div = document.createElement('div'); div.className = 'chk';
@@ -1113,8 +1147,17 @@ $('aiGo').onclick = async () => {
     $('by').value = n.trim(); store.set('by', n.trim());
   }
   if ($('script').value.trim() && !confirm('Thay kịch bản đang có bằng kịch bản AI viết?')) return;
-  const mode = aiMode(), btn = $('aiGo');
+  const btn = $('aiGo');
+  if (btn.disabled) return;
   btn.disabled = true;
+  const requestedMode = aiMode();
+  await refreshAiCfg();
+  if (requestedMode === 'paid' && aiMode() !== 'paid') {
+    btn.disabled = false;
+    toast('Chế độ kiểm chứng không còn khả dụng. Bạn có thể chọn Viết nhanh.');
+    return;
+  }
+  const mode = aiMode();
   let sec = 0; const tick = setInterval(() => { sec++; btn.textContent = `⏳ AI đang ${mode === 'paid' ? 'tra nguồn và ' : ''}viết... ${sec}s`; }, 1000);
   $('aiInfo').textContent = mode === 'paid' ? 'Claude đang tra trang chính thức, thường mất 20–60 giây.' : 'Thường mất 5–20 giây.';
   try {
@@ -1140,7 +1183,7 @@ function drawAiCfg() {
     rows.map(([k, u]) => `<tr><td>${esc(k.split('@')[0])}</td><td>${u.free || 0}</td><td>${u.paid || 0}</td></tr>`).join('') + '</table>' : '';
 }
 $('cfSave').onclick = async () => {
-  try { const d = await api('/api/ai/config', { free: $('cfFree').value, paid: $('cfPaid').value, paid_staff: $('cfStaff').checked }); Object.assign(AI_CFG, d); toast('Đã lưu cài đặt AI'); }
+  try { const d = await api('/api/ai/config', { free: $('cfFree').value, paid: $('cfPaid').value, paid_staff: $('cfStaff').checked }); Object.assign(AI_CFG, d); applyAiPermissions(AI_CFG); toast('Đã lưu cài đặt AI'); }
   catch (e) { toast(e.message); }
 };
 
