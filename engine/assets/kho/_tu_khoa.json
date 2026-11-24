@@ -78,5 +78,45 @@
    "suy nghĩ"
   ],
   "lo": 2
+ },
+ "so_sanh_hai_truong": {
+  "ten": "So sánh hai trường trên bảng",
+  "tu_khoa": [
+   "so sánh",
+   "trường học",
+   "lựa chọn",
+   "du học"
+  ],
+  "lo": 3
+ },
+ "gia_dinh_hop_ban_ke_hoach": {
+  "ten": "Gia đình họp bàn kế hoạch du học",
+  "tu_khoa": [
+   "gia đình",
+   "kế hoạch",
+   "định hướng",
+   "du học"
+  ],
+  "lo": 3
+ },
+ "hoc_sinh_on_thi": {
+  "ten": "Học sinh lớp 12 ôn thi",
+  "tu_khoa": [
+   "ôn thi",
+   "lớp 12",
+   "học tập",
+   "chuẩn bị"
+  ],
+  "lo": 3
+ },
+ "hoc_sinh_doc_tai_lieu": {
+  "ten": "Học sinh đọc tài liệu du học",
+  "tu_khoa": [
+   "tài liệu",
+   "du học",
+   "tìm hiểu",
+   "chuẩn bị"
+  ],
+  "lo": 3
  }
 }
