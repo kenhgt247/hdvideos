@@ -1626,8 +1626,10 @@ def bullet_block(group, scene, scale, base):
         lh = line_h(lsize) * 0.9
         return {'k': 'cards', 'items': group, 'names': names, 'per_row': per_row, 'ih': ih, 'size': lsize,
                 'rowh': ih + lh + 18, 'h': rows * (ih + lh + 18) + (rows - 1) * 16}
+    if got < n:                     # thiếu hình cho vài ý -> dùng dấu tích cho tất cả, nhìn đồng đều
+        names, got = [None] * n, 0
     size = int(min(fit(t, base * 0.95, LMAXW - (190 if got else 110)) for t, _ in group))
-    return {'k': 'bullets', 'items': group, 'names': names if got else [None] * n, 'size': size,
+    return {'k': 'bullets', 'items': group, 'names': names, 'size': size,
             'h': n * (max(line_h(size) * 0.92, (line_h(size) * 1.15) if got else 0) + 14)}
 
 
@@ -1733,6 +1735,8 @@ def layout_scene(scene, idx, has_logo_end):
     scale = 1.0
     while True:
         blocks = build_blocks(scene, scale)
+        if has_logo_end and any(b['k'] != 'icon' for b in blocks):   # cảnh cuối có logo to: bỏ hình để chữ đủ to
+            blocks = [b for b in blocks if b['k'] != 'icon']
         gap = 30 * scale
         total = sum(b['h'] for b in blocks) + gap * max(0, len(blocks) - 1)
         if total <= bottom - top or scale < 0.45:
@@ -2351,6 +2355,10 @@ class Renderer:
             say_n = norm(' '.join(sc.get('say') or []))
             t, sch = ENTER * k, []
             for it in items:
+                if isinstance(it, Badge):                         # huy hiệu 1/3 tự hiện nhanh, không bắt tay vẽ
+                    it.nohand = True
+                    sch.append((it, 0.0, 0.3))
+                    continue
                 if i == 0 and self.hook and isinstance(it, Txt):   # cảnh mở: chữ hiện ngay từ khung đầu
                     it.nohand = True
                     sch.append((it, -1.0, -0.999))
