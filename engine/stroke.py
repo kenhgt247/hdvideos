@@ -174,3 +174,63 @@ def pen_at(pen, p):
     a, b = pen[i - 1], pen[i]
     u = 0.0 if b[0] <= a[0] else (p - a[0]) / (b[0] - a[0])
     return float(a[1] + (b[1] - a[1]) * u), float(a[2] + (b[2] - a[2]) * u)
+
+
+def brush(arr, mask, band=None, max_groups=6, seed=3):
+    """Tô màu như cầm cọ: chia ảnh theo nhóm màu, tô xong nhóm này mới sang nhóm khác,
+    trong mỗi nhóm cọ quét qua lại theo từng dải (mép dải lượn sóng cho giống nét cọ).
+    Trả về (reveal HxW float32 trong 0..1, pen Nx3 [t, x, y]) hoặc None."""
+    H, W = mask.shape
+    white = mask & (arr[:, :, :3].min(axis=2) > 222)      # mảng trắng trên giấy trắng: hiện luôn, khỏi tô
+    mask = mask & ~white
+    ys, xs = np.nonzero(mask)
+    if len(ys) < 50:
+        return None
+    band = band or max(10, int(min(H, W) / 11))
+    cols = arr[ys, xs, :3].astype(np.int32)
+    key = (cols[:, 0] // 64) * 16 + (cols[:, 1] // 64) * 4 + (cols[:, 2] // 64)
+    uniq, inv, cnt = np.unique(key, return_inverse=True, return_counts=True)
+    big = [i for i in np.argsort(-cnt) if cnt[i] >= 0.03 * len(ys)][:max_groups] or [int(np.argmax(cnt))]
+    means = np.array([cols[inv == i].mean(axis=0) for i in big])
+    d = ((cols[:, None, :] - means[None, :, :]) ** 2).sum(axis=2)
+    grp = np.argmin(d, axis=1)                           # mỗi điểm ảnh thuộc 1 nhóm màu lớn
+    # thứ tự nhóm: mảng lớn trước, chi tiết nhỏ sau
+    sizes = np.bincount(grp, minlength=len(big)).astype(np.float64)
+    order = list(np.argsort(-sizes))
+    weights = np.maximum(sizes / sizes.sum(), 0.08)
+    weights = weights / weights[order].sum()
+    rng = np.random.RandomState(seed)
+    reveal = np.full((H, W), 2.0, np.float32)
+    pen, t0 = [], 0.0
+    for g in order:
+        sel = grp == g
+        gy, gx = ys[sel], xs[sel]
+        if len(gy) == 0:
+            continue
+        ph = rng.rand() * 6.28
+        wav = band * 0.35 * np.sin(gx / (band * 2.3) * 6.28 + ph)
+        b = np.floor((gy + wav) / band).astype(np.int32)
+        bands = np.unique(b)
+        rank = np.searchsorted(bands, b)
+        nb = len(bands)
+        bmin = np.full(nb, W, np.int32); bmax = np.zeros(nb, np.int32)
+        np.minimum.at(bmin, rank, gx); np.maximum.at(bmax, rank, gx)
+        span = np.maximum(1, bmax - bmin)
+        xf = (gx - bmin[rank]) / span[rank]
+        xf = np.where(rank % 2 == 0, xf, 1 - xf)          # đi qua rồi đi lại
+        wg = float(weights[g])
+        reveal[gy, gx] = t0 + wg * (rank + xf) / nb
+        for k in range(nb):
+            yc = (bands[k] + 0.5) * band
+            xa, xb = (bmin[k], bmax[k]) if k % 2 == 0 else (bmax[k], bmin[k])
+            steps = max(2, int(abs(xb - xa) / (band * 0.8)))
+            for s in range(steps + 1):
+                u = s / steps
+                zig = band * 0.38 * (1 if s % 2 else -1)
+                pen.append((t0 + wg * (k + u) / nb, xa + (xb - xa) * u, yc + zig))
+        t0 += wg
+    reveal = np.minimum(reveal, 1.0)
+    reveal[~mask] = 0.0                                    # gồm cả mảng trắng
+    pen = np.array(pen, np.float32)
+    pen = pen[np.argsort(pen[:, 0], kind='stable')]
+    return reveal.astype(np.float32), pen

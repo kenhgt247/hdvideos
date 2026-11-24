@@ -3,7 +3,7 @@
 import json, math, os, random, re, shutil, subprocess, sys, tempfile, unicodedata, wave
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 try:
     import stroke as _stroke
@@ -272,31 +272,44 @@ class Txt:
         return (self.left + (self.right - self.left) * clamp(r), self.cy + 10 * math.sin(t * 38))
 
 
+REVEAL = 'net'      # 'net': vẽ từng nét rồi tô bằng cọ | 'quet': quét 3 bước (chữ -> nét chì -> màu)
+
+
 class CharItem:
-    """Nhân vật dẫn chuyện: vẽ nét đen từ trên xuống, rồi tô màu."""
+    """Hình (nhân vật, ảnh trong kho): vẽ nét đen trước, rồi tô màu bằng nét cọ theo từng nhóm màu."""
     _cache = {}
 
     def __init__(self, path, cx, feet_y, height):
-        key = (path, int(height))
+        key = (path, int(height), REVEAL)
         if key not in CharItem._cache:
             im = Image.open(path).convert('RGBA')
             im = im.resize((int(im.width * height / im.height), int(height)), Image.LANCZOS)
             a = np.asarray(im).astype(np.int32)
             mx, mn = a[:, :, :3].max(axis=2), a[:, :, :3].min(axis=2)
             la = np.where((mx < 75) & (mx - mn < 30) & (a[:, :, 3] > 0), a[:, :, 3], 0).astype(np.uint8)
-            lines = Image.new('RGBA', im.size, (30, 30, 36, 0))
+            if REVEAL == 'quet':                   # nét chì xám: lấy độ tối của toàn ảnh
+                gray = 255 - a[:, :, :3].mean(axis=2)
+                shade = np.clip(np.where(a[:, :, 3] > 0, gray * 0.45, 0), 0, 95)
+                la = np.maximum(la.astype(np.float32), shade).astype(np.uint8)
+            lines = Image.new('RGBA', im.size, (30, 30, 36, 0) if REVEAL != 'quet' else (90, 90, 96, 0))
             lines.putalpha(Image.fromarray(la))
-            sp = None
-            if STROKE:
+            sp = bp = None
+            if STROKE and REVEAL != 'quet':
                 try:
                     sp = _stroke.plan(la > 40, 'img', 40)
                 except Exception:
                     sp = None
-            CharItem._cache[key] = (im, lines, sp, np.asarray(lines).copy())
-        self.im, self.lines, self.sp, self._larr = CharItem._cache[key]
+                try:
+                    arr8 = np.asarray(im)
+                    bp = _stroke.brush(arr8, arr8[:, :, 3] > 40, seed=int(height) % 97)
+                except Exception:
+                    bp = None
+            CharItem._cache[key] = (im, lines, sp, np.asarray(lines).copy(), bp, np.asarray(im).copy())
+        self.im, self.lines, self.sp, self._larr, self.bp, self._carr = CharItem._cache[key]
         self.x = int(cx - self.im.width / 2)
         self.y = int(feet_y - self.im.height)
-        self.dur = 2.0 if self.sp is not None else 1.6
+        self.dur = 2.4 if self.sp is not None else 1.6
+        self.LE = 0.5 if self.bp is not None else (0.72 if self.sp is not None else 0.6)
 
     def draw(self, f, r):
         if r <= 0:
@@ -304,32 +317,58 @@ class CharItem:
         if r >= 1:
             f.paste(self.im, (self.x, self.y), self.im)
             return
-        LE = 0.72 if self.sp is not None else 0.6      # phần thời gian vẽ nét đen, còn lại tô màu
+        LE = self.LE
         rl = clamp(r / LE)
-        if r > LE:
-            col = with_alpha(self.im, clamp((r - LE) / (1 - LE)))
-            f.paste(col, (self.x, self.y), col)
-        if self.sp is not None:
-            if r < 1:
-                a = self._larr.copy()
-                a[:, :, 3] = np.where(self.sp[0] <= rl, a[:, :, 3], 0)
-                c = Image.fromarray(a)
+        if REVEAL == 'quet':                       # quét ngang: nét chì trước, màu sau
+            wl = int(self.im.width * eio(rl))
+            if r > LE:
+                wc = int(self.im.width * eio((r - LE) / (1 - LE)))
+                f.paste(self.lines, (self.x, self.y), self.lines)
+                if wc > 0:
+                    c = self.im.crop((0, 0, wc, self.im.height))
+                    f.paste(c, (self.x, self.y), c)
+            elif wl > 0:
+                c = self.lines.crop((0, 0, wl, self.im.height))
                 f.paste(c, (self.x, self.y), c)
             return
-        hh = int(self.lines.height * rl)
-        if hh > 0:
-            c = self.lines.crop((0, 0, self.lines.width, hh))
+        if self.sp is not None:
+            a = self._larr if rl >= 1 else self._larr.copy()
+            if rl < 1:
+                a[:, :, 3] = np.where(self.sp[0] <= rl, a[:, :, 3], 0)
+            c = Image.fromarray(a)
             f.paste(c, (self.x, self.y), c)
+        else:
+            hh = int(self.lines.height * rl)
+            if hh > 0:
+                c = self.lines.crop((0, 0, self.lines.width, hh))
+                f.paste(c, (self.x, self.y), c)
+        if r > LE:
+            rc = (r - LE) / (1 - LE)
+            if self.bp is not None:
+                a = self._carr.copy()
+                a[:, :, 3] = np.where(self.bp[0] <= rc, a[:, :, 3], 0)
+                col = Image.fromarray(a)
+            else:
+                col = with_alpha(self.im, clamp(rc))
+            f.paste(col, (self.x, self.y), col)
 
     def pos(self, r, t):
         w, h = self.im.width, self.im.height
-        if self.sp is not None and r < 0.72:
-            q = _stroke.pen_at(self.sp[1], clamp(r / 0.72))
+        LE = self.LE
+        if REVEAL == 'quet':
+            k = eio(clamp(r / LE)) if r < LE else eio(clamp((r - LE) / (1 - LE)))
+            return (self.x + w * k, self.y + h * (0.5 + 0.38 * math.sin(t * 11)))
+        if r < LE and self.sp is not None:
+            q = _stroke.pen_at(self.sp[1], clamp(r / LE))
             if q:
                 return (self.x + q[0], self.y + q[1])
-        if r < 0.6 and self.sp is None:
-            rl = clamp(r / 0.6)
+        if r < LE and self.sp is None:
+            rl = clamp(r / LE)
             return (self.x + w * (0.5 + 0.4 * math.sin(rl * 60)), self.y + h * rl)
+        if self.bp is not None:
+            q = _stroke.pen_at(self.bp[1], clamp((r - LE) / (1 - LE)))
+            if q:
+                return (self.x + q[0], self.y + q[1])
         return (self.x + w * (0.5 + 0.3 * math.sin(t * 9)), self.y + h * (0.45 + 0.2 * math.cos(t * 7)))
 
 
@@ -557,6 +596,150 @@ class Fill:
         return (self.c[0] + self.r * math.sin(t * 31), self.c[1] + self.r * 0.7 * math.cos(t * 23))
 
 
+class Hachure(Fill):
+    """Tô nền bằng các nét gạch chéo như Excalidraw (hiện dần theo đường chéo)."""
+
+    def __init__(self, x0, y0, x1, y1, color, seed=0, alpha=0.28, gapx=18, width=4):
+        self.x0, self.y0 = int(x0), int(y0)
+        w, h = max(2, int(x1 - x0)), max(2, int(y1 - y0))
+        im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+        d = ImageDraw.Draw(im)
+        rnd = random.Random(seed)
+        c = tuple(color) + (int(255 * alpha),)
+        k = -h
+        while k < w:
+            j = rnd.uniform(-3, 3)
+            d.line([(k + j, h + 2), (k + h + j + rnd.uniform(-4, 4), -2)], fill=c, width=width)
+            k += gapx + rnd.uniform(-3, 3)
+        m = Image.new('L', (w, h), 0)                                   # góc hơi bo cho giống vẽ tay
+        ImageDraw.Draw(m).rounded_rectangle((3, 3, w - 4, h - 4), 14, fill=255)
+        im.putalpha(Image.fromarray(np.minimum(np.asarray(im)[:, :, 3], np.asarray(m))))
+        self.im = im
+        self._diag = (np.add.outer(np.arange(h), np.arange(w)) / float(w + h)).astype(np.float32)
+        self._arr = np.asarray(im).copy()
+        self.c = (x0 + w / 2, y0 + h / 2)
+        self.r = min(w, h) * 0.3
+        self.w, self.h = w, h
+        self.dur = 0.35
+
+    def draw(self, f, r):
+        if r <= 0:
+            return
+        if r >= 1:
+            f.paste(self.im, (self.x0, self.y0), self.im)
+            return
+        a = self._arr.copy()
+        a[:, :, 3] = np.where(self._diag <= r, a[:, :, 3], 0)
+        c = Image.fromarray(a)
+        f.paste(c, (self.x0, self.y0), c)
+
+    def pos(self, r, t):
+        k = clamp(r) * (self.w + self.h)
+        x = min(self.w, k)
+        return (self.x0 + x, self.y0 + (k - x) + 0 * t)
+
+
+def rough_box(x0, y0, x1, y1, color, seed=0, width=7, fill=True):
+    """Khung vẽ tay kiểu Excalidraw: nền gạch chéo + viền 2 lượt hơi lệch, đầu nét chờm qua góc."""
+    rnd = random.Random(seed)
+    out = []
+    if fill:
+        out.append(Hachure(x0 + 4, y0 + 4, x1 - 4, y1 - 4, color, seed=seed))
+    for k in range(2):
+        j = lambda: rnd.uniform(-5, 5)
+        o = 6 + 4 * k
+        pts = [(x0 + j() - o * 0.5, y0 + j()), (x1 + j() + o, y0 + j()), (x1 + j(), y1 + j() + o * 0.4),
+               (x0 + j() - o * 0.3, y1 + j()), (x0 + j(), y0 + j() - o)]
+        pa = Path(poly(pts, seed=seed + 11 * k, bow=6 + 3 * k), color, width if k == 0 else max(3, width - 3))
+        pa.dur *= 0.55 if k else 1.0
+        if k:
+            pa.gap = 0.02
+        out.append(pa)
+    return out
+
+
+def curved_arrow(x0, y0, x1, y1, color, seed=0, width=7, head=28, bend=0.18):
+    """Mũi tên cong vẽ tay (đầu mũi tên 2 nét riêng như người vẽ)."""
+    rnd = random.Random(seed)
+    dx, dy = x1 - x0, y1 - y0
+    L = math.hypot(dx, dy) or 1
+    nx, ny = -dy / L, dx / L
+    b = L * bend * (1 if rnd.random() > 0.5 else -1)
+    n = max(10, int(L / 7))
+    pts = []
+    for i in range(n + 1):
+        u = i / n
+        pts.append((x0 + dx * u + nx * b * math.sin(math.pi * u) * (1 - 0.3 * u),
+                    y0 + dy * u + ny * b * math.sin(math.pi * u) * (1 - 0.3 * u)))
+    pts = wobble(pts, 1.6, seed)
+    ex, ey = pts[-1]
+    px, py = pts[-4]
+    ang = math.atan2(ey - py, ex - px)
+    shaft = Path(pts, color, width)
+    h1 = Path(seg((ex - head * math.cos(ang - 0.45), ey - head * math.sin(ang - 0.45)), (ex, ey), bow=2, seed=seed + 1), color, width)
+    h2 = Path(seg((ex, ey), (ex - head * math.cos(ang + 0.45), ey - head * math.sin(ang + 0.45)), bow=2, seed=seed + 2), color, width)
+    h1.gap = h2.gap = 0.02
+    h1.dur = h2.dur = 0.12
+    return [shaft, h1, h2]
+
+
+class Marker(Fill):
+    """Bút dạ vàng tô ngang chữ nổi bật đúng lúc giọng đọc nhắc tới."""
+
+    def __init__(self, x0, x1, cy, size, color=(255, 210, 40), seed=0):
+        h = int(size * 0.62)
+        w = max(10, int(x1 - x0 + 24))
+        im = Image.new('RGBA', (w, h + 16), (0, 0, 0, 0))
+        d = ImageDraw.Draw(im)
+        rnd = random.Random(seed)
+        pts = []
+        for i in range(0, w + 1, 6):
+            pts.append((i, 8 + rnd.uniform(-2.5, 2.5)))
+        for i in range(w, -1, -6):
+            pts.append((i, 8 + h + rnd.uniform(-2.5, 2.5)))
+        d.polygon(pts, fill=tuple(color) + (125,))
+        self.im = im
+        self.x0, self.y0 = int(x0 - 12), int(cy - h / 2 + size * 0.08 - 8)
+        self.w = w
+        self.c = (self.x0 + w / 2, cy)
+        self.r = 4
+        self.dur = max(0.25, w / 1800)
+
+    def draw(self, f, r):
+        if r <= 0:
+            return
+        wv = self.w if r >= 1 else int(self.w * eio(r))
+        if wv > 0:
+            c = self.im.crop((0, 0, wv, self.im.height))
+            f.paste(c, (self.x0, self.y0), c)
+
+    def pos(self, r, t):
+        return (self.x0 + self.w * eio(clamp(r)), self.y0 + self.im.height * 0.75)
+
+
+class Badge:
+    """Huy hiệu tiến độ "1/3" ở góc phải trên: vòng tròn vẽ tay + số."""
+
+    def __init__(self, text, seed=0):
+        s = 1.0 if LAY['H'] > LAY['W'] else 0.78
+        self.cx, self.cy = W - 120 * s - (40 if LAY.get('wide') else 0), TOP_AREA - 70 * s
+        if LAY['H'] > LAY['W'] and LAY['label_y'] + 80 > self.cy - 60 * s:
+            self.cy = LAY['label_y'] + 150
+        self.ring = Path(ellipse(self.cx, self.cy, 78 * s, 56 * s, seed=seed), ORANGE, 7)
+        self.txt = Txt(text, int(62 * s), ORANGE, self.cy, cx=self.cx)
+        self.dur = self.ring.dur + self.txt.dur
+
+    def draw(self, f, r):
+        k = self.ring.dur / self.dur
+        self.ring.draw(f, r / k if k else 1)
+        if r > k:
+            self.txt.draw(f, (r - k) / (1 - k))
+
+    def pos(self, r, t):
+        k = self.ring.dur / self.dur
+        return self.ring.pos(r / k, t) if r < k else self.txt.pos((r - k) / (1 - k), t)
+
+
 GREEN = (30, 140, 70)
 PURPLE = (130, 60, 170)
 
@@ -687,7 +870,7 @@ def kho_item(name, cx, cy, h):
     maxw = LMAXW * 0.95
     hh = min(h, maxw * h0 / w0)
     it = CharItem(path, cx, cy + hh / 2, hh)
-    it.dur = 2.4 if it.sp is not None else 1.4
+    it.dur = 2.8 if it.bp is not None else 2.4 if it.sp is not None else 1.4
     return [it]
 
 
@@ -1091,6 +1274,7 @@ def split_display(sentence, maxc=22, maxlines=4):
     return lines
 
 
+COUNT_RE = re.compile(r'^\s*\d{1,2}\s*/\s*\d{1,2}\s*$')
 PLACEHOLDER_RE = re.compile(r'^(so lieu|can kiem tra|chua kiem chung|dien|\.\.\.|x+|\?+)\b')
 KEEP_TAGS = ('tiep', 'giu bang', 'giu', 'tiep bang', 'noi tiep')
 FLOW_RE = re.compile(r'\s*(?:→|->|=>|⇒)\s*')
@@ -1154,13 +1338,15 @@ def parse_simple(text):
             continue
         keep = any(t in KEEP_TAGS for t in tags)  # [tiếp]: cảnh trước thu nhỏ lên trên, vẽ tiếp bên dưới
         tags = [t for t in tags if t not in KEEP_TAGS]
+        count = next((t.replace(' ', '') for t in tags if COUNT_RE.match(t)), None)   # [1/3]: huy hiệu tiến độ
+        tags = [t for t in tags if not COUNT_RE.match(t)]
         show_part = body.split('||', 1)[0]
         auto = auto_list(show_part)
         if auto and not FLOW_RE.search(show_part):   # 'Hồ sơ gồm: hộ chiếu, học bạ, ảnh thẻ' -> danh sách có hình
             lead, items = auto
             say = body.split('||', 1)[1].strip() if '||' in body else (lead + ' ' + ', '.join(i[:1].lower() + i[1:] for i in items[:-1]) + ' và ' + items[-1][:1].lower() + items[-1][1:] + '.')
             sc = {'title': '', 'lines': [('', [t]) for t in icon_tags] + [(lead + ':', tags)], 'say': [say], 'src': [line],
-                  'noicon': noicon, 'keep': keep, 'own_say': True}
+                  'noicon': noicon, 'keep': keep, 'own_say': True, 'count': count}
             for it in items:
                 sc['lines'].append(('- ' + it, []))
             scenes.append(sc)
@@ -1169,7 +1355,7 @@ def parse_simple(text):
             steps = [x.strip() for x in FLOW_RE.split(show_part) if x.strip()]
             say = body.split('||', 1)[1].strip() if '||' in body else flow_say(steps)
             sc = {'title': '', 'lines': [('\u00bb' + '\t'.join(steps), tags)], 'say': [say], 'src': [line],
-                  'noicon': True, 'flow': True, 'keep': keep}
+                  'noicon': True, 'flow': True, 'keep': keep, 'count': count}
             scenes.append(sc)
             continue
         if '||' in body:
@@ -1179,7 +1365,7 @@ def parse_simple(text):
             say = body
             shown = split_display(body)
         sc = {'title': '', 'lines': [('', [t]) for t in icon_tags], 'say': [say], 'src': [line], 'noicon': noicon,
-              'keep': keep, 'own_say': '||' in body}
+              'keep': keep, 'own_say': '||' in body, 'count': count}
         for i, t in enumerate(shown):
             sc['lines'].append((t, tags if i == len(shown) - 1 else []))
         scenes.append(sc)
@@ -1506,10 +1692,13 @@ def build_blocks(scene, scale):
                            'h': line_h(size) * 0.9 + (60 if 'tron' in tags else 0)})
         else:
             extra = 50 if ('khung' in tags or 'tron' in tags) else 0
+            raw_parts = txt.split('*')
+            marks = [i for i, p_ in enumerate(txt.split('*')) if i % 2 == 1 and p_.strip()] if txt.count('*') >= 2 else []
             segs = make_segs(txt, color, scene.get('auto'))
             txt = ''.join(t for t, _ in segs)
             size = fit(txt, size, LMAXW - (90 if extra else 0))
             blocks.append({'k': 'text', 'text': txt, 'segs': segs, 'size': size, 'color': color, 'tags': tags,
+                           'marks': [p_ for i, p_ in enumerate(raw_parts) if i in marks] if marks else [],
                            'h': line_h(size) * 0.9 + extra + (24 if 'gach' in tags else 0)})
         i += 1
     return blocks
@@ -1569,11 +1758,19 @@ def layout_scene(scene, idx, has_logo_end):
             t = Txt(b['text'], b['size'], b['color'], cy, cx=LCX, segs=b['segs'])
             items.append(t)
             sz = b['size']
+            if b.get('marks'):                                   # *chữ*: bút dạ tô đúng lúc đọc tới
+                fnt, done = font(sz), ''
+                for part, _c in b['segs']:
+                    if part in b['marks']:
+                        x0m = t.left + fnt.getlength(done)
+                        mk = Marker(x0m, x0m + fnt.getlength(part), cy, sz, seed=seed + len(done))
+                        mk.sync = part
+                        items.append(mk)
+                    done += part
             if 'khung' in tg:
                 x0, x1 = t.left - 34, t.right + 34
                 y0, y1 = cy - sz * 0.6, cy + sz * 0.6
-                items.append(Path(poly([(x0 + 4, y0), (x1, y0 - 4), (x1 + 4, y1), (x0, y1 + 3), (x0 + 6, y0 + 2)],
-                                       seed=seed, bow=8), b['color'], 8))
+                items += rough_box(x0, y0, x1, y1, b['color'] if b['color'] != INK else BLUE, seed=seed, width=8)
             if 'tron' in tg:
                 items.append(Path(ellipse(LCX, cy + 4, (t.right - t.left) / 2 + 45, sz * 0.68, seed=seed),
                                   b['color'], 8))
@@ -1664,18 +1861,17 @@ def layout_scene(scene, idx, has_logo_end):
                     cy = y + j * (bh + b['gapv']) + bh / 2
                     bw = min(LMAXW - 20, max(font(sz).getlength(s_) for s_ in st) + 190)
                 first = len(items)
-                if j > 0:                                        # mũi tên từ ô trước
+                if j > 0:                                        # mũi tên cong vẽ tay từ ô trước
                     if b['dir'] == 'h':
                         px = LCX + (j - 1 - (n - 1) / 2) * b['colw']
-                        items.append(Path(arrow_path(px + (b['colw'] - 70) / 2 + 8, cy, cx - bw / 2 - 10, cy, seed + j),
-                                          GREY, 7))
+                        items += curved_arrow(px + (b['colw'] - 70) / 2 + 10, cy - 6, cx - bw / 2 - 14, cy - 4,
+                                              GREY, seed + j, bend=0.28)
                     else:
-                        items.append(Path(arrow_path(cx, cy - bh / 2 - b['gapv'] + 10, cx, cy - bh / 2 - 8, seed + j),
-                                          GREY, 7))
+                        items += curved_arrow(cx - 40, cy - bh / 2 - b['gapv'] + 12, cx - 34, cy - bh / 2 - 10,
+                                              GREY, seed + j, bend=0.32)
                 x0_, x1_ = cx - bw / 2, cx + bw / 2
                 y0_, y1_ = cy - bh / 2, cy + bh / 2
-                items.append(Path(poly([(x0_ + 6, y0_), (x1_, y0_ + 3), (x1_ - 3, y1_), (x0_, y1_ - 2), (x0_ + 6, y0_)],
-                                       seed=seed + j * 5, bow=7), col, 7))
+                items += rough_box(x0_, y0_, x1_, y1_, col, seed=seed + j * 5)
                 num = Txt(str(j + 1), int(sz * 0.8), col, cy, cx=x0_ + 48)
                 items.append(num)
                 items.append(Txt(t, sz, INK, cy, cx=cx + 30))
@@ -1969,11 +2165,16 @@ def _sync_frac(say_n, key):
 
 # ------------------------------------------------------------------ dựng
 class Renderer:
-    def __init__(self, logo_path=None, label=None, bg='trang', subs=False, trans='xoa'):
+    def __init__(self, logo_path=None, label=None, bg='trang', subs=False, trans='xoa', hook=True):
         self.trans = trans if trans in ('xoa', 'lia', 'xen') else 'xoa'
+        self.hook = bool(hook)
         hj = json.load(open(os.path.join(ASSETS, 'hand.json')))
         self.hand = Image.open(os.path.join(ASSETS, 'hand.png')).convert('RGBA')
         self.tip = hj['tip']
+        ha = np.asarray(self.hand)[:, :, 3]                       # bóng tay: hình tay tô đen, làm mờ
+        sh = Image.new('RGBA', self.hand.size, (20, 20, 30, 0))
+        sh.putalpha(Image.fromarray((ha * 0.22).astype(np.uint8)))
+        self.hand_shadow = sh.filter(ImageFilter.GaussianBlur(9))
         lg = load_logo(logo_path if logo_path and os.path.exists(logo_path) else os.path.join(ASSETS, 'logo.png'))
         lw = LAY['logo_w']
         self.logo_small = scaled(lg, lw)
@@ -2129,6 +2330,9 @@ class Renderer:
                     p_['dur'] = p_['n'] / FPS
             else:
                 items = layout_scene(sc, i, logo_end)
+            if sc.get('count'):
+                at = 1 if (items and isinstance(items[0], Snap)) else 0
+                items = items[:at] + [Badge(sc['count'], seed=i * 7)] + items[at:]
             if pose:
                 cx_, feet_, kk = LAY['char']
                 hgt = {'chao': 760, 'chi': 640, 'like': 700}[pose] * kk
@@ -2146,6 +2350,10 @@ class Renderer:
             say_n = norm(' '.join(sc.get('say') or []))
             t, sch = ENTER * k, []
             for it in items:
+                if i == 0 and self.hook and isinstance(it, Txt):   # cảnh mở: chữ hiện ngay từ khung đầu
+                    it.nohand = True
+                    sch.append((it, -1.0, -0.999))
+                    continue
                 d = it.dur * k
                 key = getattr(it, 'sync', None)
                 if key and A:                       # chờ tới lúc lời đọc nhắc tới mới vẽ
@@ -2174,6 +2382,8 @@ class Renderer:
             if isinstance(it, Fill):
                 it.draw(layer, 1.0)
         for it, s_, e_ in pl['sch']:
+            if isinstance(it, Badge):
+                continue
             if not isinstance(it, (Fill, CharItem)) or (isinstance(it, CharItem) and it.x > W * 0.3):
                 it.draw(layer, 1.0)
         bb = layer.getbbox()
@@ -2187,23 +2397,30 @@ class Renderer:
         return Snap(img, tuple(bb), dst)
 
     def hand_pos(self, pl, t):
+        """Vị trí đầu bút (x, y, độ nhấc 0..1). Giữa hai nét: tay nhấc lên theo đường cong rồi hạ xuống."""
         sch = [x for x in pl['sch'] if not getattr(x[0], 'nohand', False)]
         ed = pl['ed']
         OFF = LAY['hand_off']
         if not sch:
             return None
         lerp = lambda a, b, k: (a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k)
+
+        def hop(a, b, k):
+            p_ = lerp(a, b, eio(k))
+            lift = math.sin(math.pi * clamp(k)) * min(1.0, math.dist(a, b) / 260)
+            return (p_[0], p_[1] - 46 * lift, lift)
         if t < sch[0][1]:
-            return lerp(OFF, sch[0][0].pos(0, t), eio(t / max(sch[0][1], 0.01)))
+            return hop(OFF, sch[0][0].pos(0, t), t / max(sch[0][1], 0.01))
         for i, (it, s, e) in enumerate(sch):
             if s <= t <= e:
-                return it.pos((t - s) / max(e - s, 1e-3), t)
+                p_ = it.pos((t - s) / max(e - s, 1e-3), t)
+                return (p_[0] + 1.3 * math.sin(t * 47), p_[1] + 1.1 * math.cos(t * 41), 0.0)
             if i + 1 < len(sch) and e < t < sch[i + 1][1]:
-                return lerp(it.pos(1, t), sch[i + 1][0].pos(0, t), eio((t - e) / max(sch[i + 1][1] - e, 1e-3)))
+                return hop(it.pos(1, t), sch[i + 1][0].pos(0, t), (t - e) / max(sch[i + 1][1] - e, 1e-3))
         k = (t - ed) / EXIT
         if k >= 1:
             return None
-        return lerp(sch[-1][0].pos(1, t), OFF, eio(k))
+        return hop(sch[-1][0].pos(1, t), OFF, k)
 
     def frame(self, pl, t, first, prog=None):
         f = self.paper.copy()
@@ -2230,7 +2447,10 @@ class Renderer:
             d.rounded_rectangle((bx0, by0, bx0 + max(12, int((bx1 - bx0) * clamp(prog))), by0 + 12), 6, fill=ORANGE)
         hp = self.hand_pos(pl, t)
         if hp:
-            f.paste(self.hand, (int(hp[0] - self.tip[0]), int(hp[1] - self.tip[1])), self.hand)
+            lift = hp[2] if len(hp) > 2 else 0.0
+            hx, hy = int(hp[0] - self.tip[0]), int(hp[1] - self.tip[1])
+            f.paste(self.hand_shadow, (hx + int(14 + 30 * lift), hy + int(18 + 52 * lift)), self.hand_shadow)
+            f.paste(self.hand, (hx, hy), self.hand)
         if self.subs:
             self.draw_sub(f, pl, t)
         if not pl['last'] and not pl.get('keep_next') and t > pl['dur'] - ERASE:
@@ -2297,7 +2517,7 @@ def preview_scenes(script_text, opts, out_dir):
         auto_style(scenes)
     add_hotline(scenes, opts.get('hotline'))
     r = Renderer(opts.get('logo'), opts.get('label'), opts.get('bg', 'trang'), opts.get('subs', False),
-                 opts.get('trans', 'xoa'))
+                 opts.get('trans', 'xoa'), opts.get('hook', True))
     est = [max(1.5, len(' '.join(sc.get('say') or [])) * 0.075) for sc in scenes]
     plans = r.plan(scenes, est if opts.get('subs') else None, resolve_gender(opts))
     info = []
@@ -2368,7 +2588,7 @@ def render(script_text, opts, progress=lambda msg, frac: None):
 
         progress('Đang dàn trang...', 0.28)
         r = Renderer(opts.get('logo'), opts.get('label'), opts.get('bg', 'trang'), opts.get('subs', False),
-                     opts.get('trans', 'xoa'))
+                     opts.get('trans', 'xoa'), opts.get('hook', True))
         plans = r.plan(scenes, durs, resolve_gender(opts))
         total_frames = sum(p['n'] for p in plans)
         done = 0

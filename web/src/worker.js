@@ -108,6 +108,30 @@ async function saveCredit(env, file, credit) {
   await gh(env, '/contents/engine/assets/nhac/_danh_sach.json', { method: 'PUT', body: JSON.stringify(body) });
 }
 
+const STATS = 'thongke/videos.json';
+async function readJson(env, path) {
+  const r = await gh(env, `/contents/${path}`);
+  if (!r.ok) return { data: {}, sha: null };
+  const j = await r.json();
+  try {
+    const txt = new TextDecoder().decode(Uint8Array.from(atob(j.content.replace(/\n/g, '')), c => c.charCodeAt(0)));
+    return { data: JSON.parse(txt), sha: j.sha };
+  } catch { return { data: {}, sha: j.sha }; }
+}
+async function saveStats(env, id, rec) {
+  for (let i = 0; i < 3; i++) {
+    const { data, sha } = await readJson(env, STATS);
+    if (rec === null) delete data[id]; else data[id] = rec;
+    const bytes = new TextEncoder().encode(JSON.stringify(data, null, 1));
+    let bin = ''; bytes.forEach(b => { bin += String.fromCharCode(b); });
+    const body = { message: 'Cập nhật lượt xem', content: btoa(bin), branch: 'main' };
+    if (sha) body.sha = sha;
+    const r = await gh(env, `/contents/${STATS}`, { method: 'PUT', body: JSON.stringify(body) });
+    if (r.ok) return true;
+  }
+  return false;
+}
+
 async function rawFile(env, path, type) {
   const r = await gh(env, `/contents/${path}`, { headers: { accept: 'application/vnd.github.raw' } });
   if (!r.ok) return new Response('Không tìm thấy', { status: 404 });
@@ -172,6 +196,7 @@ async function listVideos(env) {
       id: r.tag_name.slice(4), name: info.name || r.tag_name, created: info.created || Date.parse(r.created_at) / 1000,
       ok: !!info.ok && (r.assets || []).some(a => a.name.endsWith('.mp4')), error: info.error || '',
       voice: info.voice || '', by: info.by || '', fallback: info.fallback || '', script: info.script || '', credit: info.credit || '', posts: info.posts || null,
+      tpl: info.tpl || '', ab: info.ab || '', abg: info.abg || '', fmt: info.fmt || '',
     });
   }
   return { items, voices: voices || [] };
@@ -276,6 +301,11 @@ export default {
           subs: !!b.subs,
           stroke: b.stroke !== false,
           trans: ['xoa', 'lia', 'xen'].includes(b.trans) ? b.trans : 'xen',
+          reveal: b.reveal === 'quet' ? 'quet' : 'net',
+          hook: b.hook !== false,
+          tpl: /^[a-z0-9_]{1,30}$/.test(b.tpl || '') ? b.tpl : '',
+          ab: ['A', 'B'].includes(b.ab) ? b.ab : '',
+          abg: /^[a-z0-9]{1,24}$/.test(b.abg || '') ? b.abg : '',
           preview: !!b.preview,
           music: /^[a-z0-9_]+\.(mp3|m4a|aac|wav|ogg)$/.test(b.music || '') ? b.music : '',
           music_vol: Math.max(0, Math.min(40, parseInt(b.music_vol || 12, 10) || 12)),
@@ -290,6 +320,17 @@ export default {
       let m = p.match(/^\/api\/jobs\/([a-z0-9]+)$/);
       if (m) return json(await jobStatus(env, m[1]));
       if (p === '/api/list') return json(await listVideos(env));
+      if (p === '/api/stats' && req.method === 'GET') return json((await readJson(env, STATS)).data);
+      m = p.match(/^\/api\/stats\/([a-z0-9]+)$/);
+      if (m && req.method === 'POST') {
+        const b = await req.json();
+        const n = k => Math.max(0, Math.min(1e9, parseInt(b[k] || 0, 10) || 0));
+        const rec = { views: n('views'), likes: n('likes'), comments: n('comments'), shares: n('shares'), saves: n('saves'),
+          platform: ['tiktok', 'facebook', 'youtube', 'khac'].includes(b.platform) ? b.platform : 'tiktok',
+          by: String(b.by || '').slice(0, 40), at: Math.floor(Date.now() / 1000) };
+        if (!(await saveStats(env, m[1], rec))) return err('Không lưu được, thử lại', 502);
+        return json({ ok: true, rec });
+      }
       m = p.match(/^\/video\/([a-z0-9]+)$/);
       if (m) return videoProxy(req, env, m[1], url.searchParams.get('dl') === '1');
       m = p.match(/^\/prev\/([a-z0-9]+)\/(c\d+\.jpg)$/);

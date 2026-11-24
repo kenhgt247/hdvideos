@@ -151,6 +151,18 @@ pre.fmt{white-space:pre-wrap;font-size:13px;background:#fafbfe;border:1px solid 
 .ins{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .ins .btn{flex:1 1 auto;min-width:0}
 .ins select{flex:1 1 100%;padding:10px;border-radius:10px;border:1px solid var(--line,#ddd);font-size:15px;background:#fff}
+.tplc{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.tplc button{border:1px solid #d9dce5;background:#fff;border-radius:999px;padding:8px 12px;font-size:14px}
+.tplc button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.hk{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border:1px solid #e3e5ec;border-radius:10px;margin-top:6px;background:#fff}
+.hk input{margin-top:4px}.hk .t{flex:1;font-size:15px}.hk .why{font-size:12.5px;color:#777}
+.hk.b{border-color:#f0b37a;background:#fff8f1}
+.w{color:#a15c00}
+.badge{display:inline-block;font-size:12px;font-weight:700;border-radius:6px;padding:1px 6px;margin-right:4px;background:#eef2ff;color:#3546a8}
+.badge.ab{background:#fff1e4;color:#b35a00}
+.stat{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.stat input{width:88px;padding:8px}
+table.st{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}table.st td,table.st th{border-bottom:1px solid #eee;padding:6px 4px;text-align:left}
+table.st th{color:#666;font-weight:600}.win{color:#1d7a3a;font-weight:700}
 </style>
 </head>
 <body>
@@ -178,12 +190,22 @@ pre.fmt{white-space:pre-wrap;font-size:13px;background:#fafbfe;border:1px solid 
     <input type="text" id="kpQ" placeholder="Tìm hình: visa, tiền, ký túc xá...">
     <div class="grid" id="kpGrid" style="margin-top:10px"></div>
   </div>
+  <div class="card hide" id="tplCard">
+    <div class="hd"><h2>🧩 Mẫu kịch bản</h2><button class="btn sm red" id="tplClose">Đóng</button></div>
+    <div class="hint">Chọn khung, điền vài ô ngắn, máy ráp thành kịch bản chuẩn: câu mở gây tò mò, bộ đếm 1/3, bút dạ đánh dấu, câu kết mời bình luận. <b>Mỗi video chỉ nói 1 điểm kiến thức.</b></div>
+    <div class="tplc" id="tplChips"></div>
+    <div id="tplForm"></div>
+    <div id="tplHooks"></div>
+    <button class="btn main" id="tplMake" style="margin-top:12px">Ráp thành kịch bản</button>
+  </div>
   <div class="card">
     <h2>Kịch bản</h2>
     <div class="tools">
       <button class="btn sm" id="bPaste">Dán</button>
       <button class="btn sm" id="bPrompt">Copy câu lệnh ChatGPT</button>
-      <button class="btn sm" id="bSample">Mẫu</button>
+      <button class="btn sm" id="bTpl">🧩 Mẫu kịch bản</button>
+      <button class="btn sm" id="bHook">💡 Gợi ý câu mở</button>
+      <button class="btn sm" id="bSample">Ví dụ</button>
       <button class="btn sm red" id="bClear">Xoá</button>
     </div>
     <textarea id="script" placeholder="Mỗi dòng là một cảnh.&#10;Chữ trên màn hình / dòng 2 || lời đọc đầy đủ&#10;- gạch đầu dòng&#10;[vẽ: tên hình]"></textarea>
@@ -195,6 +217,7 @@ pre.fmt{white-space:pre-wrap;font-size:13px;background:#fafbfe;border:1px solid 
     </div>
     <div class="hint" id="count">0 cảnh</div>
     <div class="chk" id="chk"></div>
+    <div id="hookBox"></div>
     <details><summary>Cách viết kịch bản</summary>
 <pre class="fmt">VIẾT TAY RẤT ĐƠN GIẢN — mỗi dòng 1 câu = 1 cảnh:
 Du học Đài Loan cần chuẩn bị gì?
@@ -211,7 +234,14 @@ Inbox Du Học Hải Dương để được tư vấn nhé!
 NÂNG CAO (không bắt buộc):
 • Chữ trên bảng ngắn hơn lời đọc:  chữ ngắn / dòng 2 || lời đọc đầy đủ
 • Dưới ô có dòng xanh "✓ đúng định dạng" là được; có chữ đỏ thì sửa theo gợi ý hoặc bấm "Tự sửa".
-• Đừng để ngoặc vuông kiểu [số liệu] — máy sẽ không cho tạo video.</pre>
+• Đừng để ngoặc vuông kiểu [số liệu] — máy sẽ không cho tạo video.
+• *chữ quan trọng*: đặt giữa 2 dấu * → chữ đỏ + bút dạ vàng tô đúng lúc đọc tới.
+• [1/3] ở cuối dòng → hiện huy hiệu "1/3" ở góc, người xem biết còn mấy ý.
+
+BÍ QUYẾT GIỮ NGƯỜI XEM:
+• Câu đầu là câu hỏi/điều gây tò mò, dưới 12 chữ, nói "bạn" chứ không nói "tôi". Đừng trả lời luôn ở câu đầu.
+• Video 20–35 giây là đẹp; mỗi cảnh dưới 6 giây.
+• Câu cuối nối lại câu mở hoặc rủ bình luận ("Bạn đang mắc lỗi số mấy?").</pre>
     </details>
   </div>
 
@@ -263,7 +293,10 @@ NÂNG CAO (không bắt buộc):
     <div class="bgs" id="bgs"></div>
     <label class="f" for="trans">Chuyển cảnh</label>
     <select id="trans"><option value="xen">Xen kẽ: xoá bảng và lia ngang</option><option value="xoa">Xoá bảng</option><option value="lia">Lia ngang</option></select>
+    <label class="f" for="reveal">Kiểu vẽ hình</label>
+    <select id="reveal"><option value="net">Vẽ nét đen rồi tô màu bằng cọ</option><option value="quet">Quét 3 bước: nét chì → tô màu</option></select>
     <label class="chk"><input type="checkbox" id="stroke" checked> Vẽ từng nét như người thật (chữ, ảnh, nhân vật)</label>
+    <label class="chk"><input type="checkbox" id="hook" checked> Câu mở hiện ngay từ giây đầu (không mở đầu bằng bảng trắng)</label>
     <label class="chk"><input type="checkbox" id="subs"> Hiện phụ đề chạy theo giọng đọc</label>
     <label class="f" for="pen">Tiếng bút vẽ</label>
     <select id="pen"><option value="0">Tắt</option><option value="1" selected>Nhỏ</option><option value="1.8">Vừa</option></select>
@@ -272,6 +305,14 @@ NÂNG CAO (không bắt buộc):
     <label class="f" for="by">Người tạo</label>
     <input type="text" id="by" placeholder="Tên của bạn">
     <button class="btn" id="bPrev" style="width:100%;margin-top:16px;padding:14px;font-size:16px">👁 Xem trước & sửa từng cảnh</button>
+    <div class="card hide" id="abBox" style="margin:12px 0 0;background:#fff8f1;border:1px solid #f0b37a">
+      <b>🅰🅱 Làm 2 bản để so câu mở nào hút hơn</b>
+      <div class="hint">Bản A dùng kịch bản trên. Bản B giống hệt, chỉ đổi câu mở thành:</div>
+      <input type="text" id="abHook" placeholder="Câu mở cho bản B">
+      <div class="hint">Đăng 2 bản cách nhau vài ngày (cùng giờ), sau đó nhập lượt xem ở mục Video để biết câu mở nào thắng.</div>
+      <button class="btn sm red" id="abOff" style="margin-top:6px">Bỏ bản B</button>
+    </div>
+    <button class="btn" id="abOn" style="width:100%;margin-top:10px">🅰🅱 Thử 2 câu mở khác nhau</button>
     <button class="btn main" id="bGo" style="margin-top:10px">TẠO VIDEO</button>
     <div class="hint" style="text-align:center">Mỗi video mất khoảng 4–8 phút. Có thể tắt máy, lát quay lại mục <b>Video</b> để tải.</div>
   </div>
@@ -280,8 +321,9 @@ NÂNG CAO (không bắt buộc):
 <!-- ===== VIDEO ĐÃ LÀM ===== -->
 <section id="tab-video" class="hide">
   <div class="card">
-    <div class="hd"><h2>Video đã làm</h2><button class="btn sm" id="bReload">Làm mới</button></div>
-    <div class="hint">Video được giữ 60 ngày. Tải về máy để đăng TikTok / Reels.</div>
+    <div class="hd"><h2>Video đã làm</h2><span><button class="btn sm" id="bStat">📊 So sánh hiệu quả</button> <button class="btn sm" id="bReload">Làm mới</button></span></div>
+    <div class="hint">Video được giữ 60 ngày. Tải về máy để đăng TikTok / Reels. Đăng xong 2–3 ngày, bấm <b>📊 Lượt xem</b> ở từng video để ghi số liệu, rồi xem <b>So sánh hiệu quả</b>.</div>
+    <div id="statBox"></div>
   </div>
   <div id="vlist"><div class="empty">Đang tải...</div></div>
 </section>
@@ -397,7 +439,7 @@ function showTab(t) {
 }
 
 // ---------- form
-const FIELDS = ['name', 'voice', 'rate', 'character', 'label', 'hotline', 'by', 'music', 'music_vol', 'pen', 'bg', 'fmt', 'trans'];
+const FIELDS = ['name', 'voice', 'rate', 'character', 'label', 'hotline', 'by', 'music', 'music_vol', 'pen', 'bg', 'fmt', 'trans', 'reveal'];
 const FMTS = [['doc', 'Dọc 9:16', 'TikTok, Reels, Shorts', 18, 32], ['ngang', 'Ngang 16:9', 'YouTube, Facebook', 34, 19],
               ['vuong', 'Vuông 1:1', 'Bài đăng FB, Instagram', 27, 27], ['doc45', 'Dọc 4:5', 'Bài đăng FB, Instagram', 24, 30]];
 function drawFmts() {
@@ -443,6 +485,7 @@ FIELDS.forEach(k => { if (k !== 'voice' && k !== 'name') { const v = store.get(k
 ['auto', 'logo'].forEach(k => { $(k).checked = store.get(k, true); });
 $('subs').checked = store.get('subs', false);
 $('stroke').checked = store.get('stroke', true);
+$('hook').checked = store.get('hook', true);
 $('stroke').onchange = () => store.set('stroke', $('stroke').checked);
 $('subs').onchange = () => store.set('subs', $('subs').checked);
 if (!$('bg').value) $('bg').value = 'trang';
@@ -465,7 +508,7 @@ function cleanPasted(t) {
   const m = t.match(/```[a-zA-Z]*\n([\s\S]*?)```/);
   return (m ? m[1] : t).replace(/\r/g, '').trim();
 }
-$('bClear').onclick = () => { if (!$('script').value || confirm('Xoá kịch bản đang viết?')) { $('script').value = ''; $('name').value = ''; afterEdit(); } };
+$('bClear').onclick = () => { if (!$('script').value || confirm('Xoá kịch bản đang viết?')) { $('script').value = ''; $('name').value = ''; TPL_USED = ''; store.set('tpl_used', ''); afterEdit(); } };
 $('bSample').onclick = () => {
   if ($('script').value.trim() && !confirm('Thay kịch bản đang viết bằng kịch bản mẫu?')) return;
   $('script').value = `Hồ sơ visa Đài Loan cần lưu ý gì?
@@ -564,7 +607,7 @@ function fixScript(t) {
 }
 function checkScript(text) {
   const E = [], W = [], lines = String(text || '').replace(/\r/g, '').split('\n');
-  let scene = 0, lead = null, items = [], nScene = 0, hasList = false;
+  let scene = 0, lead = null, items = [], nScene = 0, hasList = false, secs = 0;
   const where = () => 'Cảnh ' + scene;
   const endList = () => {
     if (!lead) return;
@@ -591,7 +634,7 @@ function checkScript(text) {
       if (/^v[e]\s*:/.test(tg)) {
         const nm = tg.split(':').slice(1).join(':').trim();
         if (NAMES && nm && !NAMES.has(nm) && !['khong', '-'].includes(nm)) W.push('Dòng ' + (idx + 1) + ': không có hình tên "' + m[1].split(':').slice(1).join(':').trim() + '" trong kho, máy sẽ bỏ qua hình này.');
-      } else if (!KNOWN_TAGS.includes(tg) && !COLOR_TAGS.includes(tg)) {
+      } else if (!KNOWN_TAGS.includes(tg) && !COLOR_TAGS.includes(tg) && !/^\d{1,2}\s*\/\s*\d{1,2}$/.test(tg) && !['khung', 'gach', 'tron', 'to', 'nho', 'logo'].includes(tg)) {
         E.push('Dòng ' + (idx + 1) + ': còn chỗ chưa điền [' + m[1] + ']. Hãy thay bằng thông tin đã kiểm chứng hoặc xoá câu đó.');
       }
     }
@@ -615,11 +658,18 @@ function checkScript(text) {
       if (show.includes(' / ')) W.push(where() + ': dòng sơ đồ không dùng " / ".');
     } else if (body.includes('||')) {
       const sl = show.split(/\s+\/\s+/);
-      if (sl.length > 2) W.push(where() + ': chữ màn hình có ' + sl.length + ' dòng, nên tối đa 2.');
-      sl.forEach(x => { if (x.length > 24) W.push(where() + ': dòng chữ "' + x + '" dài ' + x.length + ' ký tự, nên dưới 22.'); });
+      if (sl.length > 3) W.push(where() + ': chữ màn hình có ' + sl.length + ' dòng, nên tối đa 3.');
+      sl.forEach(x => { if (x.replace(/\*/g, '').length > 24) W.push(where() + ': dòng chữ "' + x + '" dài ' + x.length + ' ký tự, nên dưới 22.'); });
     }
-    const words = (say || show).split(/\s+/).length;
-    if (words > 45) W.push(where() + ': lời đọc dài ' + words + ' chữ, nên dưới 35 (tách thành 2 cảnh).');
+    const spoken = (say || show.replace(/\s\/\s/g, ' ').replace(/→/g, ' ').replace(/\*/g, '')).trim();
+    const words = spoken.split(/\s+/).filter(Boolean).length;
+    secs += words / 2.9 + 0.8;
+    if (words > 24) W.push(where() + ': lời đọc ' + words + ' chữ (khoảng ' + Math.round(words / 2.9) + ' giây), nên tách thành 2 cảnh cho đỡ dài.');
+    if (scene === 1) {
+      if (words > 12) W.push('Câu mở dài ' + words + ' chữ. Nên dưới 12 chữ: người xem quyết định lướt hay ở lại chỉ trong khoảng 2 giây.');
+      if (/^(xin chào|chào (các|cả)|hôm nay|hello|hi\b)/i.test(spoken)) W.push('Đừng mở đầu bằng lời chào, hãy vào thẳng câu hỏi hoặc điều gây tò mò. Bấm "💡 Gợi ý câu mở".');
+      if (/(^|\s)(tôi|mình|em)\s/i.test(' ' + spoken + ' ') && !/bạn/i.test(spoken)) W.push('Câu mở nên nói về "bạn" (người xem), không nói về "tôi/mình".');
+    }
     if (/:\s*$/.test(show) || /:\s*\|\|/.test(body)) lead = { where: where(), say };
     if (/^[^:]{2,40}:\s+[^\d]+(,|\svà\s)/.test(show) && !/→/.test(show)) hasList = true;
   });
@@ -628,13 +678,17 @@ function checkScript(text) {
   if (nScene > 25) W.push('Kịch bản có ' + nScene + ' cảnh, dài quá (nên 8–14).');
   const last = lines.filter(x => x.trim() && !/^\s*[-+]\s/.test(x)).pop() || '';
   if (nScene >= 4 && !/inbox|nhắn tin|liên hệ|hải dương/i.test(last)) W.push('Cảnh cuối nên mời inbox Du Học Hải Dương.');
-  if (nScene >= 6 && !hasList) W.push('Nên có ít nhất 1 danh sách "- " để máy vẽ hình theo lời đọc.');
-  return { E, W };
+  if (nScene >= 8 && !hasList) W.push('Nên có ít nhất 1 danh sách để máy vẽ hình theo lời đọc.');
+  if (secs > 75) W.push('Video dự kiến dài khoảng ' + Math.round(secs) + ' giây. TikTok/Reels đẹp nhất 20–35 giây, nên cắt bớt hoặc tách thành 2 video.');
+  const tail = lines.filter(x => x.trim()).slice(-2).join(' ');
+  if (nScene >= 4 && !/\?|comment|bình luận|lưu|chia sẻ|share/i.test(tail)) W.push('Câu cuối nên rủ người xem bình luận hoặc lưu video (vd: "Bạn đang mắc lỗi số mấy? Comment nhé").');
+  return { E, W, secs, nScene };
 }
 function runCheck() {
   const t = $('script').value, box = $('chk');
   if (!t.trim()) { box.innerHTML = ''; return { E: [], W: [] }; }
   const r = checkScript(t), fixed = fixScript(t), canFix = fixed !== t.trim();
+  $('count').textContent = r.nScene + ' cảnh · khoảng ' + Math.max(1, Math.round(r.secs)) + ' giây';
   if (!r.E.length && !r.W.length && !canFix) box.innerHTML = '<div class="ok">✓ Kịch bản đúng định dạng</div>';
   else {
     let h = '<div class="box">';
@@ -648,7 +702,7 @@ function runCheck() {
 }
 let chkT = 0;
 function afterEdit() { countScenes(); store.set('draft', $('script').value); clearTimeout(chkT); chkT = setTimeout(runCheck, 300); }
-function takePasted(t) { $('script').value = fixScript(t); afterEdit(); }
+function takePasted(t) { $('script').value = fixScript(t); TPL_USED = ''; store.set('tpl_used', ''); afterEdit(); }
 $('script').addEventListener('paste', e => {
   const t = (e.clipboardData || window.clipboardData).getData('text');
   if (t && /```/.test(t) && !$('script').value.trim()) { e.preventDefault(); takePasted(t); toast('Đã lấy kịch bản từ ChatGPT'); }
@@ -660,10 +714,287 @@ function gateCheck() {
 }
 setTimeout(runCheck, 0);
 
+/* ===== MẪU KỊCH BẢN & GỢI Ý CÂU MỞ ===== */
+let TPL_USED = store.get('tpl_used', '');
+const ORD = ['nhất', 'hai', 'ba', 'tư', 'năm'];
+const cap = x => x ? x[0].toUpperCase() + x.slice(1) : x;
+const low1 = x => x ? x[0].toLowerCase() + x.slice(1) : x;
+const splitList = x => String(x || '').split(/\s*[,;\n]\s*/).map(y => y.trim()).filter(Boolean);
+const END_HINT = 'inbox Du Học Hải Dương nhé!';
+const NUMW = ['một', 'hai', 'ba', 'bốn', 'năm'];
+// Chữ trên bảng: chia dòng đều nhau, ưu tiên cắt sau ":" "," hoặc trước từ nối; không cắt ngang cụm *bút dạ*
+const BRK = new Set(['thì', 'là', 'và', 'để', 'khi', 'của', 'mới', 'trước', 'sau', 'vào', 'với', 'cho', 'nhưng', 'hoặc', 'theo', 'ở', 'tại', 'lúc', 'nếu', 'mà', 'có', 'không', 'phải', 'được']);
+function scr(show) {
+  const toks = [];
+  String(show).split(/(\*[^*]+\*)/).forEach(part => {
+    const mk = /^\*[^*]+\*$/.test(part), t = mk ? part.slice(1, -1) : part;
+    t.split(/\s+/).filter(Boolean).forEach(w => toks.push({ w, mk }));
+  });
+  const len = (i, j) => toks.slice(i, j).reduce((x, t) => x + t.w.length, 0) + Math.max(0, j - i - 1);
+  const MAX = 24, n = toks.length;
+  // chia tối ưu: ít dòng nhất, dòng dài nhất ngắn nhất, cộng điểm thưởng chỗ cắt đẹp
+  const best = new Array(n + 1).fill(null); best[0] = { cost: 0, cuts: [] };
+  for (let j = 1; j <= n; j++) for (let i = 0; i < j; i++) {
+    if (!best[i]) continue;
+    const L = len(i, j); if (L > MAX && j - i > 1) continue;
+    let pen = 0;
+    if (j < n) {
+      const prev = toks[j - 1].w, next = toks[j].w.toLowerCase();
+      if (/[:,;]$/.test(prev)) pen -= 30; else if (BRK.has(next)) pen -= 12; else pen += 14;
+      if (toks[j - 1].mk && toks[j].mk) pen += 18;
+    }
+    const cost = best[i].cost + 100 + Math.pow(MAX - L, 2) * 0.15 + pen;
+    if (!best[j] || cost < best[j].cost) best[j] = { cost, cuts: [...best[i].cuts, j] };
+  }
+  const cuts = best[n] ? best[n].cuts : [n];
+  if (cuts.length > 3) return null;
+  let st = 0;
+  return cuts.map(c => {
+    const ln = toks.slice(st, c); st = c;
+    let out = '', open = false;
+    ln.forEach((tk, j) => {
+      if (tk.mk && !open) { out += (j ? ' ' : '') + '*'; open = true; }
+      else if (!tk.mk && open) { out += '* '; open = false; }
+      else if (j) out += ' ';
+      out += tk.w;
+    });
+    return out + (open ? '*' : '');
+  }).join(' / ');
+}
+// Một cảnh: chữ trên bảng + lời đọc (+ thẻ)
+function SC(show, say, tags = '') {
+  const w = scr(show), tg = tags ? ' ' + tags : '';
+  if (!w) return say.replace(/\*/g, '') + tg;
+  return w + tg + (say ? ' || ' + say : '');
+}
+const TPLS = {
+  sai_lam: {
+    name: '❌ Những sai lầm', topicLabel: 'Chủ đề (việc người xem đang làm)', topicPh: 'làm hồ sơ du học Đài Loan',
+    fields: [['s1', 'Sai lầm 1 (ngắn, 2–6 chữ)', 'dịch giấy tờ ở ngoài'], ['f1', 'Cách đúng 1', 'dịch ở phòng tư pháp'],
+      ['s2', 'Sai lầm 2', 'khám sức khoẻ sai nơi'], ['f2', 'Cách đúng 2', 'khám ở bệnh viện chỉ định'],
+      ['s3', 'Sai lầm 3 (có thể bỏ trống)', ''], ['f3', 'Cách đúng 3', '']],
+    hooks: (v, n) => [
+      { t: `Sai ${n} điều này, ${v.topic} dễ hỏng`, why: 'Sợ làm sai' },
+      { t: `${n} sai lầm khi ${v.topic} mà nhiều bạn mắc`, why: 'Con số cụ thể' },
+      { t: `Đừng ${v.topic} khi chưa xem video này`, why: 'Cảnh báo' }],
+    count: v => [1, 2, 3].filter(i => v['s' + i]).length,
+    build(v, hook) {
+      const n = this.count(v), L = [hook];
+      for (let i = 1, k = 0; i <= 3; i++) {
+        if (!v['s' + i]) continue; k++;
+        L.push(SC(`Sai lầm ${k}: *${v['s' + i]}*`, `Sai lầm thứ ${ORD[k - 1]}: ${v['s' + i]}.`, `[${k}/${n}]`));
+        if (v['f' + i]) L.push(SC(`Cách đúng: ${v['f' + i]}`, `Cách đúng là ${low1(v['f' + i])}.`, '[tiếp]'));
+      }
+      L.push(SC('Bạn mắc lỗi số mấy?', `Bạn đang mắc lỗi số mấy? Comment cho mình biết, và ${END_HINT}`));
+      return L;
+    },
+  },
+  dung_sai: {
+    name: '🤔 Đúng hay sai?', topicLabel: 'Tin đồn / điều nhiều người tin', topicPh: 'du học Hàn phải giỏi tiếng Hàn mới đi được',
+    fields: [['verdict', 'Câu trả lời', 'Chưa hẳn', ['Sai', 'Đúng', 'Chưa hẳn']],
+      ['r1', 'Giải thích 1', 'nhiều trường nhận học tiếng trước khi vào chuyên ngành'],
+      ['r2', 'Giải thích 2 (có thể bỏ trống)', 'nhưng có TOPIK thì hồ sơ mạnh hơn'],
+      ['tip', 'Lời khuyên', 'học tiếng sớm ngay từ lớp 12']],
+    hooks: v => [
+      { t: `${cap(v.topic)}: đúng hay sai?`, why: 'Tranh luận' },
+      { t: `Nhiều bạn tin điều này về du học, bạn thì sao?`, why: 'Tò mò' },
+      { t: `Nghe câu này bao giờ chưa: ${v.topic}?`, why: 'Gọi đúng điều người xem từng nghe' }],
+    count: () => 0,
+    build(v, hook) {
+      const L = [hook, SC(`Tin đồn: ${cap(v.topic)}`, `Nhiều bạn nghĩ rằng ${v.topic}.`),
+        SC(`Câu trả lời: *${v.verdict}*`, `Câu trả lời là: ${low1(v.verdict)}!`)];
+      if (v.r1) L.push(SC(cap(v.r1), cap(v.r1) + '.'));
+      if (v.r2) L.push(SC(cap(v.r2), cap(v.r2) + '.', '[tiếp]'));
+      if (v.tip) L.push(SC(`Lời khuyên: *${v.tip}*`, `Lời khuyên của mình là ${low1(v.tip)}.`));
+      L.push(SC('Bạn còn nghe tin đồn nào?', `Bạn còn nghe tin đồn nào khác? Comment để mình giải đáp, hoặc ${END_HINT}`));
+      return L;
+    },
+  },
+  so_sanh: {
+    name: '⚖️ So sánh Hàn – Đài', topicLabel: 'So sánh về điều gì', topicPh: 'chi phí và làm thêm',
+    note: 'Chỉ ghi con số đã kiểm tra trên trang chính thức. Không chắc thì ghi chung chung (vd: "tùy trường").',
+    fields: [['c1', 'Tiêu chí 1', 'Học phí'], ['h1', 'Hàn Quốc', 'tùy trường'], ['d1', 'Đài Loan', 'tùy trường'],
+      ['c2', 'Tiêu chí 2', 'Tiếng cần học'], ['h2', 'Hàn Quốc', 'tiếng Hàn'], ['d2', 'Đài Loan', 'tiếng Trung'],
+      ['c3', 'Tiêu chí 3 (có thể bỏ trống)', ''], ['h3', 'Hàn Quốc', ''], ['d3', 'Đài Loan', ''],
+      ['concl', 'Kết luận', 'Chọn nước theo mục tiêu nghề nghiệp của bạn']],
+    hooks: v => [
+      { t: `Hàn hay Đài: ${v.topic} nơi nào hợp với bạn?`, why: 'Câu hỏi chọn lựa' },
+      { t: `So ${v.topic}: Hàn Quốc khác Đài Loan thế nào?`, why: 'Tò mò' },
+      { t: `Chọn sai nước là mất cả năm, xem ngay`, why: 'Sợ mất' }],
+    count: v => [1, 2, 3].filter(i => v['c' + i]).length,
+    build(v, hook) {
+      const n = this.count(v), L = [hook];
+      for (let i = 1, k = 0; i <= 3; i++) {
+        if (!v['c' + i]) continue; k++;
+        L.push(`${v['c' + i]}: [${k}/${n}] / ${v['h' + i] || '?'} | ${v['d' + i] || '?'} || Về ${low1(v['c' + i])}, Hàn Quốc ${v['h' + i]}, còn Đài Loan ${v['d' + i]}.`);
+      }
+      if (v.concl) L.push(SC(cap(v.concl), cap(v.concl) + '.'));
+      L.push(SC('Bạn chọn Hàn hay Đài?', `Bạn nghiêng về Hàn Quốc hay Đài Loan? Comment cho mình biết, và ${END_HINT}`));
+      return L;
+    },
+  },
+  checklist: {
+    name: '✅ Checklist', topicLabel: 'Checklist cho việc gì', topicPh: 'trước khi bay sang Hàn',
+    fields: [['items', 'Các thứ cần có (cách nhau dấu phẩy, 2–5 thứ, mỗi thứ 1–4 chữ)', 'hộ chiếu, visa, thẻ sinh viên, sim, thuốc'],
+      ['tip', 'Mẹo thêm (có thể bỏ trống)', 'chụp ảnh giấy tờ lưu vào điện thoại']],
+    hooks: (v, n) => [
+      { t: `${n} thứ phải có ${v.topic}`, why: 'Con số cụ thể' },
+      { t: `Thiếu 1 thứ này là khổ ${v.topic}`, why: 'Sợ mất' },
+      { t: `Lưu ngay checklist ${v.topic}`, why: 'Kêu gọi lưu video' }],
+    count: v => splitList(v.items).length,
+    build(v, hook) {
+      const it = splitList(v.items).slice(0, 5);
+      const L = [hook];
+      const list = it.length > 1 ? it.slice(0, -1).join(', ') + ' và ' + it[it.length - 1] : it[0] || '';
+      L.push(`Cần mang theo: ${list}`);
+      if (v.tip) L.push(SC(`Mẹo: *${v.tip}*`, `Mẹo nhỏ: ${low1(v.tip)}.`));
+      L.push(SC('Lưu video lại để khỏi quên nhé!', `Lưu video này lại để khỏi quên, và ${END_HINT}`));
+      return L;
+    },
+  },
+  quy_trinh: {
+    name: '🪜 Các bước', topicLabel: 'Quy trình gì', topicPh: 'xin visa du học Hàn',
+    fields: [['steps', 'Các bước (cách nhau dấu phẩy, 3–5 bước, mỗi bước dưới 16 ký tự)', 'Chọn trường, Nộp hồ sơ, Phỏng vấn, Nhận visa'],
+      ['notes', 'Giải thích từng bước (mỗi dòng 1 bước, có thể bỏ trống)', '', 'area']],
+    hooks: (v, n) => [
+      { t: `${cap(v.topic)} gồm mấy bước?`, why: 'Câu hỏi' },
+      { t: `${n} bước ${v.topic}, đừng làm lộn thứ tự`, why: 'Cảnh báo' },
+      { t: `${cap(v.topic)} từ A đến Z trong 30 giây`, why: 'Hứa hẹn nhanh gọn' }],
+    count: v => splitList(v.steps).length,
+    build(v, hook) {
+      const st = splitList(v.steps).slice(0, 5), notes = String(v.notes || '').split('\n').map(x => x.trim());
+      const L = [hook, st.join(' → ')];
+      st.forEach((x, i) => L.push(SC(`Bước ${i + 1}: *${x}*`, notes[i] ? cap(notes[i]) + (/[.!?]$/.test(notes[i]) ? '' : '.') : 'Bước ' + NUMW[i] + ', ' + low1(x) + '.', `[${i + 1}/${st.length}]`)));
+      L.push(SC('Bạn đang ở bước mấy?', `Bạn đang ở bước mấy rồi? Comment cho mình biết, và ${END_HINT}`));
+      return L;
+    },
+  },
+  ban_co_biet: {
+    name: '💡 Bạn có biết?', topicLabel: 'Chủ đề', topicPh: 'điểm TOPIK',
+    fields: [['fact', 'Điều bất ngờ (đã kiểm chứng)', 'điểm TOPIK chỉ có giá trị 2 năm'],
+      ['why', 'Vì sao quan trọng', 'thi quá sớm có thể hết hạn lúc nộp hồ sơ'], ['tip', 'Lời khuyên', 'tính ngày thi theo kỳ nhập học']],
+    hooks: v => [
+      { t: `Bạn có biết ${v.fact}?`, why: 'Tò mò' },
+      { t: `Ít ai biết điều này về ${v.topic}`, why: 'Bí mật' },
+      { t: `Điều này về ${v.topic} có thể làm bạn bất ngờ`, why: 'Bất ngờ' }],
+    count: () => 0,
+    build(v, hook) {
+      const L = [hook, SC(cap(v.fact), cap(v.fact) + '.')];
+      if (v.why) L.push(SC('Vì sao quan trọng?', cap(v.why) + '.'));
+      if (v.tip) L.push(SC(`Lời khuyên: *${v.tip}*`, `Lời khuyên: ${low1(v.tip)}.`, '[tiếp]'));
+      L.push(SC('Bạn đã biết chưa?', `Bạn đã biết điều này chưa? Comment cho mình biết, và ${END_HINT}`));
+      return L;
+    },
+  },
+};
+const GEN_HOOKS = t => [
+  { t: `Sai 1 điều này là ${t} hỏng`, why: 'Sợ làm sai' },
+  { t: `Đừng ${t} khi chưa xem video này`, why: 'Cảnh báo' },
+  { t: `${cap(t)}: đúng hay sai?`, why: 'Tranh luận' },
+  { t: `Ít ai biết điều này về ${t}`, why: 'Tò mò' },
+  { t: `${cap(t)} cần mấy bước?`, why: 'Câu hỏi' }];
+function hookIdeas(topic, tpl, vals) {
+  topic = String(topic || '').trim().replace(/[?.!]+$/, '');
+  if (!topic) return [];
+  const T = TPLS[tpl];
+  const wc = h => h.t.split(/\s+/).length;
+  const list = T && vals ? T.hooks({ ...vals, topic: low1(topic) }, T.count(vals) || 3) : GEN_HOOKS(low1(topic));
+  return list.map(h => ({ ...h, t: cap(h.t) })).sort((a, b) => (wc(a) > 12) - (wc(b) > 12));
+}
+let TPL_CUR = 'sai_lam';
+function tplVals() {
+  const v = { topic: ($('tf_topic') ? $('tf_topic').value.trim() : '') };
+  TPLS[TPL_CUR].fields.forEach(([k]) => { const el = $('tf_' + k); v[k] = el ? el.value.trim() : ''; });
+  return v;
+}
+function drawHooksInto(box, list, current, name) {
+  box.innerHTML = list.map((h, i) => {
+    const w = h.t.split(/\s+/).length;
+    return `<label class="hk"><input type="radio" name="${name}" value="${i}" ${i === current ? 'checked' : ''}><div class="t">${esc(h.t)}<div class="why">${esc(h.why)} · ${w} chữ${w > 12 ? ' <span class="w">(hơi dài)</span>' : ''}</div></div></label>`;
+  }).join('');
+}
+function drawTpl() {
+  const T = TPLS[TPL_CUR];
+  $('tplChips').innerHTML = Object.entries(TPLS).map(([k, t]) => `<button type="button" class="${k === TPL_CUR ? 'on' : ''}" data-k="${k}">${t.name}</button>`).join('');
+  $('tplChips').querySelectorAll('button').forEach(b => b.onclick = () => { TPL_CUR = b.dataset.k; drawTpl(); });
+  const saved = store.get('tplv_' + TPL_CUR, {});
+  const f = (k, label, ph, opt) => {
+    const val = esc(saved[k] ?? '');
+    if (Array.isArray(opt)) return `<label class="f">${esc(label)}</label><select id="tf_${k}">${opt.map(o => `<option ${o === (saved[k] || ph) ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+    if (opt === 'area') return `<label class="f">${esc(label)}</label><textarea id="tf_${k}" rows="3" placeholder="${esc(ph)}" style="min-height:0">${val}</textarea>`;
+    return `<label class="f">${esc(label)}</label><input type="text" id="tf_${k}" placeholder="${esc(ph)}" value="${val}">`;
+  };
+  $('tplForm').innerHTML = f('topic', T.topicLabel, T.topicPh) + T.fields.map(([k, l, ph, o]) => f(k, l, ph, o)).join('') +
+    (T.note ? `<div class="hint w">⚠ ${esc(T.note)}</div>` : '') +
+    `<button type="button" class="btn sm" id="tplFill" style="margin-top:8px">Điền ví dụ</button>`;
+  $('tplFill').onclick = () => {
+    $('tf_topic').value = $('tf_topic').value || T.topicPh;
+    T.fields.forEach(([k, l, ph]) => { const el = $('tf_' + k); if (el && !el.value) el.value = ph; });
+    tplHooks();
+  };
+  $('tplForm').querySelectorAll('input,select,textarea').forEach(el => el.addEventListener('input', () => { store.set('tplv_' + TPL_CUR, tplVals()); tplHooks(); }));
+  tplHooks();
+}
+function tplHooks() {
+  const v = tplVals(), list = hookIdeas(v.topic, TPL_CUR, v);
+  if (!list.length) { $('tplHooks').innerHTML = '<div class="hint">Điền chủ đề để xem gợi ý câu mở.</div>'; return; }
+  $('tplHooks').innerHTML = '<label class="f">Chọn câu mở (bản A)</label><div id="tplHA"></div>' +
+    '<label class="chk"><input type="checkbox" id="tplAB"> Làm thêm bản B với câu mở khác để so sánh</label><div id="tplHB" class="hide"></div>';
+  drawHooksInto($('tplHA'), list, 0, 'tha');
+  drawHooksInto($('tplHB'), list, 1, 'thb');
+  $('tplHB').querySelectorAll('.hk').forEach(x => x.classList.add('b'));
+  $('tplAB').onchange = () => $('tplHB').classList.toggle('hide', !$('tplAB').checked);
+}
+$('bTpl').onclick = () => { $('tplCard').classList.toggle('hide'); if (!$('tplCard').classList.contains('hide')) { drawTpl(); $('tplCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); } };
+$('tplClose').onclick = () => $('tplCard').classList.add('hide');
+$('tplMake').onclick = () => {
+  const T = TPLS[TPL_CUR], v = tplVals();
+  if (!v.topic) { toast('Hãy điền chủ đề'); $('tf_topic').focus(); return; }
+  const list = hookIdeas(v.topic, TPL_CUR, v);
+  const pick = name => { const r = document.querySelector(`input[name=${name}]:checked`); return list[r ? +r.value : 0].t; };
+  const hookA = pick('tha');
+  const script = T.build(v, hookA).join('\n');
+  if ($('script').value.trim() && !confirm('Thay kịch bản đang có bằng kịch bản từ mẫu?')) return;
+  $('script').value = script;
+  if (!$('name').value.trim()) $('name').value = hookA.slice(0, 50);
+  TPL_USED = TPL_CUR; store.set('tpl_used', TPL_USED);
+  if ($('tplAB') && $('tplAB').checked) {
+    const hb = pick('thb');
+    if (hb !== hookA) { $('abHook').value = hb; $('abBox').classList.remove('hide'); $('abOn').classList.add('hide'); }
+  }
+  afterEdit(); $('tplCard').classList.add('hide');
+  $('script').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  toast('Đã ráp kịch bản. Xem lại, sửa chữ nếu cần rồi bấm TẠO VIDEO');
+};
+// Gợi ý câu mở cho kịch bản đang viết
+$('bHook').onclick = () => {
+  const box = $('hookBox');
+  if (box.innerHTML) { box.innerHTML = ''; return; }
+  const guess = $('name').value.trim() || (TPLS[TPL_USED] && store.get('tplv_' + TPL_USED, {}).topic) || '';
+  box.innerHTML = `<div class="src" style="background:#fffbea;border:1px solid #f1dc8a;padding:10px;border-radius:10px;margin-top:8px">
+    <b>💡 Gợi ý câu mở</b><div class="hint">Gõ chủ đề ngắn (vd: hồ sơ du học Đài Loan), chọn câu, bấm "Dùng làm câu mở".</div>
+    <input type="text" id="hkTopic" value="${esc(guess)}" placeholder="Chủ đề ngắn">
+    <div id="hkList"></div>
+    <div class="row" style="margin-top:8px"><button class="btn sm" id="hkUse" type="button">Dùng làm câu mở</button><button class="btn sm" id="hkB" type="button">Dùng làm bản B</button></div></div>`;
+  const draw = () => drawHooksInto($('hkList'), hookIdeas($('hkTopic').value, '', null), 0, 'hkr');
+  $('hkTopic').oninput = draw; draw();
+  const chosen = () => { const r = document.querySelector('input[name=hkr]:checked'); const l = hookIdeas($('hkTopic').value, '', null); return r && l[+r.value] ? l[+r.value].t : ''; };
+  $('hkUse').onclick = () => {
+    const h = chosen(); if (!h) return;
+    const v = $('script').value;
+    $('script').value = v.trim() ? swapHook(v, h) : h; afterEdit(); toast('Đã thay câu mở');
+  };
+  $('hkB').onclick = () => {
+    const h = chosen(); if (!h) return;
+    $('abHook').value = h; $('abBox').classList.remove('hide'); $('abOn').classList.add('hide');
+    $('abBox').scrollIntoView({ behavior: 'smooth', block: 'center' }); toast('Đã đặt làm câu mở bản B');
+  };
+};
+
 function jobBody(preview) {
   const script = $('script').value.trim();
   FIELDS.forEach(k => k !== 'name' && store.set(k, $(k).value));
-  store.set('auto', $('auto').checked); store.set('logo', $('logo').checked);
+  store.set('auto', $('auto').checked); store.set('logo', $('logo').checked); store.set('hook', $('hook').checked);
   let voice = $('voice').value, vieneu_voice = '', clone = '';
   if (voice.startsWith('vn:')) { vieneu_voice = voice.slice(3); voice = 'vieneu'; }
   if (voice.startsWith('clone:')) { clone = voice.slice(6); voice = 'clone'; }
@@ -671,27 +1002,51 @@ function jobBody(preview) {
   return { script, name, voice, vieneu_voice, rate: $('rate').value, character: $('character').value, label: $('label').value,
     hotline: $('hotline').value, auto: $('auto').checked, logo: $('logo').checked, by: $('by').value,
     clone, music: $('music').value, music_vol: $('music_vol').value, pen: $('pen').value,
-    bg: $('bg').value || 'trang', fmt: $('fmt').value || 'doc', trans: $('trans').value || 'xen', subs: $('subs').checked, stroke: $('stroke').checked, preview: !!preview };
+    bg: $('bg').value || 'trang', fmt: $('fmt').value || 'doc', trans: $('trans').value || 'xen', subs: $('subs').checked, stroke: $('stroke').checked, preview: !!preview,
+    reveal: $('reveal').value || 'net', hook: $('hook').checked, tpl: TPL_USED || '' };
 }
 $('bGo').onclick = async () => {
   const script = $('script').value.trim();
   if (!script) { toast('Hãy dán kịch bản trước'); return; }
   return makeVideo();
 };
+function swapHook(script, hook) {
+  const ls = script.split('\n'); const i = ls.findIndex(l => l.trim());
+  if (i < 0) return script;
+  const tags = (ls[i].match(/\[[^\]]*\]/g) || []).join(' ');
+  ls[i] = hook.trim() + (tags ? ' ' + tags : '');
+  return ls.join('\n');
+}
 async function makeVideo() {
   const script = $('script').value.trim();
   if (!script) { toast('Hãy dán kịch bản trước'); return; }
   if (!gateCheck()) return;
   const body = jobBody(false), name = body.name;
+  const bHook = !$('abBox').classList.contains('hide') ? $('abHook').value.trim() : '';
+  const bodies = [body];
+  if (bHook) {
+    const abg = Date.now().toString(36);
+    Object.assign(body, { ab: 'A', abg, name: name + ' (A)' });
+    bodies.push({ ...body, ab: 'B', name: name + ' (B)', script: swapHook(script, bHook) });
+  }
   $('bGo').disabled = true; $('bGo').textContent = 'Đang gửi...';
   try {
-    const d = await api('/api/jobs', body);
-    const jobs = store.get('jobs', []); jobs.unshift({ id: d.id, name, t: Date.now() }); store.set('jobs', jobs.slice(0, 10));
-    toast('Đã gửi! Video đang được dựng.');
+    for (const bd of bodies) {
+      const d = await api('/api/jobs', bd);
+      const jobs = store.get('jobs', []); jobs.unshift({ id: d.id, name: bd.name, t: Date.now() }); store.set('jobs', jobs.slice(0, 10));
+    }
+    toast(bodies.length > 1 ? 'Đã gửi 2 bản A và B!' : 'Đã gửi! Video đang được dựng.');
     renderJobs(); pollJobs(); window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) { toast(e.message, 5000); }
   $('bGo').disabled = false; $('bGo').textContent = 'TẠO VIDEO';
 }
+$('abOn').onclick = () => {
+  const first = ($('script').value.split('\n').find(l => l.trim()) || '').split('||')[0].replace(/\[[^\]]*\]/g, '').replace(/\s\/\s/g, ' ').trim();
+  const alt = hookIdeas(first, TPL_USED).find(h => h.t !== first);
+  if (!$('abHook').value.trim() && alt) $('abHook').value = alt.t;
+  $('abBox').classList.remove('hide'); $('abOn').classList.add('hide'); $('abHook').focus();
+};
+$('abOff').onclick = () => { $('abBox').classList.add('hide'); $('abOn').classList.remove('hide'); $('abHook').value = ''; };
 
 // ----- xem trước & sửa từng cảnh
 let PV = null, pvTimer = null, kpTarget = -1, KHO = [];
@@ -883,13 +1238,15 @@ function renderJobsLight() { if (!document.querySelector('#jobs video')) renderJ
 async function loadList() {
   $('vlist').innerHTML = '<div class="empty">Đang tải...</div>';
   try {
-    const d = await api('/api/list');
+    const [d, st] = await Promise.all([api('/api/list'), api('/api/stats').catch(() => ({}))]);
+    window._stats = st || {};
     if (d.voices && d.voices.length) { store.set('voices', d.voices); fillVoices(d.voices); }
     if (!d.items.length) { $('vlist').innerHTML = '<div class="empty">Chưa có video nào.</div>'; return; }
     window._items = d.items;
     $('vlist').innerHTML = d.items.map((v, i) => `<div class="card"><div class="vid"><div class="meta">
       <div class="n">${v.ok ? '' : '✗ '}${esc(v.name)}</div>
       <div class="d">${when(v.created)}${v.by ? ' · ' + esc(v.by) : ''}${v.voice ? ' · ' + esc(v.voice) : ''}</div>
+      <div>${v.tpl && TPLS[v.tpl] ? `<span class="badge">${esc(TPLS[v.tpl].name)}</span>` : ''}${v.ab ? `<span class="badge ab">Bản ${esc(v.ab)}</span>` : ''}${statLine(window._stats[v.id])}</div>
       ${v.ok ? '' : `<span class="tag e">${esc(v.error || 'Lỗi')}</span>`}
       ${v.fallback ? '<span class="tag">Giọng dự phòng</span>' : ''}
       ${v.credit ? `<div class="hint">Ghi nguồn nhạc: ${esc(v.credit)} <a href="#" onclick="event.preventDefault();copyText(${esc(JSON.stringify(v.credit))}).then(()=>toast('Đã copy'))">Copy</a></div>` : ''}
@@ -897,11 +1254,68 @@ async function loadList() {
         ${v.ok ? `<button class="btn sm" onclick="play(this,'${v.id}')">Xem</button><button class="btn sm" style="background:var(--ok);color:#fff" onclick="saveVideo(this,'${v.id}',${esc(JSON.stringify(v.name))})">💾 Lưu</button>` : ''}
         ${v.posts ? `<button class="btn sm" onclick="showPosts(this,${i})">📝 Bài đăng</button>` : ''}
         <button class="btn sm" onclick="reuse(${i})">Dùng lại kịch bản</button>
+        ${v.ok ? `<button class="btn sm" onclick="statForm(this,${i})">📊 Lượt xem</button>` : ''}
         <button class="btn sm red adm" onclick="delVid('${v.id}')">Xoá</button>
       </div></div></div></div>`).join('');
   } catch (e) { $('vlist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
 $('bReload').onclick = loadList;
+const fmtN = n => n >= 1e6 ? (n / 1e6).toFixed(1).replace('.0', '') + 'tr' : n >= 1e3 ? (n / 1e3).toFixed(1).replace('.0', '') + 'k' : String(n || 0);
+function statLine(r) {
+  if (!r) return '';
+  return `<span class="hint" style="display:inline">👁 ${fmtN(r.views)} · ❤ ${fmtN(r.likes)} · 💬 ${fmtN(r.comments)} · ↗ ${fmtN(r.shares)} · 🔖 ${fmtN(r.saves)} <i>(${esc(r.platform || '')})</i></span>`;
+}
+function statForm(btn, i) {
+  const card = btn.closest('.card'), old = card.querySelector('.stat');
+  if (old) { old.remove(); return; }
+  const v = window._items[i], r = window._stats[v.id] || {};
+  const inp = (k, l) => `<label style="font-size:12.5px">${l}<br><input type="number" inputmode="numeric" min="0" id="st_${k}_${v.id}" value="${r[k] || ''}"></label>`;
+  card.insertAdjacentHTML('beforeend', `<div class="stat">${inp('views', '👁 Xem')}${inp('likes', '❤ Thích')}${inp('comments', '💬 Bình luận')}${inp('shares', '↗ Chia sẻ')}${inp('saves', '🔖 Lưu')}
+    <label style="font-size:12.5px">Nền tảng<br><select id="st_pf_${v.id}">${['tiktok', 'facebook', 'youtube', 'khac'].map(x => `<option ${x === (r.platform || 'tiktok') ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
+    <button class="btn sm main" style="align-self:flex-end;width:auto;margin:0" id="st_go_${v.id}">Lưu số liệu</button></div>`);
+  $('st_go_' + v.id).onclick = async () => {
+    const g = k => $('st_' + k + '_' + v.id).value;
+    try {
+      const d = await api('/api/stats/' + v.id, { views: g('views'), likes: g('likes'), comments: g('comments'), shares: g('shares'), saves: g('saves'), platform: $('st_pf_' + v.id).value, by: $('by').value });
+      window._stats[v.id] = d.rec; toast('Đã lưu số liệu'); loadList();
+    } catch (e) { toast(e.message); }
+  };
+}
+$('bStat').onclick = () => {
+  const box = $('statBox');
+  if (box.innerHTML) { box.innerHTML = ''; return; }
+  const items = (window._items || []).filter(v => v.ok), st = window._stats || {};
+  const withS = items.filter(v => st[v.id] && st[v.id].views);
+  if (!withS.length) { box.innerHTML = '<div class="hint" style="margin-top:8px">Chưa có số liệu. Bấm <b>📊 Lượt xem</b> ở từng video để nhập lượt xem, thích, bình luận...</div>'; return; }
+  const rate = r => r.views ? ((r.likes + r.comments * 2 + r.shares * 3 + r.saves * 3) / r.views * 100) : 0;
+  const hookOf = v => (String(v.script || '').split('\n').find(l => l.trim()) || '').split('||')[0].replace(/\[[^\]]*\]/g, '').replace(/\s\/\s/g, ' ').trim();
+  // A/B
+  const groups = {};
+  items.forEach(v => { if (v.abg) (groups[v.abg] = groups[v.abg] || {})[v.ab] = v; });
+  let h = '';
+  const pairs = Object.values(groups).filter(g => g.A && g.B);
+  if (pairs.length) {
+    h += '<b>🅰🅱 Câu mở nào hút hơn?</b><table class="st"><tr><th>Câu mở</th><th>Xem</th><th>Tương tác</th></tr>';
+    pairs.forEach(g => {
+      const a = st[g.A.id] || {}, b = st[g.B.id] || {};
+      const wa = (a.views || 0) >= (b.views || 0);
+      const row = (v, r, win) => `<tr><td>${win && r.views ? '🏆 ' : ''}<span class="badge ab">${v.ab}</span>${esc(hookOf(v))}</td><td class="${win && r.views ? 'win' : ''}">${fmtN(r.views)}</td><td>${r.views ? rate(r).toFixed(1) + '%' : '–'}</td></tr>`;
+      h += row(g.A, a, wa) + row(g.B, b, !wa) + '<tr><td colspan="3" style="border:0;height:6px"></td></tr>';
+    });
+    h += '</table>';
+  }
+  // theo mẫu
+  const by = {};
+  withS.forEach(v => { const k = v.tpl && TPLS[v.tpl] ? TPLS[v.tpl].name : '✍ Tự viết / ChatGPT'; (by[k] = by[k] || []).push(st[v.id]); });
+  h += '<b style="display:block;margin-top:10px">🧩 Mẫu kịch bản nào hiệu quả?</b><table class="st"><tr><th>Mẫu</th><th>Số video</th><th>Xem TB</th><th>Tương tác TB</th></tr>';
+  const rows = Object.entries(by).map(([k, arr]) => [k, arr.length, arr.reduce((x, r) => x + r.views, 0) / arr.length, arr.reduce((x, r) => x + rate(r), 0) / arr.length]).sort((x, y) => y[2] - x[2]);
+  rows.forEach(([k, n, av, ar], j) => { h += `<tr><td>${j === 0 && rows.length > 1 ? '🏆 ' : ''}${esc(k)}</td><td>${n}</td><td class="${j === 0 ? 'win' : ''}">${fmtN(Math.round(av))}</td><td>${ar.toFixed(1)}%</td></tr>`; });
+  h += '</table>';
+  const top = [...withS].sort((x, y) => st[y.id].views - st[x.id].views).slice(0, 3);
+  h += '<b style="display:block;margin-top:10px">🔥 Câu mở của 3 video nhiều lượt xem nhất</b><table class="st">' + top.map(v => `<tr><td>${esc(hookOf(v))}</td><td class="win">${fmtN(st[v.id].views)}</td></tr>`).join('') + '</table>';
+  h += '<div class="hint">Tương tác = (thích + bình luận×2 + chia sẻ×3 + lưu×3) / lượt xem. Cần vài chục video mới kết luận chắc chắn được.</div>';
+  box.innerHTML = '<div style="margin-top:10px">' + h + '</div>';
+};
 function play(btn, id) {
   const card = btn.closest('.card'); if (card.querySelector('video')) return;
   const v = document.createElement('video'); v.src = '/video/' + id; v.controls = true; v.playsInline = true; v.autoplay = true; card.appendChild(v);

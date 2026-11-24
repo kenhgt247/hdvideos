@@ -30,7 +30,8 @@ def main():
         job = json.load(fh)
     name = (job.get('name') or '').strip() or 'Video %s' % time.strftime('%d-%m %H:%M')
     info = {'ok': False, 'name': name, 'file': slug(name) + '.mp4', 'created': int(time.time()),
-            'by': job.get('by', ''), 'script': job.get('script', '')[:3000]}
+            'by': job.get('by', ''), 'script': job.get('script', '')[:3000],
+            'tpl': job.get('tpl', ''), 'ab': job.get('ab', ''), 'abg': job.get('abg', '')}
 
     voice = job.get('voice') or 'vieneu_nam'
     character = job.get('character') or 'auto'
@@ -42,6 +43,8 @@ def main():
     if not job.get('logo', True):
         opts['logo'] = None
     E.STROKE = job.get('stroke', True) is not False
+    E.REVEAL = 'quet' if job.get('reveal') == 'quet' else 'net'
+    E.CharItem._cache.clear()
     fmt = job.get('fmt') or 'doc'
     E.set_format(fmt if fmt in E.FORMATS else 'doc')
     info['fmt'] = fmt
@@ -50,6 +53,7 @@ def main():
     opts['subs'] = bool(job.get('subs', False))
     tr = job.get('trans') or 'xoa'
     opts['trans'] = tr if tr in ('xoa', 'lia', 'xen') else 'xoa'
+    opts['hook'] = job.get('hook', True) is not False
     pen = job.get('pen', 1)
     pen = {True: 1.0, False: 0.0}.get(pen, pen)
     try:
