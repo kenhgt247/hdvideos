@@ -2199,5 +2199,245 @@
    "thiên nhiên"
   ],
   "lo": 60
+ },
+ "thap_namsan_seoul": {
+  "ten": "Tháp Namsan Seoul",
+  "tu_khoa": [
+   "Namsan",
+   "Seoul",
+   "tháp truyền hình",
+   "du lịch"
+  ],
+  "lo": 61
+ },
+ "lang_bukchon": {
+  "ten": "Làng nhà mái ngói Bukchon",
+  "tu_khoa": [
+   "Bukchon",
+   "hanok",
+   "nhà truyền thống",
+   "Hàn Quốc"
+  ],
+  "lo": 61
+ },
+ "bien_busan": {
+  "ten": "Biển Busan",
+  "tu_khoa": [
+   "Busan",
+   "bãi biển",
+   "du lịch",
+   "biển"
+  ],
+  "lo": 61
+ },
+ "thit_nuong_han_quoc": {
+  "ten": "Ăn thịt nướng Hàn Quốc",
+  "tu_khoa": [
+   "thịt nướng",
+   "ẩm thực",
+   "bạn bè",
+   "Hàn Quốc"
+  ],
+  "lo": 61
+ },
+ "cua_hang_my_pham_han": {
+  "ten": "Cửa hàng mỹ phẩm Hàn Quốc",
+  "tu_khoa": [
+   "mỹ phẩm",
+   "mua sắm",
+   "làm đẹp",
+   "Hàn Quốc"
+  ],
+  "lo": 62
+ },
+ "an_ga_ran_cung_ban": {
+  "ten": "Ăn gà rán cùng bạn",
+  "tu_khoa": [
+   "gà rán",
+   "bạn bè",
+   "ăn uống",
+   "giải trí"
+  ],
+  "lo": 62
+ },
+ "hat_karaoke_phong_rieng": {
+  "ten": "Hát karaoke phòng riêng",
+  "tu_khoa": [
+   "karaoke",
+   "micro",
+   "ca hát",
+   "giải trí"
+  ],
+  "lo": 62
+ },
+ "truot_tuyet": {
+  "ten": "Trượt tuyết",
+  "tu_khoa": [
+   "trượt tuyết",
+   "mùa đông",
+   "thể thao",
+   "núi tuyết"
+  ],
+  "lo": 62
+ },
+ "ap_luc_hoc_tap": {
+  "ten": "Căng thẳng áp lực học tập",
+  "tu_khoa": [
+   "căng thẳng",
+   "học tập",
+   "áp lực",
+   "mệt mỏi"
+  ],
+  "lo": 63
+ },
+ "tam_su_ban_than": {
+  "ten": "Tâm sự với bạn thân",
+  "tu_khoa": [
+   "tâm sự",
+   "bạn thân",
+   "chia sẻ",
+   "lắng nghe"
+  ],
+  "lo": 63
+ },
+ "ngoi_thien_thu_gian": {
+  "ten": "Ngồi thiền thư giãn",
+  "tu_khoa": [
+   "thiền",
+   "thư giãn",
+   "bình tĩnh",
+   "tinh thần"
+  ],
+  "lo": 63
+ },
+ "tu_van_vien_dong_vien": {
+  "ten": "Tư vấn viên động viên học sinh",
+  "tu_khoa": [
+   "tư vấn viên",
+   "động viên",
+   "học sinh",
+   "hỗ trợ"
+  ],
+  "lo": 63
+ },
+ "di_ve_muon_ban_dem": {
+  "ten": "Đi về muộn ban đêm cẩn thận",
+  "tu_khoa": [
+   "ban đêm",
+   "đi về muộn",
+   "cảnh giác",
+   "an toàn"
+  ],
+  "lo": 64
+ },
+ "cat_ho_chieu_trong_ket": {
+  "ten": "Cất hộ chiếu vào két an toàn",
+  "tu_khoa": [
+   "hộ chiếu",
+   "két sắt",
+   "bảo quản",
+   "giấy tờ"
+  ],
+  "lo": 64
+ },
+ "goi_dien_khan_cap": {
+  "ten": "Gọi điện khẩn cấp",
+  "tu_khoa": [
+   "khẩn cấp",
+   "điện thoại",
+   "trợ giúp",
+   "an toàn"
+  ],
+  "lo": 64
+ },
+ "tru_duoi_ban_khi_dong_dat": {
+  "ten": "Trú dưới gầm bàn khi động đất",
+  "tu_khoa": [
+   "động đất",
+   "gầm bàn",
+   "trú ẩn",
+   "bảo vệ"
+  ],
+  "lo": 64
+ },
+ "o_trong_nha_khi_bao": {
+  "ten": "Ở trong nhà khi có bão lớn",
+  "tu_khoa": [
+   "bão lớn",
+   "mưa gió",
+   "trong nhà",
+   "an toàn"
+  ],
+  "lo": 65
+ },
+ "tu_choi_nguoi_la_ru_lam": {
+  "ten": "Từ chối người lạ rủ đi làm",
+  "tu_khoa": [
+   "người lạ",
+   "từ chối",
+   "làm thêm",
+   "cảnh giác"
+  ],
+  "lo": 65
+ },
+ "giu_vi_tren_tau_dong": {
+  "ten": "Giữ ví cẩn thận trên tàu đông người",
+  "tu_khoa": [
+   "ví tiền",
+   "tàu điện",
+   "đông người",
+   "giữ đồ"
+  ],
+  "lo": 65
+ },
+ "lo_lang_vi_mat_do": {
+  "ten": "Lo lắng vì mất đồ",
+  "tu_khoa": [
+   "mất đồ",
+   "lo lắng",
+   "ví tiền",
+   "thất lạc"
+  ],
+  "lo": 65
+ },
+ "cui_chao_le_phep": {
+  "ten": "Cúi chào lễ phép",
+  "tu_khoa": [
+   "cúi chào",
+   "lễ phép",
+   "tôn trọng",
+   "văn hóa"
+  ],
+  "lo": 66
+ },
+ "xep_hang_trat_tu": {
+  "ten": "Xếp hàng trật tự",
+  "tu_khoa": [
+   "xếp hàng",
+   "trật tự",
+   "chờ đợi",
+   "văn minh"
+  ],
+  "lo": 66
+ },
+ "giu_im_lang_tren_tau": {
+  "ten": "Giữ im lặng trên tàu",
+  "tu_khoa": [
+   "im lặng",
+   "tàu điện",
+   "lịch sự",
+   "công cộng"
+  ],
+  "lo": 66
+ },
+ "dua_do_bang_hai_tay": {
+  "ten": "Đưa đồ bằng hai tay",
+  "tu_khoa": [
+   "hai tay",
+   "trao đồ",
+   "lễ phép",
+   "tôn trọng"
+  ],
+  "lo": 66
  }
 }
