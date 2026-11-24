@@ -184,6 +184,9 @@ pre.fmt{white-space:pre-wrap;font-size:13px;background:#fafbfe;border:1px solid 
 • " / " (có cách 2 bên) = xuống dòng chữ.
 • Dòng bắt đầu bằng "- " = gạch đầu dòng.
 • [vẽ: tiền]  [vẽ: hộ chiếu mở] = chọn hình minh hoạ.
+• Gạch đầu dòng ngắn (Hộ chiếu, Học bạ...) → máy tự vẽ hình cho từng ý, đúng lúc lời đọc nhắc tới.
+• Các bước nối bằng → thành sơ đồ:  Nộp hồ sơ → Phỏng vấn → Nhận visa
+• Thêm [tiếp] cuối dòng = vẽ tiếp trên bảng cũ (cảnh trước thu nhỏ lên trên).
 • Không cần tô màu: máy tự tô số đỏ, từ khoá xanh, gạch chân ý chính.
 Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi chủ đề, rồi copy kịch bản về dán vào đây.</pre>
     </details>
@@ -235,6 +238,8 @@ Cách nhanh nhất: bấm "Copy câu lệnh ChatGPT", dán vào ChatGPT, gửi c
     <label class="f">Kiểu nền</label>
     <input type="hidden" id="bg">
     <div class="bgs" id="bgs"></div>
+    <label class="f" for="trans">Chuyển cảnh</label>
+    <select id="trans"><option value="xen">Xen kẽ: xoá bảng và lia ngang</option><option value="xoa">Xoá bảng</option><option value="lia">Lia ngang</option></select>
     <label class="chk"><input type="checkbox" id="stroke" checked> Vẽ từng nét như người thật (chữ, ảnh, nhân vật)</label>
     <label class="chk"><input type="checkbox" id="subs"> Hiện phụ đề chạy theo giọng đọc</label>
     <label class="f" for="pen">Tiếng bút vẽ</label>
@@ -369,7 +374,7 @@ function showTab(t) {
 }
 
 // ---------- form
-const FIELDS = ['name', 'voice', 'rate', 'character', 'label', 'hotline', 'by', 'music', 'music_vol', 'pen', 'bg', 'fmt'];
+const FIELDS = ['name', 'voice', 'rate', 'character', 'label', 'hotline', 'by', 'music', 'music_vol', 'pen', 'bg', 'fmt', 'trans'];
 const FMTS = [['doc', 'Dọc 9:16', 'TikTok, Reels, Shorts', 18, 32], ['ngang', 'Ngang 16:9', 'YouTube, Facebook', 34, 19],
               ['vuong', 'Vuông 1:1', 'Bài đăng FB, Instagram', 27, 27], ['doc45', 'Dọc 4:5', 'Bài đăng FB, Instagram', 24, 30]];
 function drawFmts() {
@@ -440,16 +445,15 @@ function cleanPasted(t) {
 $('bClear').onclick = () => { if (!$('script').value || confirm('Xoá kịch bản đang viết?')) { $('script').value = ''; $('name').value = ''; countScenes(); store.set('draft', ''); } };
 $('bSample').onclick = () => {
   if ($('script').value.trim() && !confirm('Thay kịch bản đang viết bằng kịch bản mẫu?')) return;
-  $('script').value = `Tốt nghiệp 2–3 năm / còn đi du học Hàn được không? || Tốt nghiệp cấp ba được hai, ba năm rồi, giờ còn đi du học Hàn được không? [vẽ: học sinh suy nghĩ chọn nước]
-Câu trả lời là: vẫn đi được nha! [vẽ: tích]
-Quan trọng là giải trình / khoảng thời gian trống || Điều quan trọng nhất là bạn giải trình được khoảng thời gian trống đó. [vẽ: kế hoạch học tập]
-Bạn có thể chứng minh bằng:
-- Hợp đồng đi làm
-- Bằng học nghề
-- Giấy xuất ngũ
-Trống càng lâu / hồ sơ càng cần chặt chẽ || Thời gian trống càng dài thì hồ sơ càng cần chuẩn bị kỹ. [vẽ: bộ hồ sơ xếp chồng]
-Inbox năm tốt nghiệp / mình check trường ngay! || Inbox năm tốt nghiệp cho Du Học Hải Dương, mình check trường phù hợp cho bạn ngay nhé!`;
-  $('name').value = 'Trống năm đi Hàn'; countScenes(); store.set('draft', $('script').value);
+  $('script').value = `Hồ sơ du học Đài Loan / cần những gì? || Hồ sơ du học Đài Loan gồm những gì, chuẩn bị sao cho nhanh? [vẽ: bộ hồ sơ xếp chồng]
+Giấy tờ cá nhân: || Đầu tiên là giấy tờ cá nhân: hộ chiếu, học bạ và ảnh thẻ.
+- Hộ chiếu
+- Học bạ
+- Ảnh thẻ
+Chứng minh tài chính / là phần quan trọng nhất || Chứng minh tài chính là phần quan trọng nhất, cần có sổ tiết kiệm. [vẽ: ống tiết kiệm]
+Dịch thuật → Công chứng → Nộp hồ sơ → Phỏng vấn || Quy trình là dịch thuật, công chứng, nộp hồ sơ rồi phỏng vấn.
+Inbox Du Học Hải Dương / để nhận checklist! || Inbox Du Học Hải Dương để nhận checklist hồ sơ đầy đủ nhé!`;
+  $('name').value = 'Hồ sơ du học Đài Loan'; countScenes(); store.set('draft', $('script').value);
 };
 $('bPrompt').onclick = () => copyFile('chatgpt', 'Đã copy câu lệnh. Mở ChatGPT, dán vào rồi gửi chủ đề video.');
 $('bPromptAnh').onclick = () => copyFile('anh', 'Đã copy câu lệnh vẽ ảnh cho ChatGPT.');
@@ -473,7 +477,7 @@ function jobBody(preview) {
   return { script, name, voice, vieneu_voice, rate: $('rate').value, character: $('character').value, label: $('label').value,
     hotline: $('hotline').value, auto: $('auto').checked, logo: $('logo').checked, by: $('by').value,
     clone, music: $('music').value, music_vol: $('music_vol').value, pen: $('pen').value,
-    bg: $('bg').value || 'trang', fmt: $('fmt').value || 'doc', subs: $('subs').checked, stroke: $('stroke').checked, preview: !!preview };
+    bg: $('bg').value || 'trang', fmt: $('fmt').value || 'doc', trans: $('trans').value || 'xen', subs: $('subs').checked, stroke: $('stroke').checked, preview: !!preview };
 }
 $('bGo').onclick = async () => {
   const script = $('script').value.trim();

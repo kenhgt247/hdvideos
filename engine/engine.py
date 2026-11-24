@@ -997,7 +997,7 @@ def _words(t):
     return ' ' + re.sub(r'[^a-z0-9%+]+', ' ', norm(t)) + ' '
 
 
-def pick_icon(screen, say, avoid=()):
+def pick_icon(screen, say, avoid=(), with_score=False):
     a, b = _words(screen), _words(say)
     best, best_score = None, 0
     allkeys = dict(ICON_KEYWORDS)
@@ -1016,6 +1016,8 @@ def pick_icon(screen, say, avoid=()):
             sc *= 0.25
         if sc > best_score:
             best, best_score = icon, sc
+    if with_score:
+        return best, best_score
     if best is None and screen.strip().endswith('?'):
         return 'hoi'
     return best
@@ -1089,6 +1091,20 @@ def split_display(sentence, maxc=22, maxlines=4):
     return lines
 
 
+KEEP_TAGS = ('tiep', 'giu bang', 'giu', 'tiep bang', 'noi tiep')
+FLOW_RE = re.compile(r'\s*(?:→|->|=>|⇒)\s*')
+
+
+def flow_say(steps):
+    if len(steps) == 1:
+        return steps[0]
+    out = []
+    for i, s_ in enumerate(steps):
+        lead = 'Đầu tiên' if i == 0 else ('Cuối cùng' if i == len(steps) - 1 else 'Tiếp theo')
+        out.append('%s, %s.' % (lead, s_[:1].lower() + s_[1:] if not s_[:2].isupper() else s_))
+    return ' '.join(out)
+
+
 def parse_simple(text):
     """Kiểu viết đơn giản: mỗi dòng = 1 cảnh, app đọc nguyên câu và tự cắt chữ hiện lên màn hình.
     Dòng bắt đầu bằng '- ' thuộc cảnh ngay trên (gạch đầu dòng).
@@ -1106,7 +1122,7 @@ def parse_simple(text):
         icon_tags = [t for t in icon_tags if icon_known(t.split(':', 1)[1].strip())]
         if body[:2] in ('- ', '+ ') and scenes:
             item = body[2:].strip()
-            scenes[-1]['lines'].append(('- ' + item, tags))
+            scenes[-1]['lines'].append(('- ' + item, tags + icon_tags))
             scenes[-1]['say'].append(item + ',')
             scenes[-1]['src'].append(line)
             continue
@@ -1115,13 +1131,24 @@ def parse_simple(text):
                 scenes[-1]['lines'].append(('', tags))
                 scenes[-1]['src'].append(line)
             continue
+        keep = any(t in KEEP_TAGS for t in tags)  # [tiếp]: cảnh trước thu nhỏ lên trên, vẽ tiếp bên dưới
+        tags = [t for t in tags if t not in KEEP_TAGS]
+        show_part = body.split('||', 1)[0]
+        if FLOW_RE.search(show_part):             # sơ đồ: A → B → C
+            steps = [x.strip() for x in FLOW_RE.split(show_part) if x.strip()]
+            say = body.split('||', 1)[1].strip() if '||' in body else flow_say(steps)
+            sc = {'title': '', 'lines': [('\u00bb' + '\t'.join(steps), tags)], 'say': [say], 'src': [line],
+                  'noicon': True, 'flow': True, 'keep': keep}
+            scenes.append(sc)
+            continue
         if '||' in body:
             show, say = [x.strip() for x in body.split('||', 1)]
             shown = [x.strip() for x in re.split(r'\s+/\s+', show) if x.strip()]
         else:
             say = body
             shown = split_display(body)
-        sc = {'title': '', 'lines': [('', [t]) for t in icon_tags], 'say': [say], 'src': [line], 'noicon': noicon}
+        sc = {'title': '', 'lines': [('', [t]) for t in icon_tags], 'say': [say], 'src': [line], 'noicon': noicon,
+              'keep': keep}
         for i, t in enumerate(shown):
             sc['lines'].append((t, tags if i == len(shown) - 1 else []))
         scenes.append(sc)
@@ -1282,6 +1309,10 @@ def auto_style(scenes):
     for si, sc in enumerate(scenes):
         sc['auto'] = True
         lines = sc['lines']
+        if sc.get('flow'):
+            if si == n - 1 and n > 1 and not any('logo' in t for _, t in lines):
+                lines.append(('', ['logo']))
+            continue
         has_icon = any(tag_icon(t) for _, t in lines)
         text_idx = [i for i, (txt, tg) in enumerate(lines)
                     if txt and txt[:2] not in ('- ', '+ ') and not tag_icon(tg)]
@@ -1319,7 +1350,10 @@ def auto_style(scenes):
             if key_spans(lines[best][0]) and len(lines[best][0]) <= 32:
                 lines[best] = (lines[best][0], lines[best][1] + ['gach'])
         # hình vẽ minh họa theo ngữ cảnh (vẽ trước, chữ sau)
-        if not has_icon and not sc.get('noicon') and len(text_idx) <= 4 and not (si == n - 1 and n > 1):
+        n_bul = sum(1 for txt, _ in lines if txt[:2] in ('- ', '+ '))
+        if sc.get('flow'):
+            pass
+        elif not has_icon and not sc.get('noicon') and n_bul < 2 and len(text_idx) <= 4 and not (si == n - 1 and n > 1):
             screen = ' '.join(t for t, _ in lines)
             icon = pick_icon(screen, ' '.join(sc['say']), avoid=(last_icon,) if last_icon else ())
             if icon:
@@ -1336,11 +1370,88 @@ def auto_style(scenes):
 
 
 # ------------------------------------------------------------------ dàn trang
+def _bullet_icons(group, scene):
+    """Hình cho từng gạch đầu dòng: [vẽ: x] trên dòng đó, hoặc máy tự chọn theo chữ (đủ chắc mới lấy)."""
+    names, used = [], set()
+    for t, tg in group:
+        name = tag_icon(tg)
+        if name and icon_known(name):
+            names.append(name); used.add(name); continue
+        name = None
+        if scene.get('auto') and not scene.get('noicon'):
+            cand, sc_ = pick_icon(t, t, avoid=tuple(used), with_score=True)
+            if cand and sc_ >= 2.4 and cand not in used:
+                name = cand
+        names.append(name)
+        if name:
+            used.add(name)
+    return names
+
+
+def bullet_block(group, scene, scale, base):
+    names = _bullet_icons(group, scene)
+    n = len(group)
+    got = sum(1 for x in names if x)
+    short = all(len(t) <= 26 for t, _ in group)
+    if 2 <= n <= 4 and got == n and short and not LAY.get('wide') and LAY['H'] > LAY['W']:
+        # khung dọc: mỗi ý một hàng, hình lớn bên trái, chữ bên phải
+        ih = min(330 * scale, (BOTTOM_AREA - TOP_AREA) * 0.9 / n)
+        lsize = min(fit(t, base * 0.8, LMAXW * 0.5) for t, _ in group)
+        return {'k': 'irows', 'items': group, 'names': names, 'ih': ih, 'size': lsize,
+                'h': n * ih + (n - 1) * 22 * scale, 'gapr': 22 * scale}
+    if 2 <= n <= 4 and got == n and short:
+        # thẻ hình: mỗi ý một hình lớn, chữ ở dưới
+        per_row = n if (n <= 3 or LAY.get('wide')) else 2
+        rows = math.ceil(n / per_row)
+        colw = LMAXW / per_row
+        ih = min(colw * 0.9, (400 if rows == 1 else 290) * scale * (1.2 if LAY.get('wide') else 1))
+        lsize = min(fit(t, base * 0.62, colw - 24) for t, _ in group)
+        lh = line_h(lsize) * 0.9
+        return {'k': 'cards', 'items': group, 'names': names, 'per_row': per_row, 'ih': ih, 'size': lsize,
+                'rowh': ih + lh + 18, 'h': rows * (ih + lh + 18) + (rows - 1) * 16}
+    size = int(min(fit(t, base * 0.95, LMAXW - (190 if got else 110)) for t, _ in group))
+    return {'k': 'bullets', 'items': group, 'names': names if got else [None] * n, 'size': size,
+            'h': n * (max(line_h(size) * 0.92, (line_h(size) * 1.15) if got else 0) + 14)}
+
+
+def flow_block(steps, scale):
+    n = len(steps)
+    if LAY.get('wide') and n <= 4 and all(len(s_) <= 12 for s_ in steps):
+        colw = LMAXW / n
+        size = min(fit(s_, 96 * scale, colw - 130) for s_ in steps)
+        bh = line_h(size) * 0.9 + 70
+        return {'k': 'flow', 'steps': steps, 'dir': 'h', 'size': size, 'bh': bh, 'colw': colw, 'h': bh + 20}
+    size = min(fit(s_, 100 * scale, LMAXW - 190) for s_ in steps)
+    bh = line_h(size) * 0.9 + 54
+    gap = 92 * scale
+    return {'k': 'flow', 'steps': steps, 'dir': 'v', 'size': size, 'bh': bh, 'gapv': gap,
+            'h': n * bh + (n - 1) * gap}
+
+
+def arrow_path(x0, y0, x1, y1, seed=0, head=26):
+    ang = math.atan2(y1 - y0, x1 - x0)
+    a1 = (x1 - head * math.cos(ang - 0.5), y1 - head * math.sin(ang - 0.5))
+    a2 = (x1 - head * math.cos(ang + 0.5), y1 - head * math.sin(ang + 0.5))
+    return seg((x0, y0), (x1, y1), bow=5, seed=seed) + [a1, (x1, y1), a2]
+
+
 def build_blocks(scene, scale):
     base = 118 * scale
     blocks, lines, i = [], scene['lines'], 0
     while i < len(lines):
         txt, tags = lines[i]
+        if txt.startswith('\u00bb'):                              # sơ đồ quy trình
+            steps = txt[1:].split('\t')
+            blocks.append(flow_block(steps, scale))
+            i += 1
+            continue
+        if txt[:2] in ('- ', '+ '):
+            group = []
+            while i < len(lines) and lines[i][0][:2] in ('- ', '+ '):
+                group.append((lines[i][0][2:].strip().replace('*', ''), lines[i][1]))
+                i += 1
+            blocks.append(bullet_block(group, scene, scale, base))
+            continue
         icon = tag_icon(tags)
         if icon and not icon_known(icon):
             i += 1
@@ -1352,15 +1463,6 @@ def build_blocks(scene, scale):
             continue
         if not txt:
             i += 1
-            continue
-        if txt[:2] in ('- ', '+ '):
-            group = []
-            while i < len(lines) and lines[i][0][:2] in ('- ', '+ '):
-                group.append((lines[i][0][2:].strip().replace('*', ''), lines[i][1]))
-                i += 1
-            size = int(min(fit(t, base * 0.95, LMAXW - 110) for t, _ in group))
-            blocks.append({'k': 'bullets', 'items': group, 'size': size,
-                           'h': len(group) * (line_h(size) * 0.92 + 14)})
             continue
         mult = 1.35 if 'to' in tags else 0.72 if 'nho' in tags else 1.0
         size = base * mult
@@ -1460,19 +1562,104 @@ def layout_scene(scene, idx, has_logo_end):
                                               seed=seed + j), col_color, 8))
         elif b['k'] == 'bullets':
             sz = b['size']
-            rh = line_h(sz) * 0.92 + 14
+            rh = h / len(b['items'])
+            has_ic = any(b['names'])
+            ind = 170 if has_ic else 100
             maxw = max(font(sz).getlength(t) for t, _ in b['items'])
-            x0 = LCX - (100 + maxw) / 2
-            for j, (t, tg) in enumerate(b['items']):
+            x0 = LCX - (ind + maxw) / 2
+            for j, ((t, tg), name) in enumerate(zip(b['items'], b['names'])):
                 cy = y + rh * j + rh / 2
                 c = tag_color(tg, None)
                 mark = c or bullet_colors[j % len(bullet_colors)]
-                items.append(Path(poly([(x0, cy + 2), (x0 + 28, cy + 30), (x0 + 72, cy - 32)], seed=seed + j, bow=3),
-                                  mark, 12))
-                items.append(Txt(t, sz, c or INK, cy, left=x0 + 100))
+                first = len(items)
+                if name:
+                    ih = min(rh * 0.95, 150)
+                    parts = icon_paths(name, x0 + 64, cy, ih, mark, seed + j)
+                    _squeeze(parts, 0.9)
+                    items += parts
+                else:
+                    items.append(Path(poly([(x0, cy + 2), (x0 + 28, cy + 30), (x0 + 72, cy - 32)], seed=seed + j, bow=3),
+                                      mark, 12))
+                items.append(Txt(t, sz, c or INK, cy, left=x0 + ind))
+                items[first].sync = t
+        elif b['k'] == 'cards':
+            pr, ih, sz = b['per_row'], b['ih'], b['size']
+            colw = LMAXW / pr
+            for j, ((t, tg), name) in enumerate(zip(b['items'], b['names'])):
+                r_, c_ = divmod(j, pr)
+                n_in_row = min(pr, len(b['items']) - r_ * pr)
+                x = LCX + (c_ - (n_in_row - 1) / 2) * colw
+                top_ = y + r_ * (b['rowh'] + 16)
+                col = tag_color(tg, None) or bullet_colors[j % len(bullet_colors)]
+                first = len(items)
+                save_w = LMAXW
+                LMAXW = colw * 0.96 / 0.95          # hình trong Kho không lấn sang ô bên cạnh
+                try:
+                    parts = icon_paths(name, x, top_ + ih / 2, ih * (0.98 if big_icon(name) else 0.9), col, seed + j * 3)
+                finally:
+                    LMAXW = save_w
+                _squeeze(parts, 1.5)
+                items += parts
+                items.append(Txt(t, sz, col, top_ + ih + 10 + line_h(sz) * 0.45, cx=x))
+                items[first].sync = t
+        elif b['k'] == 'irows':
+            ih, sz = b['ih'], b['size']
+            for j, ((t, tg), name) in enumerate(zip(b['items'], b['names'])):
+                cy = y + j * (ih + b['gapr']) + ih / 2
+                col = tag_color(tg, None) or bullet_colors[j % len(bullet_colors)]
+                first = len(items)
+                save_w = LMAXW
+                LMAXW = save_w * 0.46 / 0.95
+                try:
+                    parts = icon_paths(name, LCX - save_w * 0.25, cy,
+                                       ih * (0.98 if kho_has(name) else 1.3 if _hv.has(name) else 0.9), col, seed + j * 3)
+                finally:
+                    LMAXW = save_w
+                _squeeze(parts, 1.4)
+                items += parts
+                items.append(Txt(t, sz, col, cy, left=LCX + LMAXW * 0.02))
+                items[first].sync = t
+        elif b['k'] == 'flow':
+            st, sz, bh = b['steps'], b['size'], b['bh']
+            n = len(st)
+            for j, t in enumerate(st):
+                col = bullet_colors[j % len(bullet_colors)]
+                if b['dir'] == 'h':
+                    cx = LCX + (j - (n - 1) / 2) * b['colw']
+                    cy = y + bh / 2
+                    bw = b['colw'] - 70
+                else:
+                    cx = LCX
+                    cy = y + j * (bh + b['gapv']) + bh / 2
+                    bw = min(LMAXW - 20, max(font(sz).getlength(s_) for s_ in st) + 190)
+                first = len(items)
+                if j > 0:                                        # mũi tên từ ô trước
+                    if b['dir'] == 'h':
+                        px = LCX + (j - 1 - (n - 1) / 2) * b['colw']
+                        items.append(Path(arrow_path(px + (b['colw'] - 70) / 2 + 8, cy, cx - bw / 2 - 10, cy, seed + j),
+                                          GREY, 7))
+                    else:
+                        items.append(Path(arrow_path(cx, cy - bh / 2 - b['gapv'] + 10, cx, cy - bh / 2 - 8, seed + j),
+                                          GREY, 7))
+                x0_, x1_ = cx - bw / 2, cx + bw / 2
+                y0_, y1_ = cy - bh / 2, cy + bh / 2
+                items.append(Path(poly([(x0_ + 6, y0_), (x1_, y0_ + 3), (x1_ - 3, y1_), (x0_, y1_ - 2), (x0_ + 6, y0_)],
+                                       seed=seed + j * 5, bow=7), col, 7))
+                num = Txt(str(j + 1), int(sz * 0.8), col, cy, cx=x0_ + 48)
+                items.append(num)
+                items.append(Txt(t, sz, INK, cy, cx=cx + 30))
+                items[first].sync = t
         y += h + gap
         seed += 7
     return items
+
+
+def _squeeze(parts, budget):
+    tot = sum(it.dur for it in parts) or 1
+    for it in parts:
+        it.gap = 0.01 if len(parts) > 6 else 0.05
+        if tot > budget:
+            it.dur = max(0.03, it.dur * budget / tot)
 
 
 # ------------------------------------------------------------------ giọng đọc
@@ -1715,9 +1902,44 @@ def mix_into_wav(path, track):
         w.writeframes(np.clip(data, -32768, 32767).astype(np.int16).tobytes())
 
 
+class Snap:
+    """Cảnh trước thu nhỏ lại, giữ trên bảng làm cầu nối (không cần tay vẽ)."""
+    nohand = True
+
+    def __init__(self, img, src_box, dst_box):
+        self.img, self.src, self.dst = img, src_box, dst_box
+        self.dur, self.gap = 0.7, 0.05
+
+    def draw(self, f, r):
+        k = eio(clamp(r))
+        bx = [a + (b - a) * k for a, b in zip(self.src, self.dst)]
+        w, h = max(2, int(bx[2] - bx[0])), max(2, int(bx[3] - bx[1]))
+        im = self.img.resize((w, h), Image.LANCZOS)
+        f.paste(im, (int(bx[0]), int(bx[1])), im)
+
+    def pos(self, r, t):
+        return None
+
+
+def _sync_frac(say_n, key):
+    """Vị trí (0..1) của cụm chữ key trong lời đọc đã chuẩn hoá."""
+    words = norm(key).split()
+    if not say_n or not words:
+        return None
+    for nw in (4, 3, 2, 1):
+        k = ' '.join(words[:nw])
+        if len(k) < 3:
+            continue
+        i = say_n.find(k)
+        if i >= 0:
+            return i / max(1, len(say_n))
+    return None
+
+
 # ------------------------------------------------------------------ dựng
 class Renderer:
-    def __init__(self, logo_path=None, label=None, bg='trang', subs=False):
+    def __init__(self, logo_path=None, label=None, bg='trang', subs=False, trans='xoa'):
+        self.trans = trans if trans in ('xoa', 'lia', 'xen') else 'xoa'
         hj = json.load(open(os.path.join(ASSETS, 'hand.json')))
         self.hand = Image.open(os.path.join(ASSETS, 'hand.png')).convert('RGBA')
         self.tip = hj['tip']
@@ -1858,7 +2080,24 @@ class Renderer:
                 LCX, LMAXW = LAY['col_char']
             else:
                 LCX, LMAXW = LAY['col_full']
-            items = layout_scene(sc, i, logo_end)
+            snap = None
+            if sc.get('keep') and plans and not plans[-1]['logo_end']:
+                snap = self._snapshot(plans[-1])
+            if snap:
+                old_top = TOP_AREA
+                globals()['TOP_AREA'] = snap.dst[3] + 34
+                try:
+                    items = layout_scene(sc, i, logo_end)
+                finally:
+                    globals()['TOP_AREA'] = old_top
+                items = [snap] + items
+                p_ = plans[-1]
+                if not p_.get('keep_next'):
+                    p_['keep_next'] = True
+                    p_['n'] = max(1, p_['n'] - int(ERASE * FPS))
+                    p_['dur'] = p_['n'] / FPS
+            else:
+                items = layout_scene(sc, i, logo_end)
             if pose:
                 cx_, feet_, kk = LAY['char']
                 hgt = {'chao': 760, 'chi': 640, 'like': 700}[pose] * kk
@@ -1873,9 +2112,15 @@ class Renderer:
             k = 1.0
             if A:
                 k = max(0.45, min(1.5, (A * 0.88) / max(natural, 0.1)))
+            say_n = norm(' '.join(sc.get('say') or []))
             t, sch = ENTER * k, []
             for it in items:
                 d = it.dur * k
+                key = getattr(it, 'sync', None)
+                if key and A:                       # chờ tới lúc lời đọc nhắc tới mới vẽ
+                    f_ = _sync_frac(say_n, key)
+                    if f_ is not None:
+                        t = max(t, 0.12 + f_ * A - 0.2)
                 sch.append((it, t, t + d))
                 t += d + getattr(it, 'gap', GAP) * k
             ed = (sch[-1][2]) if sch else 0.3
@@ -1886,13 +2131,33 @@ class Renderer:
                 dur += ERASE
             nfr = int(math.ceil(dur * FPS))
             subs = self.make_subs(' '.join(sc.get('say') or []), 0.12, A) if (self.subs and A) else []
+            trans = 'lia' if (self.trans == 'lia' or (self.trans == 'xen' and i % 2 == 1)) else 'xoa'
             plans.append({'sch': sch, 'ed': ed, 'n': nfr, 'dur': nfr / FPS, 'logo_end': logo_end, 'last': last,
-                          'lcx': lcx, 'subs': subs})
+                          'lcx': lcx, 'subs': subs, 'trans': trans})
         BOTTOM_AREA = old_bottom
         return plans
 
+    def _snapshot(self, pl):
+        layer = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+        for it, s_, e_ in pl['sch']:
+            if isinstance(it, Fill):
+                it.draw(layer, 1.0)
+        for it, s_, e_ in pl['sch']:
+            if not isinstance(it, (Fill, CharItem)) or (isinstance(it, CharItem) and it.x > W * 0.3):
+                it.draw(layer, 1.0)
+        bb = layer.getbbox()
+        if not bb:
+            return None
+        img = layer.crop(bb)
+        mh = (BOTTOM_AREA - TOP_AREA) * 0.3
+        k = min(mh / img.height, (W * 0.62) / img.width, 1.0)
+        w, h = img.width * k, img.height * k
+        dst = (W / 2 - w / 2, TOP_AREA - 10, W / 2 + w / 2, TOP_AREA - 10 + h)
+        return Snap(img, tuple(bb), dst)
+
     def hand_pos(self, pl, t):
-        sch, ed = pl['sch'], pl['ed']
+        sch = [x for x in pl['sch'] if not getattr(x[0], 'nohand', False)]
+        ed = pl['ed']
         OFF = LAY['hand_off']
         if not sch:
             return None
@@ -1937,9 +2202,34 @@ class Renderer:
             f.paste(self.hand, (int(hp[0] - self.tip[0]), int(hp[1] - self.tip[1])), self.hand)
         if self.subs:
             self.draw_sub(f, pl, t)
-        if not pl['last'] and t > pl['dur'] - ERASE:
-            self.erase(f, (t - (pl['dur'] - ERASE)) / ERASE)
+        if not pl['last'] and not pl.get('keep_next') and t > pl['dur'] - ERASE:
+            e = (t - (pl['dur'] - ERASE)) / ERASE
+            if pl.get('trans') == 'lia':
+                f = self.pan(f, pl, e, first, prog)
+            else:
+                self.erase(f, e)
         return f
+
+    def pan(self, f, pl, e, first, prog):
+        """Chuyển cảnh lia ngang: nội dung trượt sang trái, giấy và logo đứng yên."""
+        dx = int(W * eio(clamp(e)))
+        g = self.paper.copy()
+        if dx < W:
+            g.paste(f.crop((dx, 0, W, H)), (0, 0))
+            g.paste(self.paper.crop((W - dx, 0, W, H)), (W - dx, 0))
+        top = LAY['logo_xy'][1] + self.logo_small.height + 8
+        g.paste(self.paper.crop((0, 0, W, top)), (0, 0))
+        if not pl['logo_end']:
+            g.paste(self.logo_small, LAY['logo_xy'], self.logo_small)
+        if self.label is not None:
+            g.paste(self.label, (W - LAY['label_r'] - self.label.width, LAY['label_y']), self.label)
+        if prog is not None:
+            d = ImageDraw.Draw(g)
+            bx0, by0, bx1 = LAY['bar']
+            g.paste(self.paper.crop((0, by0 - 4, W, by0 + 18)), (0, by0 - 4))
+            d.rounded_rectangle((bx0, by0, bx1, by0 + 12), 6, fill=(232, 232, 228))
+            d.rounded_rectangle((bx0, by0, bx0 + max(12, int((bx1 - bx0) * clamp(prog))), by0 + 12), 6, fill=ORANGE)
+        return g
 
 
 def add_hotline(scenes, hotline):
@@ -1975,7 +2265,8 @@ def preview_scenes(script_text, opts, out_dir):
     if opts.get('auto', True):
         auto_style(scenes)
     add_hotline(scenes, opts.get('hotline'))
-    r = Renderer(opts.get('logo'), opts.get('label'), opts.get('bg', 'trang'), opts.get('subs', False))
+    r = Renderer(opts.get('logo'), opts.get('label'), opts.get('bg', 'trang'), opts.get('subs', False),
+                 opts.get('trans', 'xoa'))
     est = [max(1.5, len(' '.join(sc.get('say') or [])) * 0.075) for sc in scenes]
     plans = r.plan(scenes, est if opts.get('subs') else None, resolve_gender(opts))
     info = []
@@ -2045,7 +2336,8 @@ def render(script_text, opts, progress=lambda msg, frac: None):
             durs.append(wav_dur(wv)); wavs.append(wv)
 
         progress('Đang dàn trang...', 0.28)
-        r = Renderer(opts.get('logo'), opts.get('label'), opts.get('bg', 'trang'), opts.get('subs', False))
+        r = Renderer(opts.get('logo'), opts.get('label'), opts.get('bg', 'trang'), opts.get('subs', False),
+                     opts.get('trans', 'xoa'))
         plans = r.plan(scenes, durs, resolve_gender(opts))
         total_frames = sum(p['n'] for p in plans)
         done = 0

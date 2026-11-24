@@ -48,6 +48,8 @@ def main():
     bg = job.get('bg') or 'trang'
     opts['bg'] = bg if bg in dict(E.BG_STYLES) else 'trang'
     opts['subs'] = bool(job.get('subs', False))
+    tr = job.get('trans') or 'xoa'
+    opts['trans'] = tr if tr in ('xoa', 'lia', 'xen') else 'xoa'
     pen = job.get('pen', 1)
     pen = {True: 1.0, False: 0.0}.get(pen, pen)
     try:
