@@ -225,7 +225,7 @@ details.opt>summary{font-weight:700;padding:12px 0;cursor:pointer;color:var(--bl
     <div class="hint">Dán bài viết và chọn thời lượng. Giữ nguyên toàn bộ nếu không muốn tóm tắt; hoặc chọn thời lượng ngắn hơn để AI biên tập có chọn lọc. Số liệu phải giữ chính xác.</div>
     <textarea id="cvText" rows="6" style="min-height:0" placeholder="Ví dụ: Nhiều bạn hỏi đi Đài Loan cần chuẩn bị gì. Đầu tiên là hộ chiếu, học bạ, bằng tốt nghiệp. Bằng phải dịch rồi hợp pháp hoá. Sau đó khám sức khoẻ ở bệnh viện được chỉ định..."></textarea>
     <label class="f" for="cvDuration">Thời lượng video</label>
-    <select id="cvDuration"><option value="full" selected>Giữ nguyên toàn bộ nội dung</option><option value="quick">30–60 giây · Video ngắn</option><option value="short">1–3 phút · Video chia sẻ</option><option value="medium">3–10 phút · Video chuyên sâu</option><option value="long">10–15 phút · Video dài</option></select>
+    <select id="cvDuration"><option value="quick" selected>30–60 giây · Video ngắn (TikTok, Reels)</option><option value="full">Giữ nguyên toàn bộ nội dung</option><option value="short">1–3 phút · Video chia sẻ</option><option value="medium">3–10 phút · Video chuyên sâu</option><option value="long">10–15 phút · Video dài</option></select>
     <div class="hint" id="cvDurationHint"></div>
     <button class="btn main" id="cvGo" style="margin-top:10px">🪄 CHUYỂN THÀNH KỊCH BẢN</button>
     <div class="hint" id="cvInfo"></div>
@@ -1084,7 +1084,8 @@ function setupLength(id, fallback) {
   const draw = () => { store.set(id, el.value); $(id + 'Hint').textContent = LENGTHS[el.value].hint; };
   el.onchange = draw; draw();
 }
-setupLength('aiDuration', 'quick'); setupLength('cvDuration', 'full');
+if (!store.get('cv_dur_v2', false)) { store.set('cvDuration', 'quick'); store.set('cv_dur_v2', true); }   // đổi mặc định sang video ngắn cho mọi máy
+setupLength('aiDuration', 'quick'); setupLength('cvDuration', 'quick');
 function draftLength() { return /^ai_/.test(TPL_USED) ? store.get('draft_duration', TPL_USED === 'ai_convert' ? 'full' : 'quick') : ''; }
 function setDraftLength(v) { store.set('draft_duration', v); }
 function lengthNote(r) {
