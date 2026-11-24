@@ -878,5 +878,285 @@
    "học tập"
   ],
   "lo": 22
+ },
+ "phong_ky_tuc_xa_hai_nguoi": {
+  "ten": "Phòng ký túc xá hai người",
+  "tu_khoa": [
+   "ký túc xá",
+   "phòng ở",
+   "giường ngủ",
+   "sinh viên"
+  ],
+  "lo": 23
+ },
+ "tu_nau_an_bep_chung": {
+  "ten": "Tự nấu ăn trong bếp chung",
+  "tu_khoa": [
+   "nấu ăn",
+   "bếp chung",
+   "thực phẩm",
+   "sinh hoạt"
+  ],
+  "lo": 23
+ },
+ "giat_do_may_giat_chung": {
+  "ten": "Giặt đồ bằng máy giặt chung",
+  "tu_khoa": [
+   "giặt đồ",
+   "máy giặt",
+   "quần áo",
+   "sinh hoạt"
+  ],
+  "lo": 23
+ },
+ "don_dep_phong": {
+  "ten": "Dọn dẹp phòng",
+  "tu_khoa": [
+   "dọn dẹp",
+   "lau nhà",
+   "vệ sinh",
+   "phòng ở"
+  ],
+  "lo": 23
+ },
+ "di_sieu_thi_mua_do": {
+  "ten": "Đi siêu thị mua đồ",
+  "tu_khoa": [
+   "siêu thị",
+   "mua sắm",
+   "thực phẩm",
+   "sinh hoạt"
+  ],
+  "lo": 24
+ },
+ "di_xe_buyt": {
+  "ten": "Đi xe buýt",
+  "tu_khoa": [
+   "xe buýt",
+   "giao thông",
+   "đi lại",
+   "phương tiện"
+  ],
+  "lo": 24
+ },
+ "mua_the_giao_thong": {
+  "ten": "Mua thẻ giao thông",
+  "tu_khoa": [
+   "thẻ",
+   "giao thông",
+   "đi lại",
+   "thanh toán"
+  ],
+  "lo": 24
+ },
+ "hoi_duong_nguoi_dan": {
+  "ten": "Hỏi đường người dân",
+  "tu_khoa": [
+   "hỏi đường",
+   "bản đồ",
+   "giao tiếp",
+   "người dân"
+  ],
+  "lo": 24
+ },
+ "mo_tai_khoan_ngan_hang": {
+  "ten": "Mở tài khoản ngân hàng",
+  "tu_khoa": [
+   "ngân hàng",
+   "tài khoản",
+   "đăng ký",
+   "tài chính"
+  ],
+  "lo": 25
+ },
+ "mua_sim_dien_thoai": {
+  "ten": "Mua SIM điện thoại",
+  "tu_khoa": [
+   "SIM",
+   "điện thoại",
+   "liên lạc",
+   "mua sắm"
+  ],
+  "lo": 25
+ },
+ "doi_tien_o_quay": {
+  "ten": "Đổi tiền ở quầy",
+  "tu_khoa": [
+   "đổi tiền",
+   "ngoại tệ",
+   "ngân hàng",
+   "tiền mặt"
+  ],
+  "lo": 25
+ },
+ "rut_tien_atm": {
+  "ten": "Rút tiền cây ATM",
+  "tu_khoa": [
+   "ATM",
+   "rút tiền",
+   "ngân hàng",
+   "tiền mặt"
+  ],
+  "lo": 25
+ },
+ "bi_om_nam_giuong": {
+  "ten": "Bị ốm nằm trên giường",
+  "tu_khoa": [
+   "bị ốm",
+   "sốt",
+   "nghỉ ngơi",
+   "sức khỏe"
+  ],
+  "lo": 26
+ },
+ "di_kham_benh_vien": {
+  "ten": "Đi khám ở bệnh viện",
+  "tu_khoa": [
+   "bệnh viện",
+   "bác sĩ",
+   "khám bệnh",
+   "sức khỏe"
+  ],
+  "lo": 26
+ },
+ "the_bao_hiem_y_te": {
+  "ten": "Thẻ bảo hiểm y tế",
+  "tu_khoa": [
+   "bảo hiểm",
+   "thẻ",
+   "y tế",
+   "khám bệnh"
+  ],
+  "lo": 26
+ },
+ "mua_thuoc_hieu_thuoc": {
+  "ten": "Mua thuốc ở hiệu thuốc",
+  "tu_khoa": [
+   "hiệu thuốc",
+   "dược sĩ",
+   "thuốc",
+   "sức khỏe"
+  ],
+  "lo": 26
+ },
+ "lam_them_quan_ca_phe": {
+  "ten": "Làm thêm ở quán cà phê",
+  "tu_khoa": [
+   "làm thêm",
+   "cà phê",
+   "pha chế",
+   "phục vụ"
+  ],
+  "lo": 27
+ },
+ "lam_them_nha_may": {
+  "ten": "Làm thêm ở nhà máy",
+  "tu_khoa": [
+   "làm thêm",
+   "nhà máy",
+   "sản xuất",
+   "công nhân"
+  ],
+  "lo": 27
+ },
+ "giao_hang_xe_dap": {
+  "ten": "Giao hàng bằng xe đạp",
+  "tu_khoa": [
+   "giao hàng",
+   "xe đạp",
+   "làm thêm",
+   "vận chuyển"
+  ],
+  "lo": 27
+ },
+ "linh_luong_cuoi_thang": {
+  "ten": "Lĩnh lương cuối tháng vui vẻ",
+  "tu_khoa": [
+   "tiền lương",
+   "thu nhập",
+   "làm thêm",
+   "vui mừng"
+  ],
+  "lo": 27
+ },
+ "cam_thay_co_don": {
+  "ten": "Cảm thấy cô đơn",
+  "tu_khoa": [
+   "cô đơn",
+   "nhớ nhà",
+   "buồn bã",
+   "cảm xúc"
+  ],
+  "lo": 28
+ },
+ "ket_ban_moi": {
+  "ten": "Kết bạn mới",
+  "tu_khoa": [
+   "kết bạn",
+   "giao tiếp",
+   "hòa nhập",
+   "bạn bè"
+  ],
+  "lo": 28
+ },
+ "di_choi_ban_quoc_te": {
+  "ten": "Đi chơi cùng bạn quốc tế",
+  "tu_khoa": [
+   "bạn quốc tế",
+   "đi chơi",
+   "giao lưu",
+   "du lịch"
+  ],
+  "lo": 28
+ },
+ "sinh_nhat_cung_ban_be": {
+  "ten": "Sinh nhật cùng bạn bè",
+  "tu_khoa": [
+   "sinh nhật",
+   "bạn bè",
+   "bánh kem",
+   "chúc mừng"
+  ],
+  "lo": 28
+ },
+ "don_tet_xa_nha": {
+  "ten": "Đón Tết xa nhà",
+  "tu_khoa": [
+   "Tết",
+   "gia đình",
+   "bánh chưng",
+   "nhớ nhà"
+  ],
+  "lo": 29
+ },
+ "mac_trang_phuc_hanbok": {
+  "ten": "Mặc trang phục truyền thống Hàn Quốc",
+  "tu_khoa": [
+   "hanbok",
+   "Hàn Quốc",
+   "trang phục",
+   "văn hóa"
+  ],
+  "lo": 29
+ },
+ "le_hoi_den_long": {
+  "ten": "Lễ hội đèn lồng",
+  "tu_khoa": [
+   "đèn lồng",
+   "lễ hội",
+   "văn hóa",
+   "tham quan"
+  ],
+  "lo": 29
+ },
+ "di_chua_tham_quan": {
+  "ten": "Đi chùa tham quan",
+  "tu_khoa": [
+   "chùa",
+   "tham quan",
+   "văn hóa",
+   "tâm linh"
+  ],
+  "lo": 29
  }
 }
