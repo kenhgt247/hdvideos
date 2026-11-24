@@ -195,6 +195,11 @@ const AI_CONVERT = `
 - Nội dung quá dài thì giữ các ý chính cho video 20–45 giây. Nội dung có chỗ sai chính tả thì sửa.
 - Phần NGUỒN ghi: "Nội dung do người dùng cung cấp".`;
 
+const AI_FIX = `
+- NHIỆM VỤ LẦN NÀY: SỬA kịch bản trong tin nhắn cho hết các LỖI được liệt kê, đúng định dạng PHẦN B.
+- GIỮ NGUYÊN nội dung, ý, số liệu. Chỉ sửa cách trình bày: rút ngắn chữ màn hình (dùng " / " xuống dòng, mỗi dòng ≤22 ký tự), tách cảnh dài, rút gọn câu mở, sửa danh sách, sơ đồ, thẻ.
+- Không thêm thông tin mới. Trả lời đúng PHẦN C; phần NGUỒN ghi "Nội dung do người dùng cung cấp".`;
+
 function parseAi(text) {
   const m = text.match(/```[a-zA-Z]*\n?([\s\S]*?)```/);
   const script = (m ? m[1] : text).trim();
@@ -696,12 +701,14 @@ export default {
       }
       if (p === '/api/ai/script' && req.method === 'POST') {
         const b = await req.json();
-        const convert = b.task === 'convert';
+        const fix = b.task === 'fix';
+        const convert = b.task === 'convert' || fix;
         const content = String(b.content || '').trim().slice(0, 8000);
+        const issues = (Array.isArray(b.issues) ? b.issues : []).slice(0, 12).map(x => String(x).slice(0, 200));
         const topic = convert ? 'chuyển nội dung' : String(b.topic || '').trim().slice(0, 400);
         if (convert && content.length < 20) return err('Hãy viết nội dung (ít nhất vài câu) trước khi chuyển');
         const extra = String(b.extra || '').trim().slice(0, 2500);
-        const mode = b.mode === 'paid' ? 'paid' : 'free';
+        const mode = b.mode === 'paid' && !convert ? 'paid' : 'free';   // chuyển/sửa định dạng luôn dùng Gemini miễn phí
         if (topic.length < 4) return err('Hãy nhập chủ đề video');
         const { data } = await readJson(env, AI_FILE);
         const cfg = { ...AI_DEF, ...(data.config || {}) };
@@ -712,9 +719,10 @@ export default {
         const who = (slug(b.by || '') || 'khong_ten') + '@' + ip.replace(/[^0-9a-f.:]/gi, '').slice(-20);
         const used = (((data.use || {})[today()] || {})[who] || {})[mode] || 0;
         const limit = cfg[mode];
-        if (!admin && used >= limit) return err(`Bạn đã dùng hết ${limit} lượt "${mode === 'paid' ? 'Viết có kiểm chứng' : 'Viết nhanh'}" hôm nay. Mai dùng tiếp, hoặc nhờ admin tăng giới hạn.`, 429);
-        const sys = (await chatgptPrompt(env)) + AI_COMMON + (convert ? AI_CONVERT : mode === 'paid' ? AI_PAID : AI_FREE);
-        const user = convert ? `NỘI DUNG CỦA TÔI (chuyển thành kịch bản, giữ nguyên ý và số liệu):\n${content}`
+        if (!admin && !fix && used >= limit) return err(`Bạn đã dùng hết ${limit} lượt "${mode === 'paid' ? 'Viết có kiểm chứng' : 'Viết nhanh'}" hôm nay. Mai dùng tiếp, hoặc nhờ admin tăng giới hạn.`, 429);
+        const sys = (await chatgptPrompt(env)) + AI_COMMON + (fix ? AI_FIX : convert ? AI_CONVERT : mode === 'paid' ? AI_PAID : AI_FREE);
+        const user = fix ? `KỊCH BẢN CẦN SỬA:\n\`\`\`\n${content}\n\`\`\`\n\nCÁC LỖI CẦN SỬA:\n${issues.map((x, i) => (i + 1) + '. ' + x).join('\n')}`
+          : convert ? `NỘI DUNG CỦA TÔI (chuyển thành kịch bản, giữ nguyên ý và số liệu):\n${content}`
           : `CHỦ ĐỀ: ${topic}` + (extra ? `\n\nTHÔNG TIN THÊM (của trung tâm, dùng đúng như vậy):\n${extra}` : '');
         let out;
         try { out = mode === 'paid' ? await aiClaude(env, sys, user, !convert) : await aiGemini(env, sys, user); }
@@ -724,8 +732,10 @@ export default {
         const urls = [...res.srcTxt.matchAll(/https?:\/\/[^\s)\]]+/g)].map(x => ({ url: x[0], title: '' }));
         const sources = [...out.sources];
         for (const u of urls) if (!sources.some(x => x.url === u.url)) sources.push(u);
-        const rec = aiRecord(env, admin ? 'admin' : who, mode);
-        if (ctx && ctx.waitUntil) ctx.waitUntil(rec); else await rec;
+        if (!fix) {                                                    // vòng tự sửa không tính lượt
+          const rec = aiRecord(env, admin ? 'admin' : who, mode);
+          if (ctx && ctx.waitUntil) ctx.waitUntil(rec); else await rec;
+        }
         return json({ script: res.script, caption: res.caption, sources: convert ? [] : sources.slice(0, 8), mode, convert,
           verified: !convert && mode === 'paid' && sources.length > 0, used: used + 1, limit: admin ? null : limit });
       }

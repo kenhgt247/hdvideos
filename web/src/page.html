@@ -221,9 +221,7 @@ details.opt>summary{font-weight:700;padding:12px 0;cursor:pointer;color:var(--bl
     <h2>📝 Viết bình thường, AI chuyển thành kịch bản</h2>
     <div class="hint">Cứ viết như nhắn tin hay viết bài Facebook, không cần lo định dạng. AI giữ nguyên ý và số liệu của bạn, chỉ chia cảnh, thêm câu mở, danh sách có hình, câu kết.</div>
     <textarea id="cvText" rows="6" style="min-height:0" placeholder="Ví dụ: Nhiều bạn hỏi đi Đài Loan cần chuẩn bị gì. Đầu tiên là hộ chiếu, học bạ, bằng tốt nghiệp. Bằng phải dịch rồi hợp pháp hoá. Sau đó khám sức khoẻ ở bệnh viện được chỉ định..."></textarea>
-    <label class="f">Dùng AI nào</label>
-    <label class="aim" id="cvFree"><input type="radio" name="cvmode" value="free" checked><div><b>⚡ Gemini (miễn phí)</b><span>Đủ dùng cho hầu hết nội dung.</span></div></label>
-    <label class="aim" id="cvPaid"><input type="radio" name="cvmode" value="paid"><div><b>✨ Claude (khoảng 300–400đ/lần)</b><span>Câu chữ mượt, chia cảnh khéo hơn. Không tra web.</span></div></label>
+    <div class="hint">Dùng Gemini miễn phí. Còn lỗi định dạng thì máy tự gửi lại cho Gemini sửa thêm.</div>
     <button class="btn main" id="cvGo" style="margin-top:10px">🪄 CHUYỂN THÀNH KỊCH BẢN</button>
     <div class="hint" id="cvInfo"></div>
     <div id="cvSrc"></div>
@@ -1126,6 +1124,7 @@ $('aiGo').onclick = async () => {
     TPL_USED = 'ai_' + mode; store.set('tpl_used', TPL_USED);
     afterEdit(); showAiSources(d);
     $('aiInfo').textContent = d.limit ? `Đã dùng ${d.used}/${d.limit} lượt hôm nay.` : '';
+    if (mode === 'free') { clearInterval(tick); const fixed = await autoFix(btn); if (fixed) toast('Đã tự sửa thêm ' + fixed + ' lỗi định dạng', 2500); }
     const r = runCheck();
     if ($('aiAuto').checked && !r.E.length) { toast('Đã viết xong, đang gửi tạo video...'); makeVideo(); }
     else { $('scriptCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); toast(r.E.length ? 'Kịch bản còn lỗi, xem ô đỏ để sửa' : 'Xong! Xem lại kịch bản rồi bấm TẠO VIDEO'); }
@@ -1146,13 +1145,25 @@ $('cfSave').onclick = async () => {
 };
 
 
+/* ===== VÒNG TỰ SỬA: còn lỗi thì gửi lại Gemini kèm danh sách lỗi ===== */
+const SOFT = /Nên có ít nhất 1 danh sách|không có hình tên|hơi ngắn/;
+function issuesOf(text) { const r = checkScript(text); return [...r.E, ...r.W.filter(x => !SOFT.test(x))]; }
+async function autoFix(btn) {
+  const before = $('script').value, list = issuesOf(before);
+  if (!list.length) return 0;
+  if (btn) btn.textContent = `🔧 Đang tự sửa ${list.length} lỗi...`;
+  try {
+    const d = await api('/api/ai/script', { task: 'fix', content: before, issues: list, mode: 'free', by: $('by').value });
+    const after = fixScript(d.script);
+    const left = issuesOf(after);
+    if (left.length < list.length) { $('script').value = after; afterEdit(); return list.length - left.length; }
+  } catch (e) { /* giữ bản cũ */ }
+  return 0;
+}
+
 /* ===== VIẾT BÌNH THƯỜNG -> AI CHUYỂN ĐỊNH DẠNG ===== */
 $('cvText').value = store.get('cv_text', '');
 $('cvText').oninput = () => store.set('cv_text', $('cvText').value);
-const cvMode = () => (document.querySelector('input[name=cvmode]:checked') || {}).value || 'free';
-function drawCv() { $('cvFree').classList.toggle('on', cvMode() === 'free'); $('cvPaid').classList.toggle('on', cvMode() === 'paid'); store.set('cv_mode', cvMode()); }
-document.querySelectorAll('input[name=cvmode]').forEach(r => { r.checked = r.value === store.get('cv_mode', 'free'); r.onchange = drawCv; });
-drawCv();
 $('cvOpenTpl').onclick = e => { e.preventDefault(); $('tplCard').classList.remove('hide'); drawTpl(); $('tplCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
 async function aiConvert(content, mode, btn, label, info) {
   if (content.trim().length < 20) { toast('Hãy viết nội dung (ít nhất vài câu) trước'); return; }
@@ -1171,6 +1182,9 @@ async function aiConvert(content, mode, btn, label, info) {
     afterEdit();
     if (info) info.textContent = d.limit ? `Đã dùng ${d.used}/${d.limit} lượt hôm nay.` : '';
     if (d.caption) showAiSources({ ...d, sources: [], mode: 'convert' }, document.body.classList.contains('mode-ai') ? $('aiSrc') : $('cvSrc'));
+    clearInterval(tick);
+    const fixed = await autoFix(btn);
+    if (fixed) toast('Đã tự sửa thêm ' + fixed + ' lỗi định dạng', 2500);
     const r = runCheck();
     $('scriptCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
     toast(r.E.length ? 'Đã chuyển, còn vài lỗi nhỏ: xem ô đỏ' : 'Đã chuyển xong! Xem lại, sửa nếu cần rồi bấm TẠO VIDEO', 4000);
@@ -1179,13 +1193,12 @@ async function aiConvert(content, mode, btn, label, info) {
 }
 $('cvGo').onclick = () => {
   if ($('script').value.trim() && !confirm('Thay kịch bản đang có bằng kịch bản mới?')) return;
-  aiConvert($('cvText').value, cvMode(), $('cvGo'), '🪄 CHUYỂN THÀNH KỊCH BẢN', $('cvInfo'));
+  aiConvert($('cvText').value, 'free', $('cvGo'), '🪄 CHUYỂN THÀNH KỊCH BẢN', $('cvInfo'));
 };
 $('bFixAi').onclick = () => {
   const t = $('script').value.trim();
   if (!t) { toast('Ô kịch bản đang trống. Hãy viết hoặc dán nội dung vào trước'); return; }
-  const paid = confirm('Dùng Claude (khoảng 300–400đ, câu chữ mượt hơn)?\n\nBấm "Huỷ" để dùng Gemini miễn phí.');
-  aiConvert(t, paid ? 'paid' : 'free', $('bFixAi'), '🪄 AI sửa định dạng', null);
+  aiConvert(t, 'free', $('bFixAi'), '🪄 AI sửa định dạng', null);
 };
 
 function jobBody(preview) {
