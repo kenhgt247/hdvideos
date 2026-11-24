@@ -318,5 +318,45 @@
    "viết tay"
   ],
   "lo": 8
+ },
+ "thu_gioi_thieu": {
+  "ten": "Thư giới thiệu",
+  "tu_khoa": [
+   "giới thiệu",
+   "giáo viên",
+   "xác nhận",
+   "hồ sơ"
+  ],
+  "lo": 9
+ },
+ "don_dang_ky_nhap_hoc": {
+  "ten": "Đơn đăng ký nhập học",
+  "tu_khoa": [
+   "đăng ký",
+   "nhập học",
+   "biểu mẫu",
+   "hồ sơ"
+  ],
+  "lo": 9
+ },
+ "bo_ho_so_day_du": {
+  "ten": "Bộ hồ sơ đầy đủ trong bìa",
+  "tu_khoa": [
+   "hồ sơ",
+   "tài liệu",
+   "bìa đựng",
+   "giấy tờ"
+  ],
+  "lo": 9
+ },
+ "danh_sach_kiem_tra_ho_so": {
+  "ten": "Danh sách kiểm tra hồ sơ",
+  "tu_khoa": [
+   "kiểm tra",
+   "danh sách",
+   "chuẩn bị",
+   "hồ sơ"
+  ],
+  "lo": 9
  }
 }
