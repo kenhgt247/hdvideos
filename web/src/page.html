@@ -183,6 +183,9 @@ table.st th{color:#666;font-weight:600}.win{color:#1d7a3a;font-weight:700}
 .modes button small{font-weight:400;font-size:12.5px;color:#777}
 .modes button.on{border-color:var(--blue);background:#eef3ff;color:var(--blue)}
 body.mode-ai .only-self, body.mode-self .only-ai{display:none!important}
+body.mode-batch .only-self, body.mode-batch #aiCard, body.mode-batch #scriptCard, body.mode-batch .no-batch{display:none!important}
+body:not(.mode-batch) .only-batch{display:none!important}
+.modes button{padding:10px 4px;font-size:15px}
 .aim{display:flex;gap:8px;align-items:flex-start;padding:10px;border:1px solid #e3e5ec;border-radius:12px;margin-top:6px;background:#fff}
 .aim input{margin-top:4px}.aim b{display:block}.aim span{font-size:12.5px;color:#666}
 .aim.on{border-color:var(--blue);background:#f4f7ff}
@@ -216,6 +219,7 @@ details.opt>summary{font-weight:700;padding:12px 0;cursor:pointer;color:var(--bl
   </div>
   <div class="modes">
     <button type="button" id="mAI">✨ Nhập chủ đề<br><small>AI viết kịch bản cho bạn</small></button>
+    <button type="button" id="mBatch">📅 Hàng loạt<br><small>nhiều video một lúc</small></button>
     <button type="button" id="mSelf">✍️ Tự viết<br><small>có mẫu &amp; hướng dẫn</small></button>
   </div>
   <div class="card only-ai" id="aiCard">
@@ -235,7 +239,7 @@ details.opt>summary{font-weight:700;padding:12px 0;cursor:pointer;color:var(--bl
     <div class="hint" id="aiInfo"></div>
     <div id="aiSrc"></div>
   </div>
-  <div class="card only-ai" id="bxCard">
+  <div class="card only-batch" id="bxCard">
     <h2>📅 Làm hàng loạt</h2>
     <div class="hint">Nhập hướng chủ đề, AI gợi ý nhiều chủ đề một lúc. Tích chọn, AI viết kịch bản từng video (sửa được), rồi bấm <b>Tạo tất cả</b>. Video dựng trên máy chủ: gửi xong có thể đóng trang, lát quay lại tab <b>Video</b> xem.</div>
     <textarea id="bxTheme" rows="2" style="min-height:0;margin-top:8px" placeholder="Ví dụ: Du học Đài Loan cho học sinh lớp 12 và phụ huynh, tháng 12"></textarea>
@@ -388,7 +392,8 @@ BÍ QUYẾT GIỮ NGƯỜI XEM:
     </details>
     <label class="f" for="by">Người tạo</label>
     <input type="text" id="by" placeholder="Tên của bạn">
-    <button class="btn" id="bPrev" style="width:100%;margin-top:16px;padding:14px;font-size:16px">👁 Xem trước & sửa từng cảnh</button>
+    <div class="hint only-batch" style="margin-top:12px">Các cài đặt ở trên (giọng đọc, nhạc, khung hình, hiệu ứng...) sẽ dùng chung cho mọi video hàng loạt. Bấm <b>TẠO … VIDEO</b> ở thẻ Hàng loạt phía trên.</div>
+    <button class="btn no-batch" id="bPrev" style="width:100%;margin-top:16px;padding:14px;font-size:16px">👁 Xem trước & sửa từng cảnh</button>
     <div class="card hide" id="abBox" style="margin:12px 0 0;background:#fff8f1;border:1px solid #f0b37a">
       <b>🅰🅱 Làm 2 bản để so câu mở nào hút hơn</b>
       <div class="hint">Bản A dùng kịch bản trên. Bản B giống hệt, chỉ đổi câu mở thành:</div>
@@ -396,9 +401,9 @@ BÍ QUYẾT GIỮ NGƯỜI XEM:
       <div class="hint">Đăng 2 bản cách nhau vài ngày (cùng giờ), sau đó nhập lượt xem ở mục Video để biết câu mở nào thắng.</div>
       <button class="btn sm red" id="abOff" style="margin-top:6px">Bỏ bản B</button>
     </div>
-    <button class="btn" id="abOn" style="width:100%;margin-top:10px">🅰🅱 Thử 2 câu mở khác nhau</button>
-    <button class="btn main" id="bGo" style="margin-top:10px">TẠO VIDEO</button>
-    <div class="hint" style="text-align:center">Mỗi video mất khoảng 4–8 phút. Có thể tắt máy, lát quay lại mục <b>Video</b> để tải.</div>
+    <button class="btn no-batch" id="abOn" style="width:100%;margin-top:10px">🅰🅱 Thử 2 câu mở khác nhau</button>
+    <button class="btn main no-batch" id="bGo" style="margin-top:10px">TẠO VIDEO</button>
+    <div class="hint no-batch" style="text-align:center">Video ngắn thường xong sau khoảng 2–4 phút (dài hơn thì lâu hơn). Có thể tắt máy, lát quay lại mục <b>Video</b> để tải.</div>
   </div>
 </section>
 
@@ -1112,11 +1117,15 @@ $('bHook').onclick = () => {
 /* ===== CHẾ ĐỘ & AI VIẾT KỊCH BẢN ===== */
 const tplName = k => k === 'ai_free' ? '⚡ AI viết nhanh' : k === 'ai_paid' ? '🔎 AI kiểm chứng' : k === 'ai_convert' ? '🪄 AI chuyển định dạng' : (TPLS[k] ? TPLS[k].name : '');
 function setMode(m) {
-  document.body.classList.toggle('mode-ai', m === 'ai'); document.body.classList.toggle('mode-self', m !== 'ai');
-  $('mAI').classList.toggle('on', m === 'ai'); $('mSelf').classList.toggle('on', m !== 'ai');
+  if (!['ai', 'self', 'batch'].includes(m)) m = 'ai';
+  document.body.classList.toggle('mode-ai', m === 'ai' || m === 'batch');
+  document.body.classList.toggle('mode-batch', m === 'batch');
+  document.body.classList.toggle('mode-self', m === 'self');
+  $('mAI').classList.toggle('on', m === 'ai'); $('mSelf').classList.toggle('on', m === 'self'); $('mBatch').classList.toggle('on', m === 'batch');
   store.set('mode', m);
 }
 $('mAI').onclick = () => setMode('ai');
+$('mBatch').onclick = () => setMode('batch');
 $('mSelf').onclick = () => setMode('self');
 setMode(store.get('mode', 'ai'));
 const IDEAS = ['Hồ sơ visa Đài Loan cần lưu ý gì', 'TOPIK cấp mấy thì đi Hàn được', 'Chi phí năm đầu du học Hàn gồm những gì',

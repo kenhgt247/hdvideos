@@ -37,7 +37,34 @@ async function isAdmin(req, env) {
 
 const ADMIN_ONLY = 'Chỉ quản lý mới làm được việc này. Hãy đăng nhập bằng mật khẩu quản lý.';
 
-function gh(env, path, opt = {}) {
+// Bộ nhớ tạm ngắn hạn cho các lần ĐỌC GitHub (danh sách kho, cấu hình, danh sách video) -> trang mở nhanh hơn.
+// Mọi thao tác GHI (thêm/xoá/sửa) đều xoá sạch bộ nhớ tạm để không hiện dữ liệu cũ.
+const MEMO = new Map();
+function memoTtl(path, opt) {
+  const method = (opt.method || 'GET').toUpperCase();
+  if (method !== 'GET' || (opt.headers && opt.headers.accept === 'application/octet-stream')) return 0;
+  if (path.startsWith('/contents/')) return (opt.headers && /raw/.test(opt.headers.accept || '')) ? 0 : 45000;
+  if (path.startsWith('/releases?')) return 12000;
+  return 0;
+}
+async function gh(env, path, opt = {}) {
+  const method = (opt.method || 'GET').toUpperCase();
+  if (method !== 'GET') MEMO.clear();
+  const ttl = memoTtl(path, opt);
+  if (ttl) {
+    const hit = MEMO.get(path);
+    if (hit && Date.now() - hit.t < ttl) return new Response(hit.body, { status: hit.status, headers: hit.headers });
+  }
+  const r = await ghRaw(env, path, opt);
+  if (ttl && (r.ok || r.status === 404)) {
+    const body = await r.arrayBuffer();
+    if (MEMO.size > 200) MEMO.clear();
+    MEMO.set(path, { t: Date.now(), body, status: r.status, headers: [...r.headers] });
+    return new Response(body, { status: r.status, headers: r.headers });
+  }
+  return r;
+}
+function ghRaw(env, path, opt = {}) {
   const url = path.startsWith('http') ? path : `https://api.github.com/repos/${env.REPO}${path}`;
   return fetch(url, {
     ...opt,
@@ -49,6 +76,25 @@ function gh(env, path, opt = {}) {
       ...(opt.headers || {}),
     },
   });
+}
+
+// Ảnh (kho, nền, logo, ảnh xem trước, ảnh bìa) lưu ở bộ nhớ đệm Cloudflare gần người dùng: mở lần sau gần như tức thì.
+async function edgeCached(req, ctx, ttl, make) {
+  const cache = caches.default;
+  const key = new Request(new URL(req.url).toString(), { method: 'GET' });
+  const hit = await cache.match(key);
+  if (hit) return hit;
+  const r = await make();
+  if (r.ok) {
+    const h = new Headers(r.headers);
+    h.set('cache-control', `public, max-age=${ttl}`);
+    const out = new Response(r.body, { status: r.status, headers: h });
+    const put = cache.put(key, out.clone());
+    if (ctx && ctx.waitUntil) ctx.waitUntil(put); else await put;
+    h.set('cache-control', `private, max-age=${ttl}`);
+    return new Response(out.body, { status: out.status, headers: h });
+  }
+  return r;
 }
 
 async function ghJson(env, path, opt) {
@@ -442,7 +488,7 @@ export default {
     const p = url.pathname;
     try {
       if (p === '/manifest.webmanifest') return new Response(MANIFEST, { headers: { 'content-type': 'application/manifest+json' } });
-      if (p === '/img/logo') return rawFile(env, 'engine/assets/logo.png', 'image/png');
+      if (p === '/img/logo') return edgeCached(req, ctx, 3600, () => rawFile(env, 'engine/assets/logo.png', 'image/png'));
       if (p === '/api/login' && req.method === 'POST') {
         const { password } = await req.json().catch(() => ({}));
         const admin = !!env.ADMIN_PASSWORD && password === env.ADMIN_PASSWORD;
@@ -536,7 +582,7 @@ export default {
         return new Response(r.body, { headers: { 'content-type': 'image/jpeg', 'cache-control': 'private, max-age=86400' } });
       }
       m = p.match(/^\/img\/nen\/([a-z_]+)\.jpg$/);
-      if (m) return rawFile(env, `engine/assets/nen/${m[1]}.jpg`, 'image/jpeg');
+      if (m) return edgeCached(req, ctx, 86400, () => rawFile(env, `engine/assets/nen/${m[1]}.jpg`, 'image/jpeg'));
       m = p.match(/^\/api\/jobs\/([a-z0-9]+)\/delete$/);
       if (m && req.method === 'POST') {
         const rel = await ghJson(env, `/releases/tags/job-${m[1]}`);
@@ -574,10 +620,11 @@ export default {
       if (m && req.method === 'POST') {
         const cur = await ghJson(env, `/contents/engine/assets/kho/${m[1]}`);
         if (cur) await gh(env, `/contents/engine/assets/kho/${m[1]}`, { method: 'DELETE', body: JSON.stringify({ message: `Kho: xoá ${m[1]}`, sha: cur.sha, branch: 'main' }) });
+        await caches.default.delete(new Request(new URL('/img/kho/' + m[1], req.url).toString())).catch(() => {});
         return json({ ok: true });
       }
       m = p.match(/^\/img\/kho\/([a-z0-9_]+\.png)$/);
-      if (m) return rawFile(env, `engine/assets/kho/${m[1]}`, 'image/png');
+      if (m) return edgeCached(req, ctx, 21600, () => rawFile(env, `engine/assets/kho/${m[1]}`, 'image/png'));
 
       // ---- nhạc nền, giọng mẫu (nhân bản)
       if (p === '/api/media' && req.method === 'GET') {
@@ -667,7 +714,7 @@ export default {
         }
         return rawFile(env, `engine/assets/nhanvat/${m[1]}`, 'image/png');
       }
-      if (p === '/img/logo') return rawFile(env, 'engine/assets/logo.png', 'image/png');
+      if (p === '/img/logo') return edgeCached(req, ctx, 3600, () => rawFile(env, 'engine/assets/logo.png', 'image/png'));
       if (p === '/api/nhanvat' && req.method === 'GET') {
         const who = slug(url.searchParams.get('who') || '');
         const mine = who ? (await listDir(env, `engine/assets/nhanvat_rieng/${who}`)).map(f => f.name).filter(n => NVF.test(n)) : [];
@@ -705,6 +752,7 @@ export default {
         const b = await req.json();
         if (!b.data) return err('Thiếu ảnh');
         await putFile(env, 'engine/assets/logo.png', b.data, 'Đổi logo');
+        await caches.default.delete(new Request(new URL('/img/logo', req.url).toString())).catch(() => {});
         return json({ ok: true });
       }
 
