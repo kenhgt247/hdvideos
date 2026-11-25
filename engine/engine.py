@@ -2429,8 +2429,8 @@ def sfx_track(plans, rate=44100, pen_vol=0.05, seed=7):
                 if b > a:
                     out[a:b] += nz[:b - a] * env[:b - a] * amp * rng.uniform(0.55, 1.0) * soft
                 t += L + rng.uniform(0.02, 0.07)
-        if not pl['last'] and TRANS_SND != 'tat':          # tiếng lau bảng (tắt hẳn khi chọn im lặng)
-            n = int(ERASE * rate)
+        if not pl['last'] and not pl.get('keep_next') and TRANS_SND != 'tat' and pl.get('trans') != 'bang':   # tiếng lau bảng
+            n = int(pl.get('tr', ERASE) * rate)
             x = rng.standard_normal(n + 400).astype(np.float32)
             rub = _norm_noise(_smooth(x, 9) - _smooth(x, 60))[200:200 + n]
             k = np.linspace(0, 1, n)
@@ -2506,7 +2506,7 @@ def fx_events(plans):
         if pl.get('logo_end'):
             ev.append((off + 0.15, 'chuong'))
         if not pl['last'] and not pl.get('keep_next') and TRANS_SND in ('vut', 'giay'):
-            ev.append((off + pl['dur'] - ERASE + 0.02, TRANS_SND))
+            ev.append((off + pl['dur'] - pl.get('tr', ERASE) + 0.02, TRANS_SND))
         off += pl['n'] / FPS
     return ev
 
@@ -2603,7 +2603,7 @@ def warp_r(it, r):
 class Renderer:
     def __init__(self, logo_path=None, label=None, bg='trang', subs=False, trans='xoa', hook=True, cam=False):
         self.cam = bool(cam)
-        self.trans = trans if trans in ('xoa', 'lia', 'xen') else 'xoa'
+        self.trans = trans if trans in ('xoa', 'lia', 'xen', 'bang') else 'xoa'
         self.hook = bool(hook)
         self.hand, self.tip, self.hand_shadow = self._load_hand('hand')
         self.hand_c = None                                        # tay cầm bút tô màu (nếu có ảnh hand_to.png)
@@ -2843,7 +2843,7 @@ class Renderer:
                 p_ = plans[-1]
                 if not p_.get('keep_next'):
                     p_['keep_next'] = True
-                    p_['n'] = max(1, p_['n'] - int(ERASE * FPS))
+                    p_['n'] = max(1, p_['n'] - int(p_.get('tr', ERASE) * FPS))
                     p_['dur'] = p_['n'] / FPS
             else:
                 items = layout_scene(sc, i, logo_end)
@@ -2895,15 +2895,141 @@ class Renderer:
             hold = 2.0 if logo_end else (0.3 if A else 1.2)
             dur = max(ed + EXIT + hold, (A + 0.45) if A else 0)
             last = i == len(scenes) - 1
+            tr = ERASE
+            if self.trans == 'bang':                           # bảng liền: camera bay sang chỗ trống thay vì xoá
+                nxt_logo = i + 1 < len(scenes) and any('logo' in tg for _, tg in scenes[i + 1]['lines'])
+                tr = 1.9 if (nxt_logo and i >= 2) else 0.9
             if not last:
-                dur += ERASE
+                dur += tr
             nfr = int(math.ceil(dur * FPS))
             subs = self.make_subs(' '.join(sc.get('say') or []), 0.12, A) if (self.subs and A) else []
-            trans = 'lia' if (self.trans == 'lia' or (self.trans == 'xen' and i % 2 == 1)) else 'xoa'
+            trans = 'bang' if self.trans == 'bang' else \
+                'lia' if (self.trans == 'lia' or (self.trans == 'xen' and i % 2 == 1)) else 'xoa'
             plans.append({'sch': sch, 'ed': ed, 'n': nfr, 'dur': nfr / FPS, 'logo_end': logo_end, 'last': last,
-                          'lcx': lcx, 'subs': subs, 'trans': trans})
+                          'lcx': lcx, 'subs': subs, 'trans': trans, 'tr': tr})
         BOTTOM_AREA = old_bottom
+        if self.trans == 'bang':
+            self._board(plans)
         return plans
+
+    # ------------------------------------------------------------ BẢNG LIỀN (kiểu VideoScribe)
+    BOARD_COLS = 3
+
+    def _board(self, plans):
+        """Đặt các cảnh cạnh nhau trên một tấm bảng lớn, đi zic-zắc: phải, phải, xuống, trái, trái, xuống..."""
+        gx, gy = W * 1.04, H * 1.03
+        pos, row, col = [], 0, 0
+        for i, p_ in enumerate(plans):
+            if i and plans[i - 1].get('keep_next'):            # cảnh nối tiếp (giữ hình cảnh trước) dùng chung chỗ
+                pos.append(pos[-1])
+                p_['_pos'] = pos[-1]
+                continue
+            k = len(set(pos))
+            row, c = divmod(k, self.BOARD_COLS)
+            col = c if row % 2 == 0 else self.BOARD_COLS - 1 - c
+            pos.append((col * gx, row * gy))
+            p_['_pos'] = pos[-1]
+        for i, p_ in enumerate(plans):
+            p_['_i'] = i
+            p_['_all'] = plans
+
+    def _content(self, pl, t):
+        """Giấy + mọi thứ đã vẽ tới thời điểm t (chưa có tay, camera, logo nhỏ, phụ đề)."""
+        f = self.paper.copy()
+        if pl['logo_end']:
+            k = eo((t - 0.1) / 0.6)
+            if k > 0:
+                lg = with_alpha(self.logo_big, k)
+                f.paste(lg, (int(pl.get('lcx', W / 2) - lg.width / 2), int(LAY['big_logo_y'] + (1 - k) * 30)), lg)
+        for it, s, e in pl['sch']:
+            if isinstance(it, Fill):
+                it.draw(f, warp_r(it, (t - s) / max(e - s, 1e-3)))
+        for it, s, e in pl['sch']:
+            if not isinstance(it, Fill):
+                self._draw_item(f, it, warp_r(it, (t - s) / max(e - s, 1e-3)), t, e)
+        return f
+
+    def _page(self, pl, final=True):
+        key = '_pg_end' if final else '_pg_0'
+        im = pl.get(key)
+        if im is None:
+            t = pl['dur'] - pl.get('tr', ERASE) if final else 0.0
+            if not final and pl.get('_i') == 0 and self.hook:
+                t = 0.0
+            im = self._content(pl, t)
+            pl[key] = im
+            pl[key + '_half'] = im.resize((W // 2, H // 2), Image.BILINEAR)
+        return im
+
+    def _paste_page(self, g, pl, final, cx, cy, s):
+        px, py = pl['_pos']
+        x0 = (px - cx) * s + W / 2
+        y0 = (py - cy) * s + H / 2
+        w, h = W * s, H * s
+        if x0 > W or y0 > H or x0 + w < 0 or y0 + h < 0 or w < 4:
+            return
+        im = self._page(pl, final)
+        src = pl['_pg_end_half' if final else '_pg_0_half'] if s < 0.5 else im
+        if abs(s - 1) < 1e-3 and abs(x0 - round(x0)) < 1e-3:
+            g.paste(im, (int(round(x0)), int(round(y0))))
+            return
+        iw, ih = max(1, int(round(w))), max(1, int(round(h)))
+        g.paste(src.resize((iw, ih), Image.BILINEAR), (int(round(x0)), int(round(y0))))
+
+    def fly(self, pl, e, first, prog):
+        """Chuyển cảnh bảng liền: camera lùi ra rồi bay sang chỗ của cảnh sau (cảnh cũ vẫn còn trên bảng)."""
+        allp, i = pl['_all'], pl['_i']
+        nxt = allp[i + 1]
+        (ax, ay), (bx, by) = pl['_pos'], nxt['_pos']
+        c0 = (ax + W / 2, ay + H / 2)
+        c1 = (bx + W / 2, by + H / 2)
+        k = clamp(e)
+        recap = pl.get('tr', ERASE) > 1.5
+        if recap:                                          # trước cảnh kết: lùi thật xa cho thấy cả tấm bảng
+            shown = [p_ for p_ in allp[:i + 2]]
+            xs = [p_['_pos'][0] for p_ in shown]
+            ys = [p_['_pos'][1] for p_ in shown]
+            bw, bh = max(xs) - min(xs) + W, max(ys) - min(ys) + H
+            cm = (min(xs) + bw / 2, min(ys) + bh / 2)
+            sm = min(1.0, 0.9 * min(W / bw, H / bh))
+            if k < 0.42:
+                u = eio(k / 0.42)
+                cx, cy = c0[0] + (cm[0] - c0[0]) * u, c0[1] + (cm[1] - c0[1]) * u
+                s = math.exp(math.log(sm) * u)
+            elif k < 0.6:
+                cx, cy, s = cm[0], cm[1], sm
+            else:
+                u = eio((k - 0.6) / 0.4)
+                cx, cy = cm[0] + (c1[0] - cm[0]) * u, cm[1] + (c1[1] - cm[1]) * u
+                s = math.exp(math.log(sm) * (1 - u))
+        else:
+            u = eio(k)
+            cx, cy = c0[0] + (c1[0] - c0[0]) * u, c0[1] + (c1[1] - c0[1]) * u
+            dx, dy = abs(c1[0] - c0[0]), abs(c1[1] - c0[1])
+            A = min(1.4, max(0.3, max(dx / W, dy / H) + 0.1))        # lùi đủ xa để thấy cả trang cũ lẫn trang mới
+            s = 1 / (1 + A * math.sin(math.pi * u))
+        g = Image.new('RGB', (W, H), self._bgc())
+        for j, p_ in enumerate(allp[:i + 2]):
+            if j < i + 1 and p_.get('keep_next'):            # cảnh nối tiếp: hình của nó đã có trong cảnh sau
+                continue
+            self._paste_page(g, p_, j <= i, cx, cy, s)
+        if not pl['logo_end']:
+            g.paste(self.logo_small, LAY['logo_xy'], self.logo_small)
+        if self.label is not None:
+            g.paste(self.label, (W - LAY['label_r'] - self.label.width, LAY['label_y']), self.label)
+        if prog is not None:
+            d = ImageDraw.Draw(g)
+            bx0, by0, bx1 = LAY['bar']
+            d.rounded_rectangle((bx0, by0, bx1, by0 + 12), 6, fill=(232, 232, 228))
+            d.rounded_rectangle((bx0, by0, bx0 + max(12, int((bx1 - bx0) * clamp(prog))), by0 + 12), 6, fill=ORANGE)
+        return g
+
+    def _bgc(self):
+        c = getattr(self, '_bg_c', None)
+        if c is None:
+            a = np.asarray(self.paper.convert('RGB'))
+            c = self._bg_c = tuple(int(v) for v in np.median(a.reshape(-1, 3), axis=0))
+        return c
 
     def _snapshot(self, pl):
         layer = Image.new('RGBA', (W, H), (0, 0, 0, 0))
@@ -2979,7 +3105,7 @@ class Renderer:
         ed = pl['ed']
         z_in = eio(clamp((t - 0.15) / 1.0))
         z_out = 1 - eio(clamp((t - ed - 0.2) / 1.1))
-        z_end = 1 - eio(clamp((t - (pl['dur'] - ERASE - 0.7)) / 0.6)) if not pl['last'] else 1.0
+        z_end = 1 - eio(clamp((t - (pl['dur'] - pl.get('tr', ERASE) - 0.7)) / 0.6)) if not pl['last'] else 1.0
         z = 1 + self.CAM_Z * z_in * z_out * z_end
         if z <= 1.0005:
             return 1.0, W / 2, H / 2
@@ -3004,18 +3130,11 @@ class Renderer:
         return z, min(max(cx, hw), W - hw), min(max(cy, hh), H - hh)
 
     def frame(self, pl, t, first, prog=None):
-        f = self.paper.copy()
-        if pl['logo_end']:
-            k = eo((t - 0.1) / 0.6)
-            if k > 0:
-                lg = with_alpha(self.logo_big, k)
-                f.paste(lg, (int(pl.get('lcx', W / 2) - lg.width / 2), int(LAY['big_logo_y'] + (1 - k) * 30)), lg)
-        for it, s, e in pl['sch']:
-            if isinstance(it, Fill):
-                it.draw(f, warp_r(it, (t - s) / max(e - s, 1e-3)))
-        for it, s, e in pl['sch']:
-            if not isinstance(it, Fill):
-                self._draw_item(f, it, warp_r(it, (t - s) / max(e - s, 1e-3)), t, e)
+        TR = pl.get('tr', ERASE)
+        if pl.get('trans') == 'bang' and '_all' in pl and not pl['last'] and not pl.get('keep_next') \
+                and t > pl['dur'] - TR:
+            return self.fly(pl, (t - (pl['dur'] - TR)) / TR, first, prog)
+        f = self._content(pl, t)
         hp = self.hand_pos(pl, t)
         if hp:
             lift = hp[2] if len(hp) > 2 else 0.0
@@ -3050,8 +3169,8 @@ class Renderer:
             d.rounded_rectangle((bx0, by0, bx0 + max(12, int((bx1 - bx0) * clamp(prog))), by0 + 12), 6, fill=ORANGE)
         if self.subs:
             self.draw_sub(f, pl, t)
-        if not pl['last'] and not pl.get('keep_next') and t > pl['dur'] - ERASE:
-            e = (t - (pl['dur'] - ERASE)) / ERASE
+        if not pl['last'] and not pl.get('keep_next') and t > pl['dur'] - TR:
+            e = (t - (pl['dur'] - TR)) / TR
             if pl.get('trans') == 'lia':
                 f = self.pan(f, pl, e, first, prog)
             else:

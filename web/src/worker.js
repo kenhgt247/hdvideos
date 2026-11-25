@@ -593,7 +593,7 @@ export default {
           subs: b.subs === 'noibat' ? 'noibat' : !!b.subs,
           sfx: b.sfx !== false, punch: b.punch !== false, emph: b.emph !== false, pop: b.pop !== false,
           stroke: b.stroke !== false,
-          trans: ['xoa', 'lia', 'xen'].includes(b.trans) ? b.trans : 'xen',
+          trans: ['xoa', 'lia', 'xen', 'bang'].includes(b.trans) ? b.trans : 'xen',
           tsnd: ['giay', 'vut', 'tat'].includes(b.tsnd) ? b.tsnd : 'giay',
           reveal: ['quet', 'loang'].includes(b.reveal) ? b.reveal : 'net',
           hook: b.hook !== false,
