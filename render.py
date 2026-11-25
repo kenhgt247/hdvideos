@@ -31,7 +31,7 @@ def main():
     name = (job.get('name') or '').strip() or 'Video %s' % time.strftime('%d-%m %H:%M')
     info = {'ok': False, 'name': name, 'file': slug(name) + '.mp4', 'created': int(time.time()),
             'by': job.get('by', ''), 'script': job.get('script', '')[:3000],
-            'tpl': job.get('tpl', ''), 'ab': job.get('ab', ''), 'abg': job.get('abg', '')}
+            'tpl': job.get('tpl', ''), 'ab': job.get('ab', ''), 'abg': job.get('abg', ''), 'batch': job.get('batch', '')}
 
     voice = job.get('voice') or 'vieneu_nam'
     character = job.get('character') or 'auto'
@@ -149,6 +149,16 @@ def main():
     except Exception as e:
         info['error'] = 'Lỗi khi dựng video: %s' % e
         traceback.print_exc()
+    try:   # câu không có hình hợp trong Kho -> trang web gom lại thành danh sách 'hình còn thiếu'
+        seen, miss = set(), []
+        for t in E.MISSING:
+            t = ' '.join(str(t).replace('*', '').split())[:80]
+            if t and t.lower() not in seen:
+                seen.add(t.lower()); miss.append(t)
+        if miss:
+            info['thieu_hinh'] = miss[:30]
+    except Exception:
+        pass
     if E.LAST_VIENEU.get('voices') and 'voices' not in info:
         info['voices'] = E.LAST_VIENEU['voices']
     with open(os.path.join(out_dir, 'info.json'), 'w', encoding='utf-8') as fh:

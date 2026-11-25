@@ -97,6 +97,19 @@ video{width:100%;max-height:62vh;border-radius:12px;background:#000;margin-top:1
 .mrow .tx small{color:var(--mut);font-size:12px}
 .mrow .ck{flex:none;color:var(--blue);font-weight:700}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.bx{border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-top:8px;background:#fff}
+.bx .r{display:flex;align-items:center;gap:8px}
+.bx .r input[type=checkbox]{width:20px;height:20px;flex:none}
+.bx .r input[type=text]{padding:7px 9px;font-size:15px}
+.bx .st{font-size:12.5px;color:var(--mut);margin:4px 0 0 28px}
+.bx .st.ok{color:#1d6b35}.bx .st.er{color:#b3261e}
+.bx textarea{min-height:180px;margin-top:6px;font-size:14px}
+.bx .x{border:0;background:none;color:var(--mut);font-size:18px;flex:none;cursor:pointer}
+.miss{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.miss span{border:1px solid var(--line);border-radius:16px;padding:5px 10px;font-size:13px;background:#fff}
+.miss span b{color:var(--red);margin-left:4px}
+.miss span i{font-style:normal;color:var(--mut);margin-left:6px;cursor:pointer}
+
 .chips button{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 11px;font:inherit;font-size:13px;color:var(--blue)}
 .tnr{display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid var(--line)}
 .tnr .tx{flex:1;min-width:0}.tnr .tx b{display:block;font-size:14px;overflow-wrap:anywhere}.tnr .tx small{color:var(--mut);font-size:12px}
@@ -219,6 +232,22 @@ details.opt>summary{font-weight:700;padding:12px 0;cursor:pointer;color:var(--bl
     <button class="btn main" id="aiGo" style="margin-top:10px">✨ VIẾT KỊCH BẢN</button>
     <div class="hint" id="aiInfo"></div>
     <div id="aiSrc"></div>
+  </div>
+  <div class="card only-ai" id="bxCard">
+    <h2>📅 Làm hàng loạt</h2>
+    <div class="hint">Nhập hướng chủ đề, AI gợi ý nhiều chủ đề một lúc. Tích chọn, AI viết kịch bản từng video (sửa được), rồi bấm <b>Tạo tất cả</b>. Video dựng trên máy chủ: gửi xong có thể đóng trang, lát quay lại tab <b>Video</b> xem.</div>
+    <textarea id="bxTheme" rows="2" style="min-height:0;margin-top:8px" placeholder="Ví dụ: Du học Đài Loan cho học sinh lớp 12 và phụ huynh, tháng 12"></textarea>
+    <div class="tools" style="margin-top:8px;align-items:center">
+      <select id="bxCount" style="width:auto"><option value="5">5 chủ đề</option><option value="10" selected>10 chủ đề</option><option value="15">15 chủ đề</option><option value="20">20 chủ đề</option></select>
+      <button class="btn" id="bxIdeas" type="button">💡 Gợi ý chủ đề</button>
+      <button class="btn sm" id="bxAdd" type="button">+ Tự thêm</button>
+      <button class="btn sm hide" id="bxAll" type="button">Chọn / bỏ hết</button>
+      <button class="btn sm hide" id="bxClear" type="button">Xoá danh sách</button>
+    </div>
+    <div id="bxList"></div>
+    <button class="btn main hide" id="bxWrite" type="button" style="background:var(--blue)">✨ VIẾT KỊCH BẢN CÁC CHỦ ĐỀ ĐÃ CHỌN</button>
+    <button class="btn main hide" id="bxMake" type="button">🎬 TẠO TẤT CẢ VIDEO</button>
+    <div class="hint" id="bxInfo"></div>
   </div>
   <div class="card only-self" id="cvCard">
     <h2>📝 Viết bình thường, AI chuyển thành kịch bản</h2>
@@ -388,6 +417,11 @@ BÍ QUYẾT GIỮ NGƯỜI XEM:
     <div id="upList"></div>
     <button class="btn main hide" id="bUpload" style="background:var(--blue)">Tải lên Kho</button>
   </div>
+  <div class="card" id="missCard">
+    <div class="hd"><h2>🧩 Hình còn thiếu</h2><button class="btn sm" id="bMissCopy" type="button">Copy câu lệnh vẽ</button></div>
+    <div class="hint">Những câu trong các video gần đây <b>chưa có hình hợp</b> trong Kho. Số đỏ = số lần gặp, câu gặp nhiều nên vẽ trước. Bấm <b>Copy câu lệnh vẽ</b> rồi dán cho ChatGPT/Gemini. Câu nào không cần hình thì bấm ✕ để ẩn.</div>
+    <div class="miss" id="missList"><div class="empty">Đang tải...</div></div>
+  </div>
   <div class="card">
     <div class="hd"><h2>Kho hình <span id="khoN" style="color:var(--mut);font-weight:400"></span></h2><button class="btn sm" id="bKhoReload">Làm mới</button></div>
     <div class="hint" id="khoPending"></div>
@@ -492,7 +526,7 @@ function showTab(t) {
   document.querySelectorAll('main>section').forEach(s => s.classList.toggle('hide', s.id !== 'tab-' + t));
   window.scrollTo(0, 0);
   if (t === 'video') loadList();
-  if (t === 'kho') loadKho();
+  if (t === 'kho') { loadKho(); loadMiss(); }
   if (t === 'cai') { loadNv(); loadMedia(); }
 }
 
@@ -1220,6 +1254,136 @@ $('cfSave').onclick = async () => {
 
 /* ===== VÒNG TỰ SỬA: còn lỗi thì gửi lại Gemini kèm danh sách lỗi ===== */
 const SOFT = /Nên có ít nhất 1 danh sách|không có hình tên|hơi ngắn/;
+/* ===== LÀM HÀNG LOẠT ===== */
+let BX = store.get('bx', { items: [], theme: '' });
+$('bxTheme').value = BX.theme || '';
+$('bxTheme').oninput = () => { BX.theme = $('bxTheme').value; bxSave(); };
+function bxSave() { store.set('bx', BX); }
+function bxStatus(it) {
+  if (it.id) return ['ok', '🎬 Đã gửi tạo video'];
+  if (it.busy) return ['', '⏳ ' + it.busy];
+  if (it.err) return ['er', '⚠ ' + it.err];
+  if (it.script) {
+    const r = checkScript(it.script);
+    const n = it.script.split('\n').filter(l => l.trim() && !/^\s*-\s/.test(l)).length;
+    return r.E.length ? ['er', `⚠ Kịch bản còn ${r.E.length} lỗi: ${r.E[0]}`] : ['ok', `✅ Đã viết xong · ${n} cảnh`];
+  }
+  return ['', it.on ? 'Chưa viết' : 'Không chọn'];
+}
+function bxDraw() {
+  const L = BX.items;
+  $('bxList').innerHTML = L.map((it, i) => {
+    const [c, t] = bxStatus(it);
+    return `<div class="bx"><div class="r"><input type="checkbox" ${it.on ? 'checked' : ''} ${it.id ? 'disabled' : ''} onchange="bxOn(${i},this.checked)">
+      <input type="text" value="${esc(it.topic)}" ${it.script || it.id ? 'readonly' : ''} onchange="bxTopic(${i},this.value)">
+      ${it.script ? `<button class="btn sm" type="button" onclick="bxOpen(${i})">${it.open ? 'Đóng' : 'Xem/sửa'}</button>` : ''}
+      <button class="x" type="button" title="Bỏ" onclick="bxDel(${i})">✕</button></div>
+      <div class="st ${c}">${esc(t)}${it.script && !it.id ? ` · <a href="#" onclick="bxRedo(${i});return false">viết lại</a>` : ''}</div>
+      ${it.open ? `<textarea onchange="bxEdit(${i},this.value)">${esc(it.script)}</textarea>` : ''}</div>`;
+  }).join('');
+  const any = L.length > 0, sel = L.filter(x => x.on && !x.id);
+  ['bxAll', 'bxClear'].forEach(id => $(id).classList.toggle('hide', !any));
+  $('bxWrite').classList.toggle('hide', !sel.some(x => !x.script));
+  $('bxMake').classList.toggle('hide', !sel.some(x => x.script));
+  const ready = sel.filter(x => x.script && !checkScript(x.script).E.length).length;
+  $('bxMake').textContent = `🎬 TẠO ${ready || ''} VIDEO`.replace('  ', ' ');
+}
+function bxOn(i, v) { BX.items[i].on = v; bxSave(); bxDraw(); }
+function bxTopic(i, v) { BX.items[i].topic = v.trim(); bxSave(); }
+function bxOpen(i) { BX.items[i].open = !BX.items[i].open; bxDraw(); }
+function bxEdit(i, v) { BX.items[i].script = fixScript(v); BX.items[i].err = ''; bxSave(); bxDraw(); }
+function bxDel(i) { BX.items.splice(i, 1); bxSave(); bxDraw(); }
+function bxRedo(i) { if (!confirm('Viết lại kịch bản cho chủ đề này?')) return; Object.assign(BX.items[i], { script: '', err: '', open: false, on: true }); bxSave(); bxDraw(); }
+$('bxAdd').onclick = () => {
+  const t = prompt('Chủ đề video:'); if (!t || t.trim().length < 4) return;
+  BX.items.push({ topic: t.trim(), on: true }); bxSave(); bxDraw();
+};
+$('bxAll').onclick = () => { const v = !BX.items.filter(x => !x.id).every(x => x.on); BX.items.forEach(x => { if (!x.id) x.on = v; }); bxSave(); bxDraw(); };
+$('bxClear').onclick = () => { if (!confirm('Xoá cả danh sách chủ đề?')) return; BX.items = []; bxSave(); bxDraw(); };
+function needBy() {
+  if ($('by').value.trim()) return true;
+  const n = prompt('Tên của bạn là gì? (để tính lượt dùng AI)');
+  if (!n || !n.trim()) return false;
+  $('by').value = n.trim(); store.set('by', n.trim()); return true;
+}
+$('bxIdeas').onclick = async () => {
+  const theme = $('bxTheme').value.trim();
+  if (theme.length < 3) { toast('Hãy nhập hướng chủ đề'); $('bxTheme').focus(); return; }
+  const btn = $('bxIdeas'); if (btn.disabled) return; btn.disabled = true; btn.textContent = '⏳ AI đang nghĩ...';
+  try {
+    let done = BX.items.map(x => x.topic);
+    try { const l = await api('/api/list'); done = done.concat((l.items || []).map(x => x.name)); } catch {}
+    const d = await api('/api/ai/ideas', { theme, count: $('bxCount').value, done });
+    d.ideas.forEach(x => BX.items.push({ topic: x.topic, on: true }));
+    bxSave(); bxDraw(); toast(`Có ${d.ideas.length} chủ đề. Bỏ tích chủ đề không ưng rồi bấm VIẾT KỊCH BẢN`, 4000);
+  } catch (e) { toast(e.message, 6000); }
+  btn.disabled = false; btn.textContent = '💡 Gợi ý chủ đề';
+};
+async function bxFix(text) {
+  const list = issuesOf(text);
+  if (!list.length) return text;
+  try {
+    const d = await api('/api/ai/script', { task: 'fix', content: text, issues: list, mode: 'free', by: $('by').value });
+    const after = fixScript(d.script);
+    if (issuesOf(after).length < list.length) return after;
+  } catch {}
+  return text;
+}
+let BX_RUN = false;
+$('bxWrite').onclick = async () => {
+  if (BX_RUN) { BX_RUN = false; $('bxWrite').textContent = '⏳ Đang dừng sau chủ đề này...'; return; }
+  if (!needBy()) return;
+  const todo = BX.items.filter(x => x.on && !x.script && !x.id && x.topic.length >= 4);
+  if (!todo.length) { toast('Chưa có chủ đề nào cần viết'); return; }
+  BX_RUN = true; $('bxWrite').textContent = '⏹ Dừng viết';
+  $('bxInfo').textContent = `Đang viết ${todo.length} kịch bản, mỗi cái khoảng 10–30 giây. Giữ trang này mở đến khi xong.`;
+  let ok = 0;
+  for (const it of todo) {
+    if (!BX_RUN) break;
+    it.busy = 'AI đang viết...'; it.err = ''; bxDraw();
+    try {
+      const d = await api('/api/ai/script', { topic: it.topic, mode: 'free', duration: 'quick', by: $('by').value });
+      let t = fixScript(d.script);
+      it.busy = 'Đang tự sửa định dạng...'; bxDraw();
+      t = await bxFix(t);
+      it.script = t; if (d.caption) it.caption = d.caption; ok++;
+      if (d.limit) $('bxInfo').textContent = `Đã dùng ${d.used}/${d.limit} lượt AI hôm nay.`;
+    } catch (e) {
+      it.err = e.message;
+      if (/hết .* lượt|429/.test(e.message)) { delete it.busy; bxSave(); bxDraw(); toast(e.message, 7000); break; }
+    }
+    delete it.busy; bxSave(); bxDraw();
+    await new Promise(r => setTimeout(r, 1500));       // nghỉ một chút để Gemini miễn phí không báo quá tải
+  }
+  BX_RUN = false; $('bxWrite').textContent = '✨ VIẾT KỊCH BẢN CÁC CHỦ ĐỀ ĐÃ CHỌN'; bxDraw();
+  $('bxInfo').textContent = `Đã viết xong ${ok} kịch bản. Bấm "Xem/sửa" để đọc lại, rồi bấm TẠO VIDEO.`;
+};
+$('bxMake').onclick = async () => {
+  const ready = BX.items.filter(x => x.on && x.script && !x.id && !checkScript(x.script).E.length);
+  const bad = BX.items.filter(x => x.on && x.script && !x.id && checkScript(x.script).E.length).length;
+  if (!ready.length) { toast('Chưa có kịch bản nào sẵn sàng (còn lỗi thì bấm Xem/sửa)'); return; }
+  if (!confirm(`Tạo ${ready.length} video?` + (bad ? `\n(${bad} kịch bản còn lỗi sẽ để lại, sửa sau)` : ''))) return;
+  const btn = $('bxMake'); btn.disabled = true;
+  const batch = Date.now().toString(36);
+  const base = jobBody(false);
+  let sent = 0;
+  for (const it of ready) {
+    btn.textContent = `Đang gửi ${sent + 1}/${ready.length}...`;
+    try {
+      const body = { ...base, script: it.script, name: it.topic.slice(0, 60), tpl: 'ai_free', preview: false, batch };
+      const d = await api('/api/jobs', body);
+      it.id = d.id; it.open = false; sent++;
+      const jobs = store.get('jobs', []); jobs.unshift({ id: d.id, name: body.name, t: Date.now() }); store.set('jobs', jobs.slice(0, 40));
+    } catch (e) { it.err = 'Không gửi được: ' + e.message; }
+    bxSave(); bxDraw();
+    await new Promise(r => setTimeout(r, 800));
+  }
+  btn.disabled = false; bxDraw();
+  $('bxInfo').textContent = `Đã gửi ${sent} video. Máy chủ dựng song song, thường 10–20 phút. Có thể đóng trang, lát vào tab Video xem.`;
+  toast(`Đã gửi ${sent} video!`, 4000); renderJobs(); pollJobs();
+};
+bxDraw();
+
 function narrationWords(text, formatted = false) {
   const lines = String(text || '').split('\n');
   const spoken = formatted ? lines.filter(l => !/^\s*[-+]\s/.test(l)).map(l => l.includes('||') ? l.split('||').slice(1).join(' ') : l).join(' ') : lines.join(' ');
@@ -1367,7 +1531,7 @@ async function makeVideo() {
   try {
     for (const bd of bodies) {
       const d = await api('/api/jobs', bd);
-      const jobs = store.get('jobs', []); jobs.unshift({ id: d.id, name: bd.name, t: Date.now() }); store.set('jobs', jobs.slice(0, 10));
+      const jobs = store.get('jobs', []); jobs.unshift({ id: d.id, name: bd.name, t: Date.now() }); store.set('jobs', jobs.slice(0, 40));
     }
     // Chỉ dọn bản nháp sau khi mọi lệnh dựng (kể cả A/B) được máy chủ chấp nhận.
     // Nếu người dùng đã bắt đầu chỉnh nội dung khác trong lúc gửi, giữ nguyên nội dung mới.
@@ -1727,7 +1891,45 @@ async function loadKho() {
     if (d.pending.length && curTab === 'kho') setTimeout(loadKho, 20000);
   } catch (e) { $('khoGrid').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
-$('bKhoReload').onclick = loadKho;
+$('bKhoReload').onclick = () => { loadKho(); loadMiss(); };
+let MISS = [];
+async function loadMiss() {
+  try {
+    const d = await api('/api/list');
+    const hide = new Set(store.get('miss_hide', [])), cnt = new Map();
+    (d.items || []).forEach(v => (v.missing || []).forEach(t => {
+      const k = t.toLowerCase().trim(); if (!k || hide.has(k)) return;
+      const o = cnt.get(k) || { t, n: 0 }; o.n++; cnt.set(k, o);
+    }));
+    MISS = [...cnt.values()].sort((a, b) => b.n - a.n).slice(0, 60);
+    $('missList').innerHTML = MISS.length ? MISS.map((m, i) => `<span>${esc(m.t)}${m.n > 1 ? `<b>×${m.n}</b>` : ''}<i onclick="missHide(${i})">✕</i></span>`).join('')
+      : '<div class="empty">Chưa có. Làm thêm video, máy sẽ tự ghi lại những câu chưa có hình.</div>';
+  } catch (e) { $('missList').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+function missHide(i) {
+  const h = store.get('miss_hide', []); h.push(MISS[i].t.toLowerCase().trim()); store.set('miss_hide', h.slice(-500));
+  MISS.splice(i, 1); loadMiss();
+}
+$('bMissCopy').onclick = () => {
+  if (!MISS.length) { toast('Chưa có câu nào thiếu hình'); return; }
+  const top = MISS.slice(0, 40), lots = [];
+  for (let i = 0; i < top.length; i += 4) lots.push(`Lô ${lots.length + 1}: ` + top.slice(i, i + 4).map(m => m.t).join('; '));
+  const txt = `Vẽ tranh minh hoạ cho trung tâm du học, GIỐNG HỆT phong cách ảnh mẫu đính kèm.
+
+QUY TẮC:
+- Ảnh NGANG 3:2, lưới 2×2 = 4 hình riêng biệt, NỀN TRẮNG TINH, khoảng trắng rộng giữa các hình, không khung, không vẽ phông phòng/cửa sổ phía sau.
+- Nét viền đen DÀY như sticker, màu phẳng, biểu cảm rõ, vài nét nhấn cam.
+- KHÔNG viết chữ, số nào vào ảnh. Không cờ, không logo.
+- Nam sinh: áo polo XANH DƯƠNG. Nữ sinh: áo polo XANH DƯƠNG, tóc buộc NƠ CAM. Tư vấn viên: áo vest xanh dương, đeo thẻ đỏ.
+- Mỗi ô là 1 hình minh hoạ cho ý được ghi (vẽ cảnh hoặc đồ vật thể hiện ý đó).
+
+Mỗi lần vẽ 1 lô = 1 ảnh. Thứ tự 4 hình: trên-trái, trên-phải, dưới-trái, dưới-phải.
+
+${lots.join('\n')}
+
+Bắt đầu vẽ LÔ 1. Xong tôi sẽ nói "Tiếp lô 2".`;
+  copyText(txt).then(ok => toast(ok ? `Đã copy câu lệnh ${lots.length} lô. Dán cho ChatGPT/Gemini kèm 1 ảnh mẫu.` : 'Không copy được', 4500));
+};
 async function delKho(f) {
   if (!confirm('Xoá ảnh "' + f.replace(/_/g, ' ').replace('.png', '') + '" khỏi Kho?')) return;
   try { await api('/api/kho/' + f + '/delete', {}); toast('Đã xoá'); loadKho(); } catch (e) { toast(e.message); }

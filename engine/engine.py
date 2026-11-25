@@ -1595,8 +1595,12 @@ def make_segs(txt, color, auto):
 STYLE_TAGS = {'den', 'xanh', 'do', 'cam', 'xam', 'xanh la', 'tim', 'to', 'nho', 'khung', 'gach', 'tron', 'logo'}
 
 
+
+MISSING = []          # câu trên màn hình không tìm được hình trong Kho (để báo 'hình còn thiếu')
+
 def auto_style(scenes):
     """Tự trang trí những dòng chưa có thẻ: tô màu từ khóa, gạch chân ý chính, khung, hình vẽ."""
+    MISSING.clear()
     n = len(scenes)
     last_icon = None
     for si, sc in enumerate(scenes):
@@ -1649,6 +1653,8 @@ def auto_style(scenes):
         elif not has_icon and not sc.get('noicon') and n_bul < 2 and len(text_idx) <= 4 and not (si == n - 1 and n > 1):
             screen = ' '.join(t for t, _ in lines)
             icon = pick_icon(screen, ' '.join(sc['say']), avoid=(last_icon,) if last_icon else ())
+            if (not icon or not kho_has(icon)) and len(screen) > 3:
+                MISSING.append(screen)
             if icon:
                 at = 1 if text_idx and lines[text_idx[0]][0].endswith(':') else 0
                 lines.insert(at, ('', ['ve: ' + icon]))
@@ -1675,6 +1681,8 @@ def _bullet_icons(group, scene):
             cand, sc_ = pick_icon(t, t, avoid=tuple(used), with_score=True)
             if cand and sc_ >= 2.4 and cand not in used:
                 name = cand
+            if (not name or not kho_has(name)) and len(t.strip('-+ ')) > 3:
+                MISSING.append(t.strip('-+ '))
         names.append(name)
         if name:
             used.add(name)

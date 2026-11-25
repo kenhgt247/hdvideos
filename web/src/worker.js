@@ -385,6 +385,7 @@ async function listVideos(env) {
       ok: !!info.ok && (r.assets || []).some(a => a.name.endsWith('.mp4')), error: info.error || '',
       voice: info.voice || '', by: info.by || '', fallback: info.fallback || '', script: info.script || '', credit: info.credit || '', posts: info.posts || null,
       tpl: info.tpl || '', ab: info.ab || '', abg: info.abg || '', fmt: info.fmt || '',
+      missing: Array.isArray(info.thieu_hinh) ? info.thieu_hinh.slice(0, 30) : [], batch: info.batch || '',
     });
   }
   return { items, voices: voices || [] };
@@ -496,6 +497,7 @@ export default {
           ab: ['A', 'B'].includes(b.ab) ? b.ab : '',
           abg: /^[a-z0-9]{1,24}$/.test(b.abg || '') ? b.abg : '',
           preview: !!b.preview,
+          batch: /^[a-z0-9]{1,24}$/.test(b.batch || '') ? b.batch : '',
           music: /^[a-z0-9_]+\.(mp3|m4a|aac|wav|ogg)$/.test(b.music || '') ? b.music : '',
           music_vol: Math.max(0, Math.min(40, parseInt(b.music_vol || 12, 10) || 12)),
           clone: /^[a-z0-9_]+\.(mp3|m4a|aac|wav|ogg|webm|mp4)$/.test(b.clone || '') ? b.clone : '',
@@ -763,6 +765,30 @@ export default {
         }
         return json({ script: res.script, caption: res.caption, sources: convert ? [] : sources.slice(0, 8), mode, convert, duration,
           verified: !convert && mode === 'paid' && sources.length > 0, used: used + 1, limit: admin ? null : limit });
+      }
+      if (p === '/api/ai/ideas' && req.method === 'POST') {
+        // Gợi ý danh sách chủ đề cho chế độ làm hàng loạt (Gemini miễn phí, không tính lượt)
+        const b = await req.json();
+        const theme = String(b.theme || '').trim().slice(0, 300);
+        if (theme.length < 3) return err('Hãy nhập hướng chủ đề, ví dụ: du học Đài Loan tháng 12');
+        if (!env.GEMINI_KEY) return err('Chưa gắn khoá Gemini. Admin xem hướng dẫn trong mục Cài đặt.');
+        const n = Math.max(3, Math.min(30, parseInt(b.count || 10, 10) || 10));
+        const done = (Array.isArray(b.done) ? b.done : []).slice(0, 80).map(x => String(x).slice(0, 80));
+        const sys = `Bạn là người lên lịch nội dung video ngắn (TikTok/Facebook Reels, 30–60 giây) cho trung tâm tư vấn du học Du Học Hải Dương (du học Đài Loan và Hàn Quốc), khán giả là học sinh và phụ huynh Việt Nam.
+Hãy đề xuất đúng ${n} chủ đề video, mỗi chủ đề là MỘT ý cụ thể, hấp dẫn, dễ làm thành video vẽ tay.
+Trộn đều các dạng: sai lầm thường gặp, cảnh báo, so sánh, checklist, quy trình từng bước, "bạn có biết", trả lời câu hỏi phụ huynh hay hỏi.
+Không bịa con số, mức phí hay quy định cụ thể trong tên chủ đề. Không trùng các chủ đề đã làm.
+CHỈ trả về JSON, dạng: [{"topic":"...","dang":"canh_bao|sai_lam|so_sanh|checklist|quy_trinh|ban_co_biet|hoi_dap"}]`;
+        const user = `HƯỚNG CHỦ ĐỀ: ${theme}` + (done.length ? `\n\nCHỦ ĐỀ ĐÃ LÀM (không lặp lại):\n- ${done.join('\n- ')}` : '');
+        let out;
+        try { out = await aiGemini(env, sys, user); } catch (e) { return err(String(e.message || e), 502); }
+        const txt = out.text.replace(/```(json)?/g, '');
+        let arr = [];
+        try { arr = JSON.parse(txt.slice(txt.indexOf('['), txt.lastIndexOf(']') + 1)); } catch (e) { arr = []; }
+        const ideas = (Array.isArray(arr) ? arr : []).map(x => ({ topic: String((x && x.topic) || x || '').trim().slice(0, 160), dang: String((x && x.dang) || '').slice(0, 20) }))
+          .filter(x => x.topic.length > 5).slice(0, n);
+        if (!ideas.length) return err('AI chưa gợi ý được, hãy thử lại hoặc nói rõ hướng chủ đề hơn.', 502);
+        return json({ ideas });
       }
       if (p === '/api/names') {
         const [hv, kho] = await Promise.all([
