@@ -2919,5 +2919,45 @@
    "giá tăng"
   ],
   "lo": 77
+ },
+ "rac_thong_thuong": {
+  "ten": "Rác thông thường",
+  "tu_khoa": [
+   "rác thông thường",
+   "thùng rác",
+   "vứt rác",
+   "rác sinh hoạt"
+  ],
+  "lo": 78
+ },
+ "rac_tai_che": {
+  "ten": "Rác tái chế",
+  "tu_khoa": [
+   "rác tái chế",
+   "phân loại rác",
+   "chai nhựa",
+   "tái chế"
+  ],
+  "lo": 78
+ },
+ "ngu_quen": {
+  "ten": "Ngủ quên",
+  "tu_khoa": [
+   "ngủ quên",
+   "dậy muộn",
+   "đi học muộn",
+   "báo thức"
+  ],
+  "lo": 78
+ },
+ "om_khong_xin_phep": {
+  "ten": "Ốm không xin phép",
+  "tu_khoa": [
+   "ốm không xin phép",
+   "nghỉ ốm",
+   "bị ốm",
+   "xin phép nghỉ"
+  ],
+  "lo": 78
  }
 }
