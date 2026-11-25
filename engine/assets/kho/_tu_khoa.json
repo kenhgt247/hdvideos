@@ -3004,5 +3004,205 @@
    "đậu visa"
   ],
   "lo": 79
+ },
+ "truong_bi_siet": {
+  "ten": "Hậu quả: trường bị siết",
+  "tu_khoa": [
+   "trường bị siết",
+   "hậu quả",
+   "hạn chế tuyển sinh",
+   "bị cấm tuyển"
+  ],
+  "lo": 80
+ },
+ "giet_mo": {
+  "ten": "Giết mổ",
+  "tu_khoa": [
+   "giết mổ",
+   "lò mổ",
+   "chế biến thịt",
+   "ngành thịt"
+  ],
+  "lo": 80
+ },
+ "buon_ban": {
+  "ten": "Buôn bán",
+  "tu_khoa": [
+   "buôn bán",
+   "thương mại",
+   "xuất nhập khẩu",
+   "hàng hóa"
+  ],
+  "lo": 80
+ },
+ "dao_tao_tu_dau": {
+  "ten": "Đào tạo từ đầu",
+  "tu_khoa": [
+   "đào tạo từ đầu",
+   "đào tạo",
+   "được hướng dẫn",
+   "phát triển"
+  ],
+  "lo": 80
+ },
+ "nhan_luc_xa_hoi_gia_hoa": {
+  "ten": "Nhu cầu nhân lực cao, xã hội già hóa",
+  "tu_khoa": [
+   "già hóa",
+   "xã hội già",
+   "thiếu nhân lực",
+   "nhu cầu nhân lực"
+  ],
+  "lo": 81
+ },
+ "phi_o_viet_nam": {
+  "ten": "Phí Việt Nam",
+  "tu_khoa": [
+   "phí Việt Nam",
+   "chi phí ở Việt Nam",
+   "chi phí chuẩn bị",
+   "vé máy bay"
+  ],
+  "lo": 81
+ },
+ "phi_cho_truong": {
+  "ten": "Phí cho trường",
+  "tu_khoa": [
+   "phí cho trường",
+   "học phí",
+   "đóng tiền trường",
+   "tiền trường"
+  ],
+  "lo": 81
+ },
+ "om_ai_tra_tien": {
+  "ten": "Sang Đài ốm ai trả tiền?",
+  "tu_khoa": [
+   "ốm ai trả tiền",
+   "viện phí",
+   "nằm viện",
+   "truyền dịch"
+  ],
+  "lo": 81
+ },
+ "mang_the_di_vien": {
+  "ten": "Mang thẻ đi viện",
+  "tu_khoa": [
+   "mang thẻ",
+   "đi viện",
+   "thẻ bảo hiểm",
+   "khám bệnh rẻ"
+  ],
+  "lo": 82
+ },
+ "toan_ly_vung": {
+  "ten": "Toán lý vững",
+  "tu_khoa": [
+   "toán lý",
+   "toán",
+   "vật lý",
+   "học khối tự nhiên"
+  ],
+  "lo": 82
+ },
+ "vuot_trung_quoc": {
+  "ten": "Vượt Trung Quốc chiếm gần 38%",
+  "tu_khoa": [
+   "vượt Trung Quốc",
+   "chiếm gần",
+   "tỷ lệ",
+   "đông nhất"
+  ],
+  "lo": 82
+ },
+ "de_tim_ban_moi": {
+  "ten": "Dễ tìm bạn mới",
+  "tu_khoa": [
+   "dễ tìm bạn",
+   "bạn mới",
+   "cộng đồng đông",
+   "làm quen"
+  ],
+  "lo": 82
+ },
+ "tro_ly_khoa": {
+  "ten": "Trợ lý khoa",
+  "tu_khoa": [
+   "trợ lý khoa",
+   "văn phòng khoa",
+   "cô trợ lý",
+   "ghi chép hồ sơ"
+  ],
+  "lo": 83
+ },
+ "yeu_cau_tung_truong": {
+  "ten": "Yêu cầu riêng của từng trường",
+  "tu_khoa": [
+   "yêu cầu riêng",
+   "từng trường",
+   "điều kiện từng trường",
+   "giấy tờ yêu cầu"
+  ],
+  "lo": 83
+ },
+ "yeu_cau_tung_chuong_trinh": {
+  "ten": "Yêu cầu riêng của từng chương trình",
+  "tu_khoa": [
+   "từng chương trình",
+   "chọn chương trình",
+   "chọn ngành",
+   "chương trình học"
+  ],
+  "lo": 83
+ },
+ "diem_ban_the_nao": {
+  "ten": "Điểm bạn thế nào? Inbox",
+  "tu_khoa": [
+   "điểm bạn",
+   "điểm thế nào",
+   "đánh giá hồ sơ",
+   "inbox"
+  ],
+  "lo": 83
+ },
+ "so_thich_choi_dan": {
+  "ten": "Sở thích: chơi đàn",
+  "tu_khoa": [
+   "sở thích",
+   "chơi đàn",
+   "guitar",
+   "âm nhạc"
+  ],
+  "lo": 84
+ },
+ "so_thich_ve_tranh": {
+  "ten": "Sở thích: vẽ tranh",
+  "tu_khoa": [
+   "sở thích",
+   "vẽ tranh",
+   "hội họa",
+   "năng khiếu"
+  ],
+  "lo": 84
+ },
+ "so_thich_the_thao": {
+  "ten": "Sở thích: thể thao",
+  "tu_khoa": [
+   "sở thích",
+   "bóng đá",
+   "thể thao",
+   "vận động"
+  ],
+  "lo": 84
+ },
+ "so_thich_doc_sach": {
+  "ten": "Sở thích: đọc sách",
+  "tu_khoa": [
+   "đọc sách",
+   "nghe nhạc",
+   "thư giãn",
+   "thời gian rảnh"
+  ],
+  "lo": 84
  }
 }
