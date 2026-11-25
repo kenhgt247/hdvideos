@@ -100,7 +100,9 @@ video{width:100%;max-height:62vh;border-radius:12px;background:#000;margin-top:1
 .bx{border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-top:8px;background:#fff}
 .bx .r{display:flex;align-items:center;gap:8px}
 .bx .r input[type=checkbox]{width:20px;height:20px;flex:none}
-.bx .r input[type=text]{padding:7px 9px;font-size:15px}
+.bx .r textarea.tp{min-height:0;padding:7px 9px;font-size:15px;line-height:1.35;resize:none;overflow:hidden;margin:0}
+.bx .r .btn{flex:none}
+#bxWrite,#bxMake{white-space:normal;line-height:1.3}
 .bx .st{font-size:12.5px;color:var(--mut);margin:4px 0 0 28px}
 .bx .st.ok{color:#1d6b35}.bx .st.er{color:#b3261e}
 .bx textarea{min-height:180px;margin-top:6px;font-size:14px}
@@ -245,7 +247,7 @@ details.opt>summary{font-weight:700;padding:12px 0;cursor:pointer;color:var(--bl
       <button class="btn sm hide" id="bxClear" type="button">Xoá danh sách</button>
     </div>
     <div id="bxList"></div>
-    <button class="btn main hide" id="bxWrite" type="button" style="background:var(--blue)">✨ VIẾT KỊCH BẢN CÁC CHỦ ĐỀ ĐÃ CHỌN</button>
+    <button class="btn main hide" id="bxWrite" type="button" style="background:var(--blue)">✨ VIẾT KỊCH BẢN</button>
     <button class="btn main hide" id="bxMake" type="button">🎬 TẠO TẤT CẢ VIDEO</button>
     <div class="hint" id="bxInfo"></div>
   </div>
@@ -1255,7 +1257,7 @@ $('cfSave').onclick = async () => {
 /* ===== VÒNG TỰ SỬA: còn lỗi thì gửi lại Gemini kèm danh sách lỗi ===== */
 const SOFT = /Nên có ít nhất 1 danh sách|không có hình tên|hơi ngắn/;
 /* ===== LÀM HÀNG LOẠT ===== */
-let BX = store.get('bx', { items: [], theme: '' });
+let BX = store.get('bx', { items: [], theme: '' }), BX_RUN = false;
 $('bxTheme').value = BX.theme || '';
 $('bxTheme').oninput = () => { BX.theme = $('bxTheme').value; bxSave(); };
 function bxSave() { store.set('bx', BX); }
@@ -1275,7 +1277,7 @@ function bxDraw() {
   $('bxList').innerHTML = L.map((it, i) => {
     const [c, t] = bxStatus(it);
     return `<div class="bx"><div class="r"><input type="checkbox" ${it.on ? 'checked' : ''} ${it.id ? 'disabled' : ''} onchange="bxOn(${i},this.checked)">
-      <input type="text" value="${esc(it.topic)}" ${it.script || it.id ? 'readonly' : ''} onchange="bxTopic(${i},this.value)">
+      <textarea class="tp" rows="1" ${it.script || it.id ? 'readonly' : ''} onchange="bxTopic(${i},this.value)" oninput="bxFit(this)">${esc(it.topic)}</textarea>
       ${it.script ? `<button class="btn sm" type="button" onclick="bxOpen(${i})">${it.open ? 'Đóng' : 'Xem/sửa'}</button>` : ''}
       <button class="x" type="button" title="Bỏ" onclick="bxDel(${i})">✕</button></div>
       <div class="st ${c}">${esc(t)}${it.script && !it.id ? ` · <a href="#" onclick="bxRedo(${i});return false">viết lại</a>` : ''}</div>
@@ -1287,7 +1289,10 @@ function bxDraw() {
   $('bxMake').classList.toggle('hide', !sel.some(x => x.script));
   const ready = sel.filter(x => x.script && !checkScript(x.script).E.length).length;
   $('bxMake').textContent = `🎬 TẠO ${ready || ''} VIDEO`.replace('  ', ' ');
+  if (!BX_RUN) $('bxWrite').textContent = `✨ VIẾT ${sel.filter(x => !x.script).length} KỊCH BẢN`;
+  document.querySelectorAll('#bxList textarea.tp').forEach(bxFit);
 }
+function bxFit(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
 function bxOn(i, v) { BX.items[i].on = v; bxSave(); bxDraw(); }
 function bxTopic(i, v) { BX.items[i].topic = v.trim(); bxSave(); }
 function bxOpen(i) { BX.items[i].open = !BX.items[i].open; bxDraw(); }
@@ -1329,7 +1334,6 @@ async function bxFix(text) {
   } catch {}
   return text;
 }
-let BX_RUN = false;
 $('bxWrite').onclick = async () => {
   if (BX_RUN) { BX_RUN = false; $('bxWrite').textContent = '⏳ Đang dừng sau chủ đề này...'; return; }
   if (!needBy()) return;
@@ -1355,7 +1359,7 @@ $('bxWrite').onclick = async () => {
     delete it.busy; bxSave(); bxDraw();
     await new Promise(r => setTimeout(r, 1500));       // nghỉ một chút để Gemini miễn phí không báo quá tải
   }
-  BX_RUN = false; $('bxWrite').textContent = '✨ VIẾT KỊCH BẢN CÁC CHỦ ĐỀ ĐÃ CHỌN'; bxDraw();
+  BX_RUN = false; bxDraw();
   $('bxInfo').textContent = `Đã viết xong ${ok} kịch bản. Bấm "Xem/sửa" để đọc lại, rồi bấm TẠO VIDEO.`;
 };
 $('bxMake').onclick = async () => {
