@@ -1882,10 +1882,26 @@ function showCover(btn, id) {
   if (old) { old.remove(); return; }
   const d = document.createElement('div'); d.className = 'cover'; d.style.marginTop = '10px';
   d.innerHTML = `<img src="/bia/${id}" style="width:100%;max-width:320px;border-radius:12px;border:1px solid var(--line);display:block">
-    <div class="hint">Dùng làm ảnh bìa khi đăng TikTok / Reels / YouTube. Trên điện thoại: nhấn giữ vào ảnh để lưu.</div>
-    <a class="btn sm" href="/bia/${id}?dl=1" download>⬇ Tải ảnh bìa</a>`;
+    <div class="hint">Dùng làm ảnh bìa khi đăng TikTok / Reels / YouTube.</div>
+    <button class="btn sm" type="button">💾 Lưu ảnh bìa</button>`;
   card.appendChild(d);
+  const b = d.querySelector('button');
+  // tải sẵn ảnh để lúc bấm mở bảng Chia sẻ ngay (iPhone cần bấm là mở liền, không được chờ mạng)
+  const ready = fetch('/bia/' + id).then(r => { if (!r.ok) throw new Error('Không tải được ảnh bìa'); return r.blob(); })
+    .then(bl => (COVER[id] = new File([bl], 'anh_bia_' + id + '.jpg', { type: 'image/jpeg' }))).catch(() => null);
+  b.onclick = async () => {
+    const f = COVER[id] || await ready;
+    if (!f) { toast('Không tải được ảnh bìa, thử lại'); return; }
+    if (navigator.canShare && navigator.canShare({ files: [f] })) {
+      try { await navigator.share({ files: [f] }); return; }
+      catch (e) { if (e && e.name === 'AbortError') return; toast('Bấm lại lần nữa để mở bảng lưu ảnh'); return; }
+    }
+    if (isIOS()) { toast('Nhấn giữ vào ảnh rồi chọn "Lưu vào Ảnh"', 5000); return; }   // không mở trang tải file: app trên màn hình chính sẽ kẹt
+    const a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = f.name;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  };
 }
+const COVER = {};
 const fmtN = n => n >= 1e6 ? (n / 1e6).toFixed(1).replace('.0', '') + 'tr' : n >= 1e3 ? (n / 1e3).toFixed(1).replace('.0', '') + 'k' : String(n || 0);
 function statLine(r) {
   if (!r) return '';
