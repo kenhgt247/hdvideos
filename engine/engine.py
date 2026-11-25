@@ -2176,10 +2176,9 @@ def sfx_track(plans, rate=44100, pen_vol=0.05, seed=7):
                 if n < 64:
                     break
                 x = rng.standard_normal(n + 64).astype(np.float32)
-                hp = x - _smooth(x, 6)                     # tiếng giấy rít (đã dịu bớt)
-                mid = _smooth(x, 4) - _smooth(x, 24)       # thân tiếng bút (trầm, êm)
-                nz = _norm_noise(0.3 * hp + 0.7 * mid)[32:32 + n]
-                env = np.sin(np.linspace(0, np.pi, n)) ** 0.6
+                mid = _smooth(x, 6) - _smooth(x, 40)       # thân tiếng bút (trầm, êm, không rít)
+                nz = _norm_noise(mid)[32:32 + n]
+                env = np.sin(np.linspace(0, np.pi, n)) ** 1.5         # vào/ra mềm
                 env *= 0.75 + 0.25 * np.sin(np.linspace(0, rng.uniform(6, 14) * np.pi, n))
                 a = off + int(t * rate)
                 b = min(a + n, off + ln)
@@ -2193,16 +2192,16 @@ def sfx_track(plans, rate=44100, pen_vol=0.05, seed=7):
             k = np.linspace(0, 1, n)
             env = np.abs(np.sin(np.pi * 4 * k)) ** 0.5 * np.minimum(1, (1 - k) * 8)
             a = off + ln - n
-            out[a:a + n] += rub * env * amp * 0.45
+            out[a:a + n] += rub * env * amp * 0.3
         off += ln
     return _soften(out, rate)
 
 
 def _soften(x, rate):
-    """Lọc bỏ tần số chói (>3.5 kHz) và tiếng ù (<250 Hz) để tiếng bút/lau bảng êm tai."""
+    """Lọc bỏ tần số chói (>2.2 kHz) và tiếng ù (<200 Hz) để tiếng bút/lau bảng êm tai."""
     try:
         from scipy.signal import butter, sosfilt
-        sos = butter(4, [250, 3500], btype='band', fs=rate, output='sos')
+        sos = butter(4, [200, 2200], btype='band', fs=rate, output='sos')
         return sosfilt(sos, x).astype(np.float32) * 1.6
     except Exception:
         return _smooth(x, 5)
@@ -2734,7 +2733,7 @@ def render(script_text, opts, progress=lambda msg, frac: None):
                 out.writeframes(data + b'\x00' * (total * 4 - len(data)))
 
         if opts.get('pen_sound', True):
-            mix_into_wav(narr, sfx_track(plans, rate_hz, 0.022 * float(opts.get('pen_vol', 1.0))))
+            mix_into_wav(narr, sfx_track(plans, rate_hz, 0.018 * float(opts.get('pen_vol', 1.0))))
 
         tmp_out = out_path + '.dang-tao.mp4'
         music = opts.get('music')
