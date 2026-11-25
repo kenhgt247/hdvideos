@@ -3204,5 +3204,85 @@
    "thời gian rảnh"
   ],
   "lo": 84
+ },
+ "chua_tung_o_dai_loan": {
+  "ten": "Chưa từng học, làm việc ở Đài",
+  "tu_khoa": [
+   "chưa từng",
+   "chưa từng học",
+   "làm việc ở Đài",
+   "lần đầu sang Đài"
+  ],
+  "lo": 85
+ },
+ "hoc_nganh_gi": {
+  "ten": "Học ngành gì?",
+  "tu_khoa": [
+   "học ngành gì",
+   "ngành nào",
+   "tư vấn chọn ngành",
+   "các ngành"
+  ],
+  "lo": 85
+ },
+ "len_nam_2_can_b1": {
+  "ten": "Lên năm 2: nhiều trường cần B1",
+  "tu_khoa": [
+   "lên năm 2",
+   "B1",
+   "chứng chỉ B1",
+   "cố gắng thi"
+  ],
+  "lo": 85
+ },
+ "he_nay_co_loi_gi": {
+  "ten": "Hệ này có lợi gì?",
+  "tu_khoa": [
+   "có lợi gì",
+   "lợi ích",
+   "ưu điểm",
+   "tương lai tốt"
+  ],
+  "lo": 85
+ },
+ "o_lai_lam_viec_2_nam": {
+  "ten": "Ra trường ở lại làm việc 2 năm",
+  "tu_khoa": [
+   "ra trường",
+   "ở lại làm việc",
+   "sau tốt nghiệp",
+   "đi làm sau khi tốt nghiệp"
+  ],
+  "lo": 86
+ },
+ "tuoi_18_den_22": {
+  "ten": "Tuổi 18 đến 22",
+  "tu_khoa": [
+   "tuổi",
+   "độ tuổi",
+   "18 đến 22",
+   "đủ tuổi"
+  ],
+  "lo": 86
+ },
+ "nganh_logistics": {
+  "ten": "Ngành logistics",
+  "tu_khoa": [
+   "logistics",
+   "ngành logistics",
+   "vận tải",
+   "cảng biển"
+  ],
+  "lo": 86
+ },
+ "logistics_kho_hang": {
+  "ten": "Logistics: làm việc ở kho hàng",
+  "tu_khoa": [
+   "kho hàng",
+   "xe nâng",
+   "quản lý kho",
+   "giao nhận"
+  ],
+  "lo": 86
  }
 }
