@@ -265,6 +265,8 @@ const AI_REMIX = `
 - CẤM SAO CHÉP: không chép lại bất kỳ câu nào; không được có cụm 6 chữ liên tiếp giống bài gốc. Câu mở phải khác hẳn câu mở của họ. Đổi thứ tự trình bày, đổi ví dụ, đổi cách kết. Giọng tư vấn viên Du Học Hải Dương, nói với "bạn".
 - Bỏ hết tên kênh, tên người, tên trung tâm, số điện thoại, link, mã giảm giá, lời quảng cáo của bên kia. Không nhắc tới video gốc.
 - Nếu bài gốc có thông tin sai, phóng đại hoặc hứa hẹn kiểu môi giới (bao đậu visa, đi làm kiếm nhiều tiền...), KHÔNG lặp lại; chỉ giữ phần đúng và hữu ích.
+- Lời gốc có thể là bản dịch máy (tiếng Anh, sai chính tả, lộn xộn): hiểu ý rồi viết tiếng Việt tự nhiên.
+- Nếu lời gốc có nhiều ý mà thời lượng ngắn: chỉ chọn MỘT ý hay nhất (hoặc ý ghi ở mục CHỈ VIẾT VỀ), các ý khác bỏ.
 - Chữ Trung/Hàn chuyển sang phiên âm và giải nghĩa tiếng Việt.
 - Phần NGUỒN: ghi trang chính thức đã dùng; nếu không tra web thì ghi "Ý tưởng tham khảo, nội dung viết lại".`;
 const AI_REMIX_FREE = `
@@ -289,7 +291,7 @@ function copyScore(src, script) {
 }
 async function getTranscript(env, link) {
   const H = { 'x-api-key': env.SUPADATA_KEY };
-  let r = await fetch('https://api.supadata.ai/v1/transcript?text=true&mode=auto&url=' + encodeURIComponent(link), { headers: H });
+  let r = await fetch('https://api.supadata.ai/v1/transcript?text=true&mode=auto&lang=vi&url=' + encodeURIComponent(link), { headers: H });
   let d = await r.json().catch(() => ({}));
   if (r.status === 202 && d.jobId) {
     for (let k = 0; k < 40; k++) {
@@ -864,7 +866,7 @@ export default {
           : remix ? AI_REMIX + (mode === 'paid' ? AI_REMIX_PAID : AI_REMIX_FREE) : mode === 'paid' ? AI_PAID : AI_FREE) + durationRule;
         const user = fix ? `KỊCH BẢN CẦN SỬA:\n\`\`\`\n${content}\n\`\`\`\n\nCÁC LỖI CẦN SỬA:\n${issues.map((x, i) => (i + 1) + '. ' + x).join('\n')}`
           : convert ? `NỘI DUNG CỦA TÔI (chuyển thành kịch bản, giữ nguyên ý và số liệu):\n${content}`
-          : remix ? `LỜI VIDEO CỦA KÊNH KHÁC (chỉ học ý tưởng, viết mới hoàn toàn, không chép câu):\n${content}` + (extra ? `\n\nTHÔNG TIN THÊM (của trung tâm, dùng đúng như vậy):\n${extra}` : '')
+          : remix ? (b.focus ? `CHỈ VIẾT VỀ: ${String(b.focus).slice(0, 200)}\n\n` : '') + `LỜI VIDEO CỦA KÊNH KHÁC (chỉ học ý tưởng, viết mới hoàn toàn, không chép câu):\n${content}` + (extra ? `\n\nTHÔNG TIN THÊM (của trung tâm, dùng đúng như vậy):\n${extra}` : '')
           : `CHỦ ĐỀ: ${topic}` + (extra ? `\n\nTHÔNG TIN THÊM (của trung tâm, dùng đúng như vậy):\n${extra}` : '');
         let out, res, copy = null;
         try {
@@ -890,6 +892,25 @@ export default {
         }
         return json({ script: res.script, caption: res.caption, sources: convert ? [] : sources.slice(0, 8), mode, convert, duration, copy,
           verified: !convert && mode === 'paid' && sources.length > 0, used: used + 1, limit: admin ? null : limit });
+      }
+      if (p === '/api/ai/split' && req.method === 'POST') {
+        // Lời video dài -> tách thành nhiều chủ đề video ngắn (Gemini miễn phí, không tính lượt)
+        const b = await req.json();
+        const content = String(b.content || '').trim().slice(0, 12000);
+        if (content.length < 200) return err('Lời video ngắn, không cần tách. Bấm VIẾT LẠI là được.');
+        if (!env.GEMINI_KEY) return err('Chưa gắn khoá Gemini. Admin xem hướng dẫn trong mục Cài đặt.');
+        const sys = `Bạn lên kế hoạch video ngắn (30–60 giây) cho trung tâm Du Học Hải Dương (du học Đài Loan, Hàn Quốc), khán giả là học sinh và phụ huynh Việt Nam.
+Tin nhắn là LỜI MỘT VIDEO DÀI CỦA KÊNH KHÁC (có thể là bản dịch máy, lộn xộn). Hãy tách thành 2 đến 8 chủ đề video ngắn, mỗi chủ đề đúng MỘT ý, viết bằng tiếng Việt, bằng lời của bạn (không chép câu gốc), hấp dẫn kiểu "sai lầm", "cảnh báo", "bạn có biết", "checklist".
+Bỏ phần quảng cáo, tên trung tâm/kênh của họ, lời hứa kiểu môi giới. Ý nào trùng nhau thì gộp. Không đưa con số vào tên chủ đề.
+CHỈ trả về JSON: [{"topic":"tên chủ đề video, dưới 15 chữ"}]`;
+        let out;
+        try { out = await aiGemini(env, sys, content); } catch (e) { return err(String(e.message || e), 502); }
+        const txt = out.text.replace(/```(json)?/g, '');
+        let arr = [];
+        try { arr = JSON.parse(txt.slice(txt.indexOf('['), txt.lastIndexOf(']') + 1)); } catch (e) { arr = []; }
+        const ideas = (Array.isArray(arr) ? arr : []).map(x => String((x && x.topic) || x || '').trim().slice(0, 160)).filter(x => x.length > 5).slice(0, 8);
+        if (!ideas.length) return err('AI chưa tách được, hãy thử lại.', 502);
+        return json({ ideas });
       }
       if (p === '/api/ai/transcript' && req.method === 'POST') {
         const b = await req.json();

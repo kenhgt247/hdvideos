@@ -244,7 +244,9 @@ details.opt>summary{font-weight:700;padding:12px 0;cursor:pointer;color:var(--bl
       <input type="text" id="lkUrl" placeholder="Dán link video, ví dụ https://www.tiktok.com/@.../video/..." style="margin-top:8px">
       <button class="btn" id="lkGet" type="button" style="width:100%;margin-top:8px">📥 Lấy lời video</button>
       <textarea id="lkText" rows="4" style="min-height:0;margin-top:8px" placeholder="Lời video sẽ hiện ở đây. Không lấy được thì tự dán lời vào ô này."></textarea>
-      <button class="btn main" id="lkGo" type="button" style="margin-top:8px">🔁 VIẾT LẠI THÀNH KỊCH BẢN CỦA MÌNH</button>
+      <div class="hint" id="lkLen"></div>
+      <button class="btn main" id="lkGo" type="button" style="margin-top:8px">🔁 VIẾT LẠI THÀNH 1 KỊCH BẢN</button>
+      <button class="btn" id="lkSplit" type="button" style="width:100%;margin-top:8px">✂️ Video dài? Tách thành nhiều video ngắn</button>
       <div class="hint" id="lkInfo"></div>
     </details>
   </div>
@@ -1286,7 +1288,26 @@ $('aiGo').onclick = async () => {
 /* ===== HỌC TỪ VIDEO HOT: lấy lời -> AI viết lại, không chép ===== */
 $('lkUrl').value = store.get('lk_url', ''); $('lkText').value = store.get('lk_text', '');
 $('lkUrl').oninput = () => store.set('lk_url', $('lkUrl').value.trim());
-$('lkText').oninput = () => store.set('lk_text', $('lkText').value);
+function lkLen() {
+  const n = $('lkText').value.trim().split(/\s+/).filter(Boolean).length;
+  $('lkLen').innerHTML = n > 250 ? `Lời video dài <b>${n} chữ</b>, nhiều ý. Nên bấm <b>✂️ Tách thành nhiều video ngắn</b>: mỗi ý một video, giữ chân người xem tốt hơn.` : '';
+}
+$('lkText').oninput = () => { store.set('lk_text', $('lkText').value); lkLen(); };
+lkLen();
+$('lkSplit').onclick = async () => {
+  if ($('lkText').value.trim().length < 20 && !(await lkFetch())) return;
+  const btn = $('lkSplit'); if (btn.disabled) return; btn.disabled = true;
+  let sec = 0; const tick = setInterval(() => { sec++; btn.textContent = `⏳ AI đang tách ý... ${sec}s`; }, 1000);
+  try {
+    const src = $('lkText').value.trim().slice(0, 12000);
+    const d = await api('/api/ai/split', { content: src });
+    d.ideas.forEach(t => BX.items.push({ topic: t, on: true, src }));
+    bxSave(); setMode('batch'); bxDraw();
+    $('bxCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    toast(`Đã tách thành ${d.ideas.length} video. Bỏ tích ý không ưng rồi bấm VIẾT KỊCH BẢN`, 5000);
+  } catch (e) { toast(e.message, 6000); }
+  clearInterval(tick); btn.disabled = false; btn.textContent = '✂️ Video dài? Tách thành nhiều video ngắn';
+};
 async function lkFetch() {
   const url = $('lkUrl').value.trim();
   if (!/^https?:\/\//.test(url)) { toast('Hãy dán link video trước'); $('lkUrl').focus(); return false; }
@@ -1294,7 +1315,7 @@ async function lkFetch() {
   let sec = 0; const tick = setInterval(() => { sec++; btn.textContent = `⏳ Đang lấy lời... ${sec}s`; }, 1000);
   try {
     const d = await api('/api/ai/transcript', { url });
-    $('lkText').value = d.text; store.set('lk_text', d.text);
+    $('lkText').value = d.text; store.set('lk_text', d.text); lkLen();
     $('lkInfo').textContent = `Đã lấy ${d.text.split(/\s+/).length} chữ lời video. Bấm VIẾT LẠI để AI viết kịch bản của mình.`;
     return true;
   } catch (e) { toast(e.message, 6000); $('lkInfo').textContent = e.message; return false; }
@@ -1323,7 +1344,7 @@ $('lkGo').onclick = async () => {
     $('scriptCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
     toast(r.E.length || r.W.length ? 'Đã viết lại, còn vài chỗ cần sửa: xem ô cam' : 'Đã viết lại xong, đúng định dạng! Xem lại rồi bấm TẠO VIDEO', 4000);
   } catch (e) { toast(e.message, 6000); }
-  clearInterval(tick); btn.disabled = false; btn.textContent = '🔁 VIẾT LẠI THÀNH KỊCH BẢN CỦA MÌNH';
+  clearInterval(tick); btn.disabled = false; btn.textContent = '🔁 VIẾT LẠI THÀNH 1 KỊCH BẢN';
 };
 function drawAiCfg() {
   const c = AI_CFG; if (!c || !c.admin) return;
@@ -1431,7 +1452,8 @@ $('bxWrite').onclick = async () => {
     if (!BX_RUN) break;
     it.busy = 'AI đang viết...'; it.err = ''; bxDraw();
     try {
-      const d = await api('/api/ai/script', { topic: it.topic, mode: 'free', duration: 'quick', by: $('by').value });
+      const d = await api('/api/ai/script', it.src ? { task: 'remix', content: it.src, focus: it.topic, mode: 'free', duration: 'quick', by: $('by').value }
+        : { topic: it.topic, mode: 'free', duration: 'quick', by: $('by').value });
       let t = fixScript(d.script);
       it.busy = 'Đang tự sửa định dạng...'; bxDraw();
       t = await bxFix(t);
