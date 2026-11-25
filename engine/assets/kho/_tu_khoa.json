@@ -2879,5 +2879,45 @@
    "số điện thoại"
   ],
   "lo": 76
+ },
+ "tiet_kiem_chi_phi": {
+  "ten": "Tiết kiệm chi phí",
+  "tu_khoa": [
+   "tiết kiệm chi phí",
+   "tiết kiệm tiền",
+   "heo đất",
+   "rẻ hơn"
+  ],
+  "lo": 77
+ },
+ "tu_do_gio_giac": {
+  "ten": "Tự do giờ giấc",
+  "tu_khoa": [
+   "tự do giờ giấc",
+   "thoải mái",
+   "không giờ giới nghiêm",
+   "tự do"
+  ],
+  "lo": 77
+ },
+ "khong_gian_rieng_tu": {
+  "ten": "Không gian riêng tư",
+  "tu_khoa": [
+   "không gian riêng tư",
+   "phòng riêng",
+   "yên tĩnh",
+   "tự học"
+  ],
+  "lo": 77
+ },
+ "chi_phi_cao_hon": {
+  "ten": "Chi phí cao hơn",
+  "tu_khoa": [
+   "chi phí cao hơn",
+   "đắt hơn",
+   "tốn kém",
+   "giá tăng"
+  ],
+  "lo": 77
  }
 }
