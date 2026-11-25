@@ -1650,7 +1650,8 @@ def auto_style(scenes):
         n_bul = sum(1 for txt, _ in lines if txt[:2] in ('- ', '+ '))
         if sc.get('flow'):
             pass
-        elif not has_icon and not sc.get('noicon') and n_bul < 2 and len(text_idx) <= 4 and not (si == n - 1 and n > 1):
+        elif not has_icon and not sc.get('noicon') and n_bul < 2 and len(text_idx) <= 4 and not (si == n - 1 and n > 1) \
+                and not scene_kind(dict(sc, lines=lines)):
             screen = ' '.join(t for t, _ in lines)
             icon = pick_icon(screen, ' '.join(sc['say']), avoid=(last_icon,) if last_icon else ())
             if (not icon or not kho_has(icon)) and len(screen) > 3:
@@ -1738,11 +1739,82 @@ def arrow_path(x0, y0, x1, y1, seed=0, head=26):
     return seg((x0, y0), (x1, y1), bow=5, seed=seed) + [a1, (x1, y1), a2]
 
 
+VS_RE = re.compile(r'^\s*(.{1,28}?)\s+(?:vs\.?|VS\.?|Vs\.?)\s+(.{1,28}?)\s*$')
+BIG_RE = re.compile(r'^[~≈>+<-]?\s*\d[\d.,]*\s*(?:%|\+|k|K)?\s*[^\d\s/]{0,7}(?:\s?[^\d\s/]{1,6})?(?:\s*/\s*[^\s/]{1,6})?$')
+
+
+def is_two_col(txt):
+    return txt.count('|') == 1 and '||' not in txt and all(c.strip() for c in txt.split('|'))
+
+
+def is_big_number(txt, tags=()):
+    plain = txt.replace('*', '').strip()
+    if any(norm(t) in ('so lon', 'so') for t in tags):
+        return bool(plain)
+    return len(plain) <= 14 and bool(re.search(r'\d', plain)) and bool(BIG_RE.match(plain)) and '|' not in plain
+
+
+def scene_kind(scene):
+    """'vs' (so sánh 2 cột), 'big' (số liệu lớn) hoặc ''."""
+    texts = [(t, tg) for t, tg in scene['lines'] if t and not tag_icon(tg) and 'logo' not in tg]
+    if not texts:
+        return ''
+    if any(VS_RE.match(t.replace('*', '')) for t, _ in texts) or sum(1 for t, _ in texts if is_two_col(t)) >= 2:
+        return 'vs'
+    t0, tg0 = texts[0]
+    if len(texts) <= 3 and not any(t[:2] in ('- ', '+ ') or t.startswith('\u00bb') for t, _ in texts) \
+            and is_big_number(t0, tg0):
+        return 'big'
+    return ''
+
+
+def vs_block(lines, scale):
+    """Bảng so sánh 2 cột: tiêu đề 'A vs B' (tuỳ chọn) + các dòng 'Tiêu chí: trái | phải'."""
+    head, rows, rest = None, [], []
+    for t, tg in lines:
+        p_ = t.replace('*', '').strip()
+        m = VS_RE.match(p_)
+        if m and head is None and not rows:
+            head = (m.group(1).strip(), m.group(2).strip())
+        elif is_two_col(p_):
+            a, b = [x.strip() for x in p_.split('|')]
+            lab = ''
+            if ':' in a and len(a.split(':', 1)[0]) <= 22:
+                lab, a = [x.strip() for x in a.split(':', 1)]
+            rows.append((lab, a, b))
+        else:
+            rest.append((t, tg))
+    colw = LMAXW / 2
+    hs = min([fit(x, 96 * scale, colw * 0.64) for x in head] if head else [96 * scale])
+    rs = min([fit(x, 92 * scale, colw * 0.86) for _, a, b in rows for x in (a, b)] or [92 * scale])
+    ls = min([fit(l_, 58 * scale, LMAXW * 0.9) for l_, _, _ in rows if l_] or [58 * scale])
+    hh = (line_h(hs) * 0.9 + 70) if head else 0
+    rh = [(line_h(ls) * 0.85 if l_ else 0) + line_h(rs) * 0.9 + 30 * scale for l_, _, _ in rows]
+    return {'k': 'vs', 'head': head, 'rows': rows, 'hs': hs, 'rs': rs, 'ls': ls, 'hh': hh, 'rh': rh,
+            'h': hh + sum(rh) + 20}, rest
+
+
 def build_blocks(scene, scale):
     base = 118 * scale
     blocks, lines, i = [], scene['lines'], 0
+    kind = '' if scene.get('_novs') else scene_kind(scene)
+    if kind == 'vs':
+        vb, rest = vs_block(lines, scale)
+        other = build_blocks(dict(scene, lines=rest, _novs=True), scale) if rest else []
+        first_txt = next((t for t, tg in lines if t and not tag_icon(tg)), '')
+        lead = [b for b in other if b['k'] == 'text' and b['text'].strip() and b['text'] in first_txt]
+        return lead + [vb] + [b for b in other if b not in lead]
+    big_done = False
     while i < len(lines):
         txt, tags = lines[i]
+        if kind == 'big' and not big_done and txt and not tag_icon(tags):
+            big_done = True
+            plain = txt.replace('*', '').strip()
+            size = fit(plain, base * 2.7, LMAXW * 0.92)
+            blocks.append({'k': 'big', 'text': plain, 'size': size, 'color': tag_color(tags, None) or RED,
+                           'h': line_h(size) * 0.92 + 40 * scale})
+            i += 1
+            continue
         if txt.startswith('\u00bb'):                              # sơ đồ quy trình
             steps = txt[1:].split('\t')
             blocks.append(flow_block(steps, scale))
@@ -1935,6 +2007,58 @@ def layout_scene(scene, idx, has_logo_end):
                 items += parts
                 items.append(Txt(t, sz, col, cy, left=LCX + LMAXW * 0.02))
                 items[first].sync = t
+        elif b['k'] == 'big':                                    # số liệu lớn: con số to + nét vẽ nhấn
+            sz = b['size']
+            cy = y + line_h(sz) * 0.46
+            t = Txt(b['text'], sz, b['color'], cy, cx=LCX)
+            items.append(t)
+            items.append(Path(wavy(t.left + 20, t.right - 20, cy + sz * 0.5, amp=10), ORANGE, 12))
+            for j, ang in enumerate((-2.5, -1.95, -1.4)):          # 3 tia sáng góc trên phải
+                r0, r1 = sz * 0.25, sz * 0.48
+                ox, oy = t.right - 6, cy - sz * 0.32
+                items.append(Path(poly([(ox + r0 * math.cos(ang + 1.6), oy + r0 * math.sin(ang + 1.6)),
+                                        (ox + r1 * math.cos(ang + 1.6), oy + r1 * math.sin(ang + 1.6))],
+                                       seed=seed + j, bow=2), ORANGE, 9))
+        elif b['k'] == 'vs':                                     # so sánh 2 cột
+            colw = LMAXW / 2
+            xl, xr = LCX - colw / 2, LCX + colw / 2
+            yy = y
+            if b['head']:
+                hs = b['hs']
+                cy = yy + b['hh'] / 2 - 10
+                for j, (txt_, col) in enumerate(zip(b['head'], (BLUE, RED))):
+                    cx = xl if j == 0 else xr
+                    t = Txt(txt_, hs, col, cy, cx=cx)
+                    first = len(items)
+                    half = min(colw * 0.36, font(hs).getlength(txt_) / 2 + 30)
+                    items += rough_box(cx - half, cy - line_h(hs) * 0.5, cx + half, cy + line_h(hs) * 0.5,
+                                       col, seed=seed + j * 5)
+                    items.append(t)
+                    items[first].sync = txt_
+                vs = Txt('VS', int(hs * 0.62), ORANGE, cy, cx=LCX)
+                items.append(Path(ellipse(LCX, cy + 3, hs * 0.5, hs * 0.42, seed=seed + 3), ORANGE, 8))
+                items.append(vs)
+                yy += b['hh']
+            top_line = yy
+            for j, ((lab, a, b_), rh) in enumerate(zip(b['rows'], b['rh'])):
+                ry = yy
+                if lab:
+                    lt = Txt(lab, b['ls'], GREY, ry + line_h(b['ls']) * 0.42, cx=LCX)
+                    items.append(lt)
+                    lt.sync = lab
+                    ry += line_h(b['ls']) * 0.85
+                cy = ry + line_h(b['rs']) * 0.45
+                ta = Txt(a, b['rs'], INK, cy, cx=xl)
+                tb = Txt(b_, b['rs'], INK, cy, cx=xr)
+                if not lab:
+                    ta.sync = a
+                items += [ta, tb]
+                hv = line_h(b['rs']) * 0.42                      # vạch chia ngắn giữa 2 giá trị
+                items.append(Path(poly([(LCX, cy - hv), (LCX + 2, cy + hv)], seed=seed + j + 20, bow=3), (190, 190, 185), 5))
+                yy += rh
+                if j < len(b['rows']) - 1:                       # gạch ngang mảnh giữa các dòng
+                    items.append(Path(poly([(LCX - LMAXW * 0.46, yy - 14 * scale), (LCX + LMAXW * 0.46, yy - 12 * scale)],
+                                           seed=seed + j, bow=3), (205, 205, 200), 4))
         elif b['k'] == 'flow':
             st, sz, bh = b['steps'], b['size'], b['bh']
             n = len(st)
@@ -2298,7 +2422,8 @@ def _sync_frac(say_n, key):
 
 # ------------------------------------------------------------------ dựng
 class Renderer:
-    def __init__(self, logo_path=None, label=None, bg='trang', subs=False, trans='xoa', hook=True):
+    def __init__(self, logo_path=None, label=None, bg='trang', subs=False, trans='xoa', hook=True, cam=False):
+        self.cam = bool(cam)
         self.trans = trans if trans in ('xoa', 'lia', 'xen') else 'xoa'
         self.hook = bool(hook)
         hj = json.load(open(os.path.join(ASSETS, 'hand.json')))
@@ -2433,12 +2558,12 @@ class Renderer:
                 poses[-1] = 'like'
             budget = max(1, int((n - 2) * 0.4))
             for i in range(1, n - 1):
-                if budget and poses[i - 1] is None and important_scene(scenes[i]):
+                if budget and poses[i - 1] is None and important_scene(scenes[i]) and scene_kind(scenes[i]) != 'vs':
                     poses[i] = 'chi'
                     budget -= 1
         for i, sc in enumerate(scenes):
             logo_end = any('logo' in tags for _, tags in sc['lines'])
-            pose = poses[i]
+            pose = poses[i] if not (poses[i] and not logo_end and scene_kind(sc) == 'vs') else None
             if pose == 'like':
                 LCX, LMAXW = LAY['col_like']
             elif pose:
@@ -2560,13 +2685,45 @@ class Renderer:
             return None
         return hop(sch[-1][0].pos(1, t), OFF, k)
 
+    CAM_Z = 0.06            # phóng tối đa 6%
+
+    def _focus_raw(self, pl, t):
+        sch = [x for x in pl['sch'] if not getattr(x[0], 'nohand', False) and not getattr(x[0], 'presenter', False)]
+        if not sch:
+            return None
+        cur = sch[0]
+        for x in sch:
+            if x[1] <= t:
+                cur = x
+        it, s0, e0 = cur
+        try:
+            p_ = it.pos(clamp((t - s0) / max(e0 - s0, 1e-3)), t)
+            return (float(p_[0]), float(p_[1]))
+        except Exception:
+            return None
+
+    def cam_view(self, pl, t):
+        """(độ phóng, tâm x, tâm y): phóng nhẹ theo chỗ tay đang vẽ, vẽ xong thì lùi ra toàn cảnh."""
+        if not self.cam or pl.get('logo_end'):
+            return 1.0, W / 2, H / 2
+        ed = pl['ed']
+        z_in = eio(clamp((t - 0.15) / 1.0))
+        z_out = 1 - eio(clamp((t - ed - 0.2) / 1.1))
+        z_end = 1 - eio(clamp((t - (pl['dur'] - ERASE - 0.7)) / 0.6)) if not pl['last'] else 1.0
+        z = 1 + self.CAM_Z * z_in * z_out * z_end
+        pts = [self._focus_raw(pl, t - k * 0.3) for k in range(6)]
+        pts = [q for q in pts if q]
+        if not pts or z <= 1.0005:
+            return 1.0, W / 2, H / 2
+        cx = sum(q[0] for q in pts) / len(pts)
+        cy = sum(q[1] for q in pts) / len(pts)
+        cx = W / 2 + (cx - W / 2) * 0.7                     # chỉ nghiêng về phía chỗ đang vẽ, không bám sát
+        cy = (TOP_AREA + BOTTOM_AREA) / 2 + (cy - (TOP_AREA + BOTTOM_AREA) / 2) * 0.7
+        hw, hh = W / (2 * z), H / (2 * z)
+        return z, min(max(cx, hw), W - hw), min(max(cy, hh), H - hh)
+
     def frame(self, pl, t, first, prog=None):
         f = self.paper.copy()
-        if not pl['logo_end']:
-            lg = with_alpha(self.logo_small, eo(t / 0.4) if first else 1.0)
-            f.paste(lg, LAY['logo_xy'], lg)
-        if self.label is not None:
-            f.paste(self.label, (W - LAY['label_r'] - self.label.width, LAY['label_y']), self.label)
         if pl['logo_end']:
             k = eo((t - 0.1) / 0.6)
             if k > 0:
@@ -2578,17 +2735,28 @@ class Renderer:
         for it, s, e in pl['sch']:
             if not isinstance(it, Fill):
                 it.draw(f, (t - s) / max(e - s, 1e-3))
-        if prog is not None:
-            d = ImageDraw.Draw(f)
-            bx0, by0, bx1 = LAY['bar']
-            d.rounded_rectangle((bx0, by0, bx1, by0 + 12), 6, fill=(232, 232, 228))
-            d.rounded_rectangle((bx0, by0, bx0 + max(12, int((bx1 - bx0) * clamp(prog))), by0 + 12), 6, fill=ORANGE)
         hp = self.hand_pos(pl, t)
         if hp:
             lift = hp[2] if len(hp) > 2 else 0.0
             hx, hy = int(hp[0] - self.tip[0]), int(hp[1] - self.tip[1])
             f.paste(self.hand_shadow, (hx + int(14 + 30 * lift), hy + int(18 + 52 * lift)), self.hand_shadow)
             f.paste(self.hand, (hx, hy), self.hand)
+        z, zx, zy = self.cam_view(pl, t)
+        if z > 1.0005:                                   # camera phóng nhẹ (logo, nhãn, thanh tiến độ đứng yên)
+            hw, hh = W / (2 * z), H / (2 * z)
+            f = f.crop((int(zx - hw), int(zy - hh), int(zx + hw), int(zy + hh))).resize((W, H), Image.BILINEAR)
+            top = LAY['logo_xy'][1] + self.logo_small.height + 8
+            f.paste(self.paper.crop((0, 0, W, top)), (0, 0))
+        if not pl['logo_end']:
+            lg = with_alpha(self.logo_small, eo(t / 0.4) if first else 1.0)
+            f.paste(lg, LAY['logo_xy'], lg)
+        if self.label is not None:
+            f.paste(self.label, (W - LAY['label_r'] - self.label.width, LAY['label_y']), self.label)
+        if prog is not None:
+            d = ImageDraw.Draw(f)
+            bx0, by0, bx1 = LAY['bar']
+            d.rounded_rectangle((bx0, by0, bx1, by0 + 12), 6, fill=(232, 232, 228))
+            d.rounded_rectangle((bx0, by0, bx0 + max(12, int((bx1 - bx0) * clamp(prog))), by0 + 12), 6, fill=ORANGE)
         if self.subs:
             self.draw_sub(f, pl, t)
         if not pl['last'] and not pl.get('keep_next') and t > pl['dur'] - ERASE:
@@ -2834,7 +3002,7 @@ def render(script_text, opts, progress=lambda msg, frac: None):
 
         progress('Đang dàn trang...', 0.28)
         r = Renderer(opts.get('logo'), opts.get('label'), opts.get('bg', 'trang'), opts.get('subs', False),
-                     opts.get('trans', 'xoa'), opts.get('hook', True))
+                     opts.get('trans', 'xoa'), opts.get('hook', True), opts.get('cam', True))
         plans = r.plan(scenes, durs, resolve_gender(opts))
         total_frames = sum(p['n'] for p in plans)
         done = 0

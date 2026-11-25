@@ -54,6 +54,7 @@ def main():
     tr = job.get('trans') or 'xoa'
     opts['trans'] = tr if tr in ('xoa', 'lia', 'xen') else 'xoa'
     opts['hook'] = job.get('hook', True) is not False
+    opts['cam'] = job.get('cam', True) is not False
     pen = job.get('pen', 1)
     pen = {True: 1.0, False: 0.0}.get(pen, pen)
     try:

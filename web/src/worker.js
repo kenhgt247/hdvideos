@@ -494,6 +494,7 @@ export default {
           trans: ['xoa', 'lia', 'xen'].includes(b.trans) ? b.trans : 'xen',
           reveal: b.reveal === 'quet' ? 'quet' : 'net',
           hook: b.hook !== false,
+          cam: b.cam !== false,
           tpl: /^[a-z0-9_]{1,30}$/.test(b.tpl || '') ? b.tpl : '',
           ab: ['A', 'B'].includes(b.ab) ? b.ab : '',
           abg: /^[a-z0-9]{1,24}$/.test(b.abg || '') ? b.abg : '',

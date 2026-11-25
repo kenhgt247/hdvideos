@@ -373,6 +373,7 @@ BÍ QUYẾT GIỮ NGƯỜI XEM:
     <select id="reveal"><option value="net">Vẽ nét đen rồi tô màu bằng cọ</option><option value="quet">Quét 3 bước: nét chì → tô màu</option></select>
     <label class="chk"><input type="checkbox" id="stroke" checked> Vẽ từng nét như người thật (chữ, ảnh, nhân vật)</label>
     <label class="chk"><input type="checkbox" id="hook" checked> Câu mở hiện ngay từ giây đầu (không mở đầu bằng bảng trắng)</label>
+    <label class="chk"><input type="checkbox" id="cam" checked> Camera phóng nhẹ vào chỗ đang vẽ (video bớt tĩnh)</label>
     <label class="chk"><input type="checkbox" id="subs"> Hiện phụ đề chạy theo giọng đọc</label>
     <label class="f" for="pen">Tiếng bút vẽ</label>
     <select id="pen"><option value="0">Tắt</option><option value="0.5">Rất nhỏ</option><option value="1" selected>Nhỏ</option><option value="1.8">Vừa</option></select>
@@ -586,6 +587,7 @@ FIELDS.forEach(k => { if (k !== 'voice' && k !== 'name') { const v = store.get(k
 $('subs').checked = store.get('subs', false);
 $('stroke').checked = store.get('stroke', true);
 $('hook').checked = store.get('hook', true);
+$('cam').checked = store.get('cam', true);
 $('stroke').onchange = () => store.set('stroke', $('stroke').checked);
 $('subs').onchange = () => store.set('subs', $('subs').checked);
 if (!$('bg').value) $('bg').value = 'trang';
@@ -758,8 +760,14 @@ function checkScript(text, preserve = false) {
       if (show.includes(' / ')) W.push(where() + ': dòng sơ đồ không dùng " / ".');
     } else if (body.includes('||')) {
       const sl = show.split(/\s+\/\s+/);
-      if (sl.length > 3) W.push(where() + ': chữ màn hình có ' + sl.length + ' dòng, nên tối đa 3.');
-      sl.forEach(x => { if (x.replace(/\*/g, '').length > 24) W.push(where() + ': dòng chữ "' + x + '" dài ' + x.length + ' ký tự, nên dưới 22.'); });
+      const isVs = sl.some(x => /\s(vs|VS|Vs)\.?\s/.test(x)) || sl.filter(x => x.split('|').length === 2).length >= 2;
+      if (isVs) {                                        // bảng so sánh 2 cột: tối đa 5 dòng so sánh
+        if (sl.length > 6) W.push(where() + ': bảng so sánh có ' + (sl.length - 1) + ' dòng, nên tối đa 4.');
+        sl.forEach(x => x.split('|').forEach(c => { const v = c.split(':').pop().replace(/\*/g, '').trim(); if (v.length > 16) W.push(where() + ': ô so sánh "' + v + '" dài quá, nên dưới 14 ký tự.'); }));
+      } else {
+        if (sl.length > 3) W.push(where() + ': chữ màn hình có ' + sl.length + ' dòng, nên tối đa 3.');
+        sl.forEach(x => { if (x.replace(/\*/g, '').length > 24) W.push(where() + ': dòng chữ "' + x + '" dài ' + x.length + ' ký tự, nên dưới 22.'); });
+      }
     }
     const spoken = (say || show.replace(/\s\/\s/g, ' ').replace(/→/g, ' ').replace(/\*/g, '')).trim();
     const words = spoken.split(/\s+/).filter(Boolean).length;
@@ -928,7 +936,7 @@ const TPLS = {
       const n = this.count(v), L = [hook];
       for (let i = 1, k = 0; i <= 3; i++) {
         if (!v['c' + i]) continue; k++;
-        L.push(`${v['c' + i]}: [${k}/${n}] / ${v['h' + i] || '?'} | ${v['d' + i] || '?'} || Về ${low1(v['c' + i])}, Hàn Quốc ${v['h' + i]}, còn Đài Loan ${v['d' + i]}.`);
+        L.push(`Hàn Quốc vs Đài Loan / ${v['c' + i]}: ${v['h' + i] || '?'} | ${v['d' + i] || '?'} [${k}/${n}] || Về ${low1(v['c' + i])}, Hàn Quốc ${v['h' + i]}, còn Đài Loan ${v['d' + i]}.`);
       }
       if (v.concl) L.push(SC(cap(v.concl), cap(v.concl) + '.'));
       L.push(SC('Bạn chọn Hàn hay Đài?', `Bạn nghiêng về Hàn Quốc hay Đài Loan? Comment cho mình biết, và ${END_HINT}`));
@@ -1464,7 +1472,7 @@ $('bFixAi').onclick = () => {
 function jobBody(preview) {
   const script = $('script').value.trim();
   FIELDS.forEach(k => k !== 'name' && store.set(k, $(k).value));
-  store.set('auto', $('auto').checked); store.set('logo', $('logo').checked); store.set('hook', $('hook').checked);
+  store.set('auto', $('auto').checked); store.set('logo', $('logo').checked); store.set('hook', $('hook').checked); store.set('cam', $('cam').checked);
   let voice = $('voice').value, vieneu_voice = '', clone = '';
   if (voice.startsWith('vn:')) { vieneu_voice = voice.slice(3); voice = 'vieneu'; }
   if (voice.startsWith('clone:')) { clone = voice.slice(6); voice = 'clone'; }
@@ -1473,7 +1481,7 @@ function jobBody(preview) {
     hotline: $('hotline').value, auto: $('auto').checked, logo: $('logo').checked, by: $('by').value,
     clone, music: $('music').value, music_vol: $('music_vol').value, pen: $('pen').value,
     bg: $('bg').value || 'trang', fmt: $('fmt').value || 'doc', trans: $('trans').value || 'xen', subs: $('subs').checked, stroke: $('stroke').checked, preview: !!preview,
-    reveal: $('reveal').value || 'net', hook: $('hook').checked, tpl: TPL_USED || '' };
+    reveal: $('reveal').value || 'net', hook: $('hook').checked, cam: $('cam').checked, tpl: TPL_USED || '' };
 }
 $('bGo').onclick = async () => {
   const script = $('script').value.trim();

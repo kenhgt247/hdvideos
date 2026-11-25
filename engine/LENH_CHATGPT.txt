@@ -33,6 +33,14 @@ B4. Quy trình, các bước: viết trên MỘT dòng, các bước nối bằn
   Ví dụ:
   Nộp hồ sơ → Phỏng vấn → Nhận visa || Quy trình gồm nộp hồ sơ, phỏng vấn nếu được yêu cầu, rồi nhận visa.
 
+B4b. Số liệu lớn: khi cảnh chỉ nói MỘT con số quan trọng, dòng 1 chỉ ghi con số + đơn vị thật ngắn (tối đa 12 ký tự), dòng 2 giải thích ngắn. Máy sẽ vẽ con số thật to giữa màn hình. Chỉ dùng con số đã kiểm chứng (theo A).
+  Ví dụ:
+  20 giờ/tuần / trong kỳ học || Trong kỳ học, du học sinh được làm thêm tối đa hai mươi giờ mỗi tuần.
+
+B4c. So sánh 2 cột: dòng 1 ghi "A vs B", các dòng sau (2 đến 4 dòng) ghi "Tiêu chí: bên A | bên B", nối bằng " / ". Mỗi ô tối đa 14 ký tự. Máy sẽ vẽ thành bảng 2 cột.
+  Ví dụ:
+  Hàn Quốc vs Đài Loan / Ngôn ngữ: tiếng Hàn | tiếng Trung / Học phí: tùy trường | tùy trường || So nhanh Hàn Quốc và Đài Loan: ngôn ngữ khác nhau, học phí thì tùy trường.
+
 B5. Thêm [tiếp] ở cuối dòng khi muốn viết nối tiếp trên bảng cũ (cảnh trước thu nhỏ lên trên). Dùng 1 đến 2 lần mỗi video, chỉ cho hai ý liền mạch.
 
 B6. Hình minh họa: thêm [vẽ: tên hình] ở cuối dòng, tối đa 1 hình mỗi cảnh, không bắt buộc (máy tự chọn hình nếu không ghi). CHỈ dùng tên có trong "DANH SÁCH HÌNH" và "ẢNH TRONG KHO" ở cuối câu lệnh này, chép đúng từng chữ. Không tự đặt tên mới.
