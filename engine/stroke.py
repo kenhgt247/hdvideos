@@ -146,9 +146,14 @@ def plan(mask, mode='img', unit=40, min_len=3, max_side=900):
         ts = (t + np.arange(len(s))) / total
         tmap[arr[:, 0], arr[:, 1]] = ts
         step = max(1, len(s) // 12)
-        for j in range(0, len(s), step):
-            pen.append((ts[j], s[j][1] / k, s[j][0] / k))
-        pen.append((ts[-1], s[-1][1] / k, s[-1][0] / k))
+        idx = list(range(0, len(s), step)) + [len(s) - 1]
+        pts = [(ts[j], s[j][1] / k, s[j][0] / k) for j in idx]
+        for _ in range(2):                    # làm mượt đường đi của đầu bút (giữ nguyên 2 đầu nét)
+            if len(pts) < 3:
+                break
+            pts = [pts[0]] + [(pts[j][0], (pts[j - 1][1] + 2 * pts[j][1] + pts[j + 1][1]) / 4,
+                               (pts[j - 1][2] + 2 * pts[j][2] + pts[j + 1][2]) / 4) for j in range(1, len(pts) - 1)] + [pts[-1]]
+        pen.extend(pts)
         t += len(s)
     # mỗi điểm ảnh của nét lấy thời điểm của điểm xương gần nhất
     _, (iy, ix) = ndimage.distance_transform_edt(~np.isfinite(tmap), return_indices=True)

@@ -272,7 +272,27 @@ class Txt:
         return (self.left + (self.right - self.left) * clamp(r), self.cy + 10 * math.sin(t * 38))
 
 
-REVEAL = 'net'      # 'net': vẽ từng nét rồi tô bằng cọ | 'quet': quét 3 bước (chữ -> nét chì -> màu)
+REVEAL = 'net'      # 'net': vẽ từng nét rồi tô bằng cọ | 'quet': quét 3 bước | 'loang': nét đen rồi màu loang theo nét
+
+
+def loang_map(ink, alpha):
+    """Bản đồ thời điểm tô màu kiểu 'loang': mép màu tràn từ trên xuống, gợn sóng như nước,
+    gặp nét viền thì khựng lại rồi mới tràn qua. Trả về float32 HxW trong khoảng 0..1."""
+    h, w = ink.shape
+    spread = int(np.clip(min(w, h) // 64, 3, 17)) | 1
+    ink_im = Image.fromarray((ink > 40).astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(spread))
+    ink_im = ink_im.filter(ImageFilter.GaussianBlur(max(1.0, min(w, h) / 220.0)))
+    res = np.asarray(ink_im).astype(np.float32)
+    res /= max(1e-6, float(res.max()))
+    for row in range(1, h):                                  # mỗi nét viền đổ 'bóng cản' nhạt dần xuống dưới
+        np.maximum(res[row], res[row - 1] * 0.94, out=res[row])
+    xs = np.arange(w, dtype=np.float32)
+    wave = np.sin(xs / max(24.0, w / 20.0)) + 0.35 * np.sin(xs / max(8.0, w / 72.0) + 1.7)
+    delay = float(np.clip(h * 0.06, 12, 52))
+    ys = np.arange(h, dtype=np.float32)[:, None]
+    lead = ys - wave[None, :] * delay * 0.45 + res * delay  # mép màu phải đi tới 'lead' thì điểm này mới hiện
+    lo, hi = -delay, h + 1.6 * delay
+    return np.clip((lead - lo) / (hi - lo), 0, 1).astype(np.float32)
 
 
 class CharItem:
@@ -304,6 +324,11 @@ class CharItem:
                     bp = _stroke.brush(arr8, arr8[:, :, 3] > 40, seed=int(height) % 97)
                 except Exception:
                     bp = None
+            if REVEAL == 'loang':
+                try:
+                    bp = (loang_map(la, np.asarray(im)[:, :, 3]), None)
+                except Exception:
+                    pass
             CharItem._cache[key] = (im, lines, sp, np.asarray(lines).copy(), bp, np.asarray(im).copy())
         self.im, self.lines, self.sp, self._larr, self.bp, self._carr = CharItem._cache[key]
         self.x = int(cx - self.im.width / 2)
@@ -346,7 +371,7 @@ class CharItem:
             rc = (r - LE) / (1 - LE)
             if self.bp is not None:
                 a = self._carr.copy()
-                a[:, :, 3] = np.where(self.bp[0] <= rc, a[:, :, 3], 0)
+                a[:, :, 3] = np.where(self.bp[0] <= (eio(rc) if self.bp[1] is None else rc), a[:, :, 3], 0)
                 col = Image.fromarray(a)
             else:
                 col = with_alpha(self.im, clamp(rc))
@@ -365,7 +390,14 @@ class CharItem:
         if r < LE and self.sp is None:
             rl = clamp(r / LE)
             return (self.x + w * (0.5 + 0.4 * math.sin(rl * 60)), self.y + h * rl)
-        if self.bp is not None:
+        if self.bp is not None and self.bp[1] is None and r >= LE:   # loang: tay quét qua lại dọc theo mép màu
+            rc = eio(clamp((r - LE) / (1 - LE)))
+            d = 0.06 * h
+            fy = -d + rc * (h + 1.6 * d) - d * 0.6
+            lane = (rc * 7.0) % 2.0
+            lane = lane if lane <= 1 else 2 - lane
+            return (self.x + w * (0.12 + 0.76 * eio(lane)), self.y + clamp(fy / h) * h)
+        if self.bp is not None and self.bp[1] is not None:
             q = _stroke.pen_at(self.bp[1], clamp((r - LE) / (1 - LE)))
             if q:
                 return (self.x + q[0], self.y + q[1])
@@ -2421,6 +2453,26 @@ def _sync_frac(say_n, key):
 
 
 # ------------------------------------------------------------------ dựng
+def warp_r(it, r):
+    """Nhịp tay tự nhiên: khi cảnh dư thời gian, bút dừng một nhịp ngắn giữa chừng (tiến độ đứng yên)."""
+    pz = getattr(it, '_pz', None)
+    if not pz or r <= 0 or r >= 1:
+        return r
+    ratio, n = pz
+    q = ratio / n                          # thời lượng mỗi lần dừng (theo tỉ lệ)
+    seg = (1 - ratio) / (n + 1)            # thời lượng mỗi đoạn vẽ
+    u, done = r, 0.0
+    for j in range(n + 1):
+        if u <= seg:
+            return (j + u / seg) / (n + 1)
+        u -= seg
+        if j < n:
+            if u <= q:
+                return (j + 1) / (n + 1)
+            u -= q
+    return 1.0
+
+
 class Renderer:
     def __init__(self, logo_path=None, label=None, bg='trang', subs=False, trans='xoa', hook=True, cam=False):
         self.cam = bool(cam)
@@ -2608,7 +2660,13 @@ class Renderer:
                 k = max(0.45, min(1.5, (A * 0.88) / max(natural, 0.1)))
             say_n = norm(' '.join(sc.get('say') or []))
             t, sch = ENTER * k, []
+            spare = (A * 0.88) / max(natural, 0.1) if A else 1.0
+            pz_ratio = 0.12 if spare >= 1.6 else 0.07 if spare >= 1.2 else 0.0
             for it in items:
+                it._pz = None
+                if pz_ratio and it.dur * k >= 0.9 and not isinstance(it, (Badge, Snap)) \
+                        and not getattr(it, 'presenter', False):
+                    it._pz = (pz_ratio, max(1, min(4, int(it.dur * k / 0.9))))
                 if isinstance(it, Badge):                         # huy hiệu 1/3 tự hiện nhanh, không bắt tay vẽ
                     it.nohand = True
                     sch.append((it, 0.0, 0.3))
@@ -2676,7 +2734,7 @@ class Renderer:
             return hop(OFF, sch[0][0].pos(0, t), t / max(sch[0][1], 0.01))
         for i, (it, s, e) in enumerate(sch):
             if s <= t <= e:
-                p_ = it.pos((t - s) / max(e - s, 1e-3), t)
+                p_ = it.pos(warp_r(it, (t - s) / max(e - s, 1e-3)), t)
                 return (p_[0] + 1.3 * math.sin(t * 47), p_[1] + 1.1 * math.cos(t * 41), 0.0)
             if i + 1 < len(sch) and e < t < sch[i + 1][1]:
                 return hop(it.pos(1, t), sch[i + 1][0].pos(0, t), (t - e) / max(sch[i + 1][1] - e, 1e-3))
@@ -2697,7 +2755,7 @@ class Renderer:
                 cur = x
         it, s0, e0 = cur
         try:
-            p_ = it.pos(clamp((t - s0) / max(e0 - s0, 1e-3)), t)
+            p_ = it.pos(warp_r(it, clamp((t - s0) / max(e0 - s0, 1e-3))), t)
             return (float(p_[0]), float(p_[1]))
         except Exception:
             return None
@@ -2731,10 +2789,10 @@ class Renderer:
                 f.paste(lg, (int(pl.get('lcx', W / 2) - lg.width / 2), int(LAY['big_logo_y'] + (1 - k) * 30)), lg)
         for it, s, e in pl['sch']:
             if isinstance(it, Fill):
-                it.draw(f, (t - s) / max(e - s, 1e-3))
+                it.draw(f, warp_r(it, (t - s) / max(e - s, 1e-3)))
         for it, s, e in pl['sch']:
             if not isinstance(it, Fill):
-                it.draw(f, (t - s) / max(e - s, 1e-3))
+                it.draw(f, warp_r(it, (t - s) / max(e - s, 1e-3)))
         hp = self.hand_pos(pl, t)
         if hp:
             lift = hp[2] if len(hp) > 2 else 0.0

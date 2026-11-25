@@ -492,7 +492,7 @@ export default {
           subs: !!b.subs,
           stroke: b.stroke !== false,
           trans: ['xoa', 'lia', 'xen'].includes(b.trans) ? b.trans : 'xen',
-          reveal: b.reveal === 'quet' ? 'quet' : 'net',
+          reveal: ['quet', 'loang'].includes(b.reveal) ? b.reveal : 'net',
           hook: b.hook !== false,
           cam: b.cam !== false,
           tpl: /^[a-z0-9_]{1,30}$/.test(b.tpl || '') ? b.tpl : '',

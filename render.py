@@ -43,7 +43,7 @@ def main():
     if not job.get('logo', True):
         opts['logo'] = None
     E.STROKE = job.get('stroke', True) is not False
-    E.REVEAL = 'quet' if job.get('reveal') == 'quet' else 'net'
+    E.REVEAL = job.get('reveal') if job.get('reveal') in ('quet', 'loang') else 'net'
     E.CharItem._cache.clear()
     fmt = job.get('fmt') or 'doc'
     E.set_format(fmt if fmt in E.FORMATS else 'doc')
