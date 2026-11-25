@@ -979,6 +979,7 @@ def kho_rename(path, new_name):
 
 
 FX = {'sfx': True, 'punch': True, 'emph': True, 'pop': True}   # hiệu ứng bật/tắt (render.py đặt theo lựa chọn)
+TRANS_SND = 'giay'   # tiếng chuyển cảnh: 'giay' (lật giấy êm), 'vut' (gió vút), 'tat' (im lặng, không cả tiếng lau bảng)
 EMPH_RUNG = ('canh bao', 'lua dao', 'bi tu choi', 'truot', 'phat', 'cam ', 'sai', 'gia', 'mat tien', 'bo hoc',
              'lo lang', 'that bai', 'nguy hiem', 'loi')
 EMPH_NAY = ('cup', 'chien thang', 'nhan visa', 'do visa', 'hoc bong', 'vui mung', 'thanh cong', 've dich',
@@ -2428,14 +2429,14 @@ def sfx_track(plans, rate=44100, pen_vol=0.05, seed=7):
                 if b > a:
                     out[a:b] += nz[:b - a] * env[:b - a] * amp * rng.uniform(0.55, 1.0) * soft
                 t += L + rng.uniform(0.02, 0.07)
-        if not pl['last']:
+        if not pl['last'] and TRANS_SND != 'tat':          # tiếng lau bảng (tắt hẳn khi chọn im lặng)
             n = int(ERASE * rate)
             x = rng.standard_normal(n + 400).astype(np.float32)
             rub = _norm_noise(_smooth(x, 9) - _smooth(x, 60))[200:200 + n]
             k = np.linspace(0, 1, n)
             env = np.abs(np.sin(np.pi * 4 * k)) ** 0.5 * np.minimum(1, (1 - k) * 8)
             a = off + ln - n
-            out[a:a + n] += rub * env * amp * 0.3
+            out[a:a + n] += rub * env * amp * (0.3 if TRANS_SND == 'vut' else 0.15)
         off += ln
     return _soften(out, rate)
 
@@ -2462,6 +2463,13 @@ def _fx_sound(kind, rate):
         nz = lo * (1 - k) + hi * 0.35 * k
         env = np.sin(np.pi * k) ** 1.6
         return _norm_noise(nz) * env * 0.55
+    if kind == 'giay':                                    # lật giấy: tiếng sột nhẹ, trầm, không rít
+        n = int(0.32 * rate)
+        x = rng.standard_normal(n + 64).astype(np.float32)
+        k = np.linspace(0, 1, n)
+        nz = (_smooth(x, 30) - _smooth(x, 120))[32:32 + n]
+        env = (k / 0.25).clip(0, 1) ** 2 * np.exp(-np.clip(k - 0.25, 0, None) * 9)
+        return _norm_noise(nz) * env * 0.22
     t = np.arange(int(rate * {'ting': 0.55, 'bup': 0.12, 'tick': 0.07, 'bum': 0.5, 'chuong': 1.4}.get(kind, 0.3))) / rate
     if kind == 'ting':                                    # ting: chuông nhỏ trong trẻo
         y = np.sin(2 * np.pi * 1760 * t) + 0.45 * np.sin(2 * np.pi * 2640 * t) + 0.2 * np.sin(2 * np.pi * 3520 * t)
@@ -2497,8 +2505,8 @@ def fx_events(plans):
                 ev.append((off + max(0.0, s0), k))
         if pl.get('logo_end'):
             ev.append((off + 0.15, 'chuong'))
-        if not pl['last'] and not pl.get('keep_next'):
-            ev.append((off + pl['dur'] - ERASE + 0.02, 'vut'))
+        if not pl['last'] and not pl.get('keep_next') and TRANS_SND in ('vut', 'giay'):
+            ev.append((off + pl['dur'] - ERASE + 0.02, TRANS_SND))
         off += pl['n'] / FPS
     return ev
 

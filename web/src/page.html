@@ -392,7 +392,9 @@ BÍ QUYẾT GIỮ NGƯỜI XEM:
     <label class="f" for="subs">Phụ đề chạy theo giọng đọc</label>
     <select id="subs"><option value="">Tắt</option><option value="1">Phụ đề thường (chữ đổi màu theo lời)</option><option value="noibat">Phụ đề nổi bật kiểu CapCut (chữ to, từ đang đọc nằm trong ô cam)</option></select>
     <div class="f" style="margin-top:12px">Hiệu ứng giữ chân người xem</div>
-    <label class="chk"><input type="checkbox" id="sfx" checked> Âm thanh hiệu ứng: "vút" khi chuyển cảnh, "ting" khi hiện số, "bụp" khi hình bật ra, chuông kết</label>
+    <label class="chk"><input type="checkbox" id="sfx" checked> Âm thanh hiệu ứng: "ting" khi hiện số, "bụp" khi hình bật ra, chuông kết</label>
+    <label class="f" for="tsnd">Tiếng chuyển cảnh / xoá bảng</label>
+    <select id="tsnd"><option value="giay" selected>Êm: tiếng lật giấy nhẹ</option><option value="vut">Mạnh: tiếng "vút" + lau bảng</option><option value="tat">Tắt hẳn (im lặng khi chuyển cảnh)</option></select>
     <label class="chk"><input type="checkbox" id="punch" checked> Phá nhịp giây đầu: cảnh mở phóng nhanh + tiếng "bùm" nhẹ</label>
     <label class="chk"><input type="checkbox" id="emph" checked> Nhấn mạnh sau khi vẽ: hình cảnh báo rung, số lớn phình, cúp/tích nảy</label>
     <label class="chk"><input type="checkbox" id="pop" checked> Hình nhỏ trong danh sách nảy vào nhanh (không cần tay vẽ)</label>
@@ -607,6 +609,7 @@ fillVoices(store.get('voices', []));
 FIELDS.forEach(k => { if (k !== 'voice' && k !== 'name') { const v = store.get(k, null); if (v != null) $(k).value = v; } });
 ['auto', 'logo'].forEach(k => { $(k).checked = store.get(k, true); });
 { const sv = store.get('subs', ''); $('subs').value = sv === true ? '1' : sv === false ? '' : sv; }
+$('tsnd').value = store.get('tsnd', 'giay'); $('tsnd').onchange = () => store.set('tsnd', $('tsnd').value);
 ['sfx', 'punch', 'emph', 'pop'].forEach(k => { $(k).checked = store.get(k, true); $(k).onchange = () => store.set(k, $(k).checked); });
 $('stroke').checked = store.get('stroke', true);
 $('hook').checked = store.get('hook', true);
@@ -1573,7 +1576,7 @@ function jobBody(preview) {
   return { script, name, voice, vieneu_voice, rate: $('rate').value, character: $('character').value, label: $('label').value,
     hotline: $('hotline').value, auto: $('auto').checked, logo: $('logo').checked, by: $('by').value,
     clone, music: $('music').value, music_vol: $('music_vol').value, pen: $('pen').value,
-    bg: $('bg').value || 'trang', fmt: $('fmt').value || 'doc', trans: $('trans').value || 'xen', subs: $('subs').value === 'noibat' ? 'noibat' : !!$('subs').value, sfx: $('sfx').checked, punch: $('punch').checked, emph: $('emph').checked, pop: $('pop').checked, stroke: $('stroke').checked, preview: !!preview,
+    bg: $('bg').value || 'trang', fmt: $('fmt').value || 'doc', trans: $('trans').value || 'xen', tsnd: $('tsnd').value || 'giay', subs: $('subs').value === 'noibat' ? 'noibat' : !!$('subs').value, sfx: $('sfx').checked, punch: $('punch').checked, emph: $('emph').checked, pop: $('pop').checked, stroke: $('stroke').checked, preview: !!preview,
     reveal: $('reveal').value || 'net', hook: $('hook').checked, cam: $('cam').checked, tpl: TPL_USED || '' };
 }
 $('bGo').onclick = async () => {

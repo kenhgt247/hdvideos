@@ -54,6 +54,8 @@ def main():
     opts['subs'] = 'noibat' if sv == 'noibat' else bool(sv)
     for k in ('sfx', 'punch', 'emph', 'pop'):            # hiệu ứng bật/tắt, mặc định bật
         E.FX[k] = job.get(k, True) is not False
+    ts = job.get('tsnd') or 'giay'
+    E.TRANS_SND = ts if ts in ('giay', 'vut', 'tat') else 'giay'
     tr = job.get('trans') or 'xoa'
     opts['trans'] = tr if tr in ('xoa', 'lia', 'xen') else 'xoa'
     opts['hook'] = job.get('hook', True) is not False
