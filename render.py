@@ -39,7 +39,7 @@ def main():
             'label': (job.get('label') or '').strip() or None,
             'hotline': (job.get('hotline') or '').strip() or None,
             'logo': os.path.join(HERE, 'engine', 'assets', 'logo.png'),
-            'out_path': os.path.join(out_dir, 'video.mp4')}
+            'out_path': os.path.join(out_dir, 'video.mp4'), 'cover_path': os.path.join(out_dir, 'bia.jpg')}
     if not job.get('logo', True):
         opts['logo'] = None
     E.STROKE = job.get('stroke', True) is not False

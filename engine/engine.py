@@ -2029,7 +2029,38 @@ def tts_edge(text, voice, rate, out):
                      % (hint, ver, detail[:600]))
 
 
+PHAT_AM_FILE = os.path.join(HERE, 'phat_am.json')
+_pa = {'mtime': None, 'rx': None, 'map': {}}
+
+
+def phat_am():
+    """Từ điển phát âm do admin duyệt: {'TOPIK': 'tô pích', ...} (chỉ đổi lời đọc, chữ trên màn hình giữ nguyên)."""
+    try:
+        mt = os.path.getmtime(PHAT_AM_FILE)
+    except OSError:
+        return None, {}
+    if _pa['mtime'] != mt:
+        try:
+            with open(PHAT_AM_FILE, encoding='utf-8') as fh:
+                d = json.load(fh)
+            mp = {str(k).strip().lower(): str(v).strip() for k, v in d.items() if str(k).strip() and str(v).strip()}
+        except Exception:
+            mp = {}
+        keys = sorted(mp, key=len, reverse=True)
+        rx = re.compile(r'(?<![\w])(' + '|'.join(re.escape(k) for k in keys) + r')(?![\w])', re.I) if keys else None
+        _pa.update(mtime=mt, rx=rx, map=mp)
+    return _pa['rx'], _pa['map']
+
+
+def apply_phat_am(text):
+    rx, mp = phat_am()
+    if not rx or not text:
+        return text
+    return rx.sub(lambda m: mp.get(m.group(1).lower(), m.group(1)), text)
+
+
 def clean_say(text):
+    text = apply_phat_am(text)
     t = re.sub(r'(\d)\s*[–-]\s*(\d)', r'\1 đến \2', text)
     t = t.replace('…', ', ').replace('...', ', ').replace('–', ', ').replace('&', ' và ').replace('*', '')
     t = re.sub(r'[\[\]{}<>&#|_~^]', ' ', t)
@@ -2642,6 +2673,109 @@ def preview_scenes(script_text, opts, out_dir):
     return {'simple': simple, 'scenes': info}
 
 
+def _cover_image(scenes):
+    """Hình kho đầu tiên trong video (ưu tiên cảnh mở đầu) để làm ảnh bìa."""
+    for sc in scenes:
+        for _, tg in sc.get('lines', []):
+            n = tag_icon(tg)
+            if n and kho_has(n):
+                return kho_index()[norm(n)]
+    if scenes:
+        t = ' '.join(x for x, _ in scenes[0].get('lines', []))
+        n = pick_icon(t, ' '.join(scenes[0].get('say') or []))
+        if n and kho_has(n):
+            return kho_index()[norm(n)]
+    return None
+
+
+def make_cover(scenes, opts, path):
+    """Ảnh bìa: câu mở đầu chữ to đậm (từ khoá tô cam) + hình chính + logo. Cùng khổ với video."""
+    if not scenes:
+        return None
+    raw = ' '.join(t for t, tg in scenes[0].get('lines', []) if t and not tag_icon(tg))
+    raw = re.sub(r'\[[^\]]*\]', ' ', raw).replace(' / ', ' ').replace('||', ' ')
+    raw = re.sub(r'\s+', ' ', raw).strip()
+    if not raw:
+        return None
+    if '*' not in raw:                          # chưa đánh dấu từ khoá: tự tô số / từ khoá chính
+        sp = key_spans(raw)
+        for a0, b0, _ in reversed(sp[:2]):
+            raw = raw[:a0] + '*' + raw[a0:b0] + '*' + raw[b0:]
+    words, hot = [], False                      # (chữ, có phải từ khoá)
+    for w in raw.split(' '):
+        if not w:
+            continue
+        if w.startswith('*'):
+            hot = True
+        words.append((w.replace('*', ''), hot))
+        if w.rstrip('?!.,:;').endswith('*'):
+            hot = False
+    im = make_paper(opts.get('bg', 'trang')).convert('RGBA')
+    d = ImageDraw.Draw(im)
+    wide = bool(LAY.get('wide'))
+    pic_path = _cover_image(scenes)
+    maxw = W * (0.5 if wide and pic_path else 0.88)
+    area_h = (H * 0.62 if wide else H * 0.36) if pic_path else H * 0.6
+    size = int(min(W, H) * (0.15 if not wide else 0.13))
+    while True:                                  # ngắt dòng + giảm cỡ chữ cho vừa
+        f = font(size); lines, cur = [], []
+        for w in words:
+            if cur and f.getlength(' '.join(x for x, _ in cur + [w])) > maxw:
+                lines.append(cur); cur = [w]
+            else:
+                cur.append(w)
+        if cur:
+            lines.append(cur)
+        lh = line_h(size) * 0.98
+        if (len(lines) <= 4 and len(lines) * lh <= area_h) or size <= 44:
+            break
+        size -= 4
+    total_h = len(lines) * lh
+    pic = None
+    if pic_path:
+        pic = Image.open(pic_path).convert('RGBA')
+        bw, bh = (W * 0.4, H * 0.72) if wide else (W * 0.86, H * 0.86 - total_h - H * 0.16)
+        k = min(bw / pic.width, bh / pic.height)
+        pic = pic.resize((max(1, int(pic.width * k)), max(1, int(pic.height * k))), Image.LANCZOS) if k > 0 else None
+    gap = H * 0.035
+    logo_h = H * (0.1 if not wide else 0.14)
+    if wide or not pic:
+        ty = logo_h + max(0, (H - logo_h - total_h) / 2 - H * 0.03)
+    else:                                         # khổ dọc: cụm chữ + hình nằm giữa
+        grp = total_h + gap + pic.height
+        ty = logo_h + max(0, (H - logo_h - grp) / 2)
+    sw = max(2, size // 22)                       # nét chữ dày hơn cho dễ đọc khi thu nhỏ
+    y = ty
+    for ln in lines:
+        lw = f.getlength(' '.join(x for x, _ in ln))
+        x = W * 0.06 if (wide and pic) else (W - lw) / 2
+        for j, (wd, hk) in enumerate(ln):
+            ww = f.getlength(wd)
+            if hk:                                # nền dạ quang cam nhạt sau từ khoá (liền mạch cả cụm)
+                nxt = j + 1 < len(ln) and ln[j + 1][1]
+                ex = f.getlength(wd + ' ') - ww if nxt else 0
+                d.rounded_rectangle((x - size * 0.08, y + lh * 0.18, x + ww + ex + size * 0.08, y + lh * 0.92),
+                                    radius=size // 6, fill=(255, 214, 150))
+            col = (214, 72, 10) if hk else INK
+            d.text((x, y), wd, font=f, fill=col, stroke_width=sw, stroke_fill=col)
+            x += f.getlength(wd + ' ')
+        y += lh
+    if pic:
+        if wide:
+            px, py = W * 0.78 - pic.width / 2, H * 0.55 - pic.height / 2
+        else:
+            px, py = (W - pic.width) / 2, ty + total_h + gap
+        im.alpha_composite(pic, (int(px), int(py)))
+    if opts.get('logo'):
+        try:
+            lg = scaled(load_logo(opts['logo']), min(W, H) * 0.2)
+            im.alpha_composite(lg, (int(W * 0.04), int(H * 0.02)))
+        except Exception:
+            pass
+    im.convert('RGB').save(path, quality=90)
+    return path
+
+
 def render(script_text, opts, progress=lambda msg, frac: None):
     """opts: voice ('hoaimy'|'namminh'|'eleven'|'none'), rate, eleven_key, eleven_voice, eleven_model,
     music, music_vol (0-100), logo, out_path"""
@@ -2649,6 +2783,11 @@ def render(script_text, opts, progress=lambda msg, frac: None):
     if opts.get('auto', True):
         auto_style(scenes)
     add_hotline(scenes, opts.get('hotline'))
+    if opts.get('cover_path'):
+        try:
+            make_cover(scenes, opts, opts['cover_path'])
+        except Exception as e:
+            print('Không tạo được ảnh bìa:', e)
     out_path = opts['out_path']
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     tmp = tempfile.mkdtemp(prefix='vevideo_')
@@ -2681,7 +2820,7 @@ def render(script_text, opts, progress=lambda msg, frac: None):
             progress('Đang tạo giọng đọc cảnh %d/%d...' % (i + 1, len(scenes)), 0.02 + 0.25 * i / len(scenes))
             mp3 = os.path.join(tmp, 'v%d.mp3' % i)
             if voice == 'eleven':
-                tts_eleven(say, opts.get('eleven_key'), opts.get('eleven_voice'), opts.get('eleven_model', ''), mp3)
+                tts_eleven(apply_phat_am(say), opts.get('eleven_key'), opts.get('eleven_voice'), opts.get('eleven_model', ''), mp3)
             elif voice == '_test':
                 run_ff(['-f', 'lavfi', '-i', 'sine=frequency=330:duration=%.2f' % (len(say) * 0.065), mp3])
             else:

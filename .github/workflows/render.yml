@@ -71,5 +71,6 @@ jobs:
             mv out/video.mp4 "out/$FILE"; ASSETS="$ASSETS out/$FILE"
           fi
           for f in out/c*.jpg; do [ -f "$f" ] && ASSETS="$ASSETS $f"; done
+          [ -f out/bia.jpg ] && grep -q '"ok": true' out/info.json && ASSETS="$ASSETS out/bia.jpg"
           gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
           gh release create "$TAG" $ASSETS --title "$TAG" --notes-file out/info.json --prerelease

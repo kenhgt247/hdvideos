@@ -445,6 +445,12 @@ BÍ QUYẾT GIỮ NGƯỜI XEM:
     <div class="hint">Admin không bị giới hạn lượt. Giới hạn tính theo tên người tạo + mạng đang dùng. Để chắc chắn không tốn quá tiền, hãy đặt <b>mức trần chi tiêu</b> trong trang quản lý Claude.</div>
     <div id="aiToday"></div>
   </div>
+  <div class="card adm" id="paCard">
+    <h2>🗣 Từ điển phát âm</h2>
+    <div class="hint">Chữ trên màn hình giữ nguyên, chỉ <b>giọng đọc</b> đọc theo cách bạn ghi. Mỗi dòng một từ, dạng <b>TỪ = cách đọc</b>. Ví dụ: <b>TOPIK = tô pích</b>. Không phân biệt chữ hoa/thường. Áp dụng cho video tạo sau khi lưu.</div>
+    <textarea id="paText" rows="8" style="min-height:0;margin-top:8px;font-size:15px" placeholder="TOPIK = tô pích"></textarea>
+    <button class="btn" id="paSave" type="button" style="width:100%;margin-top:8px">Lưu từ điển phát âm</button>
+  </div>
   <div class="card">
     <h2>Nhân vật của tôi</h2>
     <div class="hint" id="nvWho"></div>
@@ -529,7 +535,7 @@ function showTab(t) {
   window.scrollTo(0, 0);
   if (t === 'video') loadList();
   if (t === 'kho') { loadKho(); loadMiss(); }
-  if (t === 'cai') { loadNv(); loadMedia(); }
+  if (t === 'cai') { loadNv(); loadMedia(); loadPa(); }
 }
 
 // ---------- form
@@ -1761,6 +1767,7 @@ async function loadList() {
       ${v.credit ? `<div class="hint">Ghi nguồn nhạc: ${esc(v.credit)} <a href="#" onclick="event.preventDefault();copyText(${esc(JSON.stringify(v.credit))}).then(()=>toast('Đã copy'))">Copy</a></div>` : ''}
       <div class="acts">
         ${v.ok ? `<button class="btn sm" onclick="play(this,'${v.id}')">Xem</button><button class="btn sm" style="background:var(--ok);color:#fff" onclick="saveVideo(this,'${v.id}',${esc(JSON.stringify(v.name))})">💾 Lưu</button>` : ''}
+        ${v.cover ? `<button class="btn sm" onclick="showCover(this,'${v.id}')">🖼 Ảnh bìa</button>` : ''}
         ${v.posts ? `<button class="btn sm" onclick="showPosts(this,${i})">📝 Bài đăng</button>` : ''}
         <button class="btn sm" onclick="reuse(${i})">Dùng lại kịch bản</button>
         ${v.ok ? `<button class="btn sm" onclick="statForm(this,${i})">📊 Lượt xem</button>` : ''}
@@ -1769,6 +1776,15 @@ async function loadList() {
   } catch (e) { $('vlist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
 $('bReload').onclick = loadList;
+function showCover(btn, id) {
+  const card = btn.closest('.card'), old = card.querySelector('.cover');
+  if (old) { old.remove(); return; }
+  const d = document.createElement('div'); d.className = 'cover'; d.style.marginTop = '10px';
+  d.innerHTML = `<img src="/bia/${id}" style="width:100%;max-width:320px;border-radius:12px;border:1px solid var(--line);display:block">
+    <div class="hint">Dùng làm ảnh bìa khi đăng TikTok / Reels / YouTube. Trên điện thoại: nhấn giữ vào ảnh để lưu.</div>
+    <a class="btn sm" href="/bia/${id}?dl=1" download>⬇ Tải ảnh bìa</a>`;
+  card.appendChild(d);
+}
 const fmtN = n => n >= 1e6 ? (n / 1e6).toFixed(1).replace('.0', '') + 'tr' : n >= 1e3 ? (n / 1e3).toFixed(1).replace('.0', '') + 'k' : String(n || 0);
 function statLine(r) {
   if (!r) return '';
@@ -1896,6 +1912,24 @@ async function loadKho() {
   } catch (e) { $('khoGrid').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
 $('bKhoReload').onclick = () => { loadKho(); loadMiss(); };
+async function loadPa() {
+  if (!isAdm()) return;
+  try { const d = await api('/api/phatam'); $('paText').value = Object.entries(d.items || {}).map(([k, v]) => k + ' = ' + v).join('\n'); } catch {}
+}
+$('paSave').onclick = async () => {
+  const items = {}, bad = [];
+  $('paText').value.split('\n').forEach(l => {
+    if (!l.trim()) return;
+    const i = l.indexOf('=');
+    if (i < 1 || !l.slice(i + 1).trim()) { bad.push(l.trim()); return; }
+    items[l.slice(0, i).trim()] = l.slice(i + 1).trim();
+  });
+  if (bad.length) { toast('Dòng chưa đúng dạng "TỪ = cách đọc": ' + bad[0], 5000); return; }
+  const btn = $('paSave'); btn.disabled = true; btn.textContent = 'Đang lưu...';
+  try { const d = await api('/api/phatam', { items }); toast(`Đã lưu ${d.n} từ. Video tạo từ giờ sẽ đọc theo.`, 3500); }
+  catch (e) { toast(e.message, 5000); }
+  btn.disabled = false; btn.textContent = 'Lưu từ điển phát âm';
+};
 let MISS = [];
 async function loadMiss() {
   try {

@@ -386,6 +386,7 @@ async function listVideos(env) {
       voice: info.voice || '', by: info.by || '', fallback: info.fallback || '', script: info.script || '', credit: info.credit || '', posts: info.posts || null,
       tpl: info.tpl || '', ab: info.ab || '', abg: info.abg || '', fmt: info.fmt || '',
       missing: Array.isArray(info.thieu_hinh) ? info.thieu_hinh.slice(0, 30) : [], batch: info.batch || '',
+      cover: (r.assets || []).some(a => a.name === 'bia.jpg'),
     });
   }
   return { items, voices: voices || [] };
@@ -765,6 +766,33 @@ export default {
         }
         return json({ script: res.script, caption: res.caption, sources: convert ? [] : sources.slice(0, 8), mode, convert, duration,
           verified: !convert && mode === 'paid' && sources.length > 0, used: used + 1, limit: admin ? null : limit });
+      }
+      if (p === '/api/phatam' && req.method === 'GET') {
+        const { data } = await readJson(env, 'engine/phat_am.json');
+        return json({ items: data || {} });
+      }
+      if (p === '/api/phatam' && req.method === 'POST') {
+        if (!admin) return err(ADMIN_ONLY, 403);
+        const b = await req.json();
+        const out = {};
+        for (const [k, v] of Object.entries(b.items || {}).slice(0, 300)) {
+          const kk = String(k).trim().slice(0, 40), vv = String(v).trim().slice(0, 80);
+          if (kk && vv) out[kk] = vv;
+        }
+        const txt = JSON.stringify(out, null, 2) + '\n';
+        const b64 = btoa(String.fromCharCode(...new TextEncoder().encode(txt)));
+        await putFile(env, 'engine/phat_am.json', b64, 'Từ điển phát âm: cập nhật');
+        return json({ ok: true, n: Object.keys(out).length });
+      }
+      m = p.match(/^\/bia\/([a-z0-9]+)$/);
+      if (m) {
+        const rel = await ghJson(env, `/releases/tags/job-${m[1]}`);
+        const a = rel && (rel.assets || []).find(x => x.name === 'bia.jpg');
+        if (!a) return new Response('Video này chưa có ảnh bìa', { status: 404 });
+        const r = await gh(env, `/releases/assets/${a.id}`, { headers: { accept: 'application/octet-stream' } });
+        const h = { 'content-type': 'image/jpeg', 'cache-control': 'private, max-age=86400' };
+        if (url.searchParams.get('dl') === '1') h['content-disposition'] = `attachment; filename="anh_bia_${m[1]}.jpg"`;
+        return new Response(r.body, { headers: h });
       }
       if (p === '/api/ai/ideas' && req.method === 'POST') {
         // Gợi ý danh sách chủ đề cho chế độ làm hàng loạt (Gemini miễn phí, không tính lượt)
