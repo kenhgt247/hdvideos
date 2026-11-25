@@ -57,7 +57,7 @@ def main():
     ts = job.get('tsnd') or 'giay'
     E.TRANS_SND = ts if ts in ('giay', 'vut', 'tat') else 'giay'
     tr = job.get('trans') or 'xoa'
-    opts['trans'] = tr if tr in ('xoa', 'lia', 'xen', 'bang') else 'xoa'
+    opts['trans'] = tr if tr in ('xoa', 'lia', 'xen', 'bang', 'bay') else 'xoa'
     opts['hook'] = job.get('hook', True) is not False
     opts['cam'] = job.get('cam', True) is not False
     pen = job.get('pen', 1)
