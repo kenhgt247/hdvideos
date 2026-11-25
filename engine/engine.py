@@ -2781,7 +2781,7 @@ class Renderer:
             return None
         return hop(sch[-1][0].pos(1, t), OFF, k)
 
-    CAM_Z = 0.06            # phóng tối đa 6%
+    CAM_Z = 0.05            # phóng tối đa 5%
 
     def _focus_raw(self, pl, t):
         sch = [x for x in pl['sch'] if not getattr(x[0], 'nohand', False) and not getattr(x[0], 'presenter', False)]
@@ -2792,11 +2792,15 @@ class Renderer:
             if x[1] <= t:
                 cur = x
         it, s0, e0 = cur
-        try:
-            p_ = it.pos(warp_r(it, clamp((t - s0) / max(e0 - s0, 1e-3))), t)
-            return (float(p_[0]), float(p_[1]))
-        except Exception:
-            return None
+        cc = getattr(it, '_cc', None)                 # tâm của cả hình/chữ (cố định), không bám đầu bút
+        if cc is None:
+            try:
+                pts = [it.pos(k, 0.0) for k in (0.05, 0.2, 0.35, 0.5, 0.65, 0.8, 0.95)]
+                cc = (sum(p_[0] for p_ in pts) / len(pts), sum(p_[1] for p_ in pts) / len(pts))
+            except Exception:
+                cc = (W / 2, (TOP_AREA + BOTTOM_AREA) / 2)
+            it._cc = cc
+        return cc
 
     def cam_view(self, pl, t):
         """(độ phóng, tâm x, tâm y): phóng nhẹ theo chỗ tay đang vẽ, vẽ xong thì lùi ra toàn cảnh."""
@@ -2807,12 +2811,23 @@ class Renderer:
         z_out = 1 - eio(clamp((t - ed - 0.2) / 1.1))
         z_end = 1 - eio(clamp((t - (pl['dur'] - ERASE - 0.7)) / 0.6)) if not pl['last'] else 1.0
         z = 1 + self.CAM_Z * z_in * z_out * z_end
-        pts = [self._focus_raw(pl, t - k * 0.3) for k in range(6)]
-        pts = [q for q in pts if q]
-        if not pts or z <= 1.0005:
+        if z <= 1.0005:
             return 1.0, W / 2, H / 2
-        cx = sum(q[0] for q in pts) / len(pts)
-        cy = sum(q[1] for q in pts) / len(pts)
+        path = pl.get('_campath')
+        if path is None:                              # đường đi camera của cả cảnh, làm mượt một lần (Gauss ~0.6s)
+            n = pl['n'] + 2
+            raw = np.array([self._focus_raw(pl, k / FPS) or (W / 2, (TOP_AREA + BOTTOM_AREA) / 2) for k in range(n)],
+                           dtype=np.float64)
+            sig = 0.6 * FPS
+            ker = np.exp(-0.5 * (np.arange(-int(3 * sig), int(3 * sig) + 1) / sig) ** 2)
+            ker /= ker.sum()
+            pad = len(ker) // 2
+            sm = [np.convolve(np.pad(raw[:, j], pad, mode='edge'), ker, mode='valid') for j in (0, 1)]
+            path = pl['_campath'] = np.stack(sm, axis=1)
+        fi = clamp(t * FPS / max(1, len(path) - 1)) * (len(path) - 1)
+        i0 = int(fi); i1 = min(i0 + 1, len(path) - 1); u = fi - i0
+        cx = path[i0, 0] * (1 - u) + path[i1, 0] * u
+        cy = path[i0, 1] * (1 - u) + path[i1, 1] * u
         cx = W / 2 + (cx - W / 2) * 0.7                     # chỉ nghiêng về phía chỗ đang vẽ, không bám sát
         cy = (TOP_AREA + BOTTOM_AREA) / 2 + (cy - (TOP_AREA + BOTTOM_AREA) / 2) * 0.7
         hw, hh = W / (2 * z), H / (2 * z)
@@ -2842,8 +2857,8 @@ class Renderer:
             f.paste(hand, (hx, hy), hand)
         z, zx, zy = self.cam_view(pl, t)
         if z > 1.0005:                                   # camera phóng nhẹ (logo, nhãn, thanh tiến độ đứng yên)
-            hw, hh = W / (2 * z), H / (2 * z)
-            f = f.crop((int(zx - hw), int(zy - hh), int(zx + hw), int(zy + hh))).resize((W, H), Image.BILINEAR)
+            hw, hh = W / (2 * z), H / (2 * z)          # phép biến đổi lẻ điểm ảnh: không giật từng 1px
+            f = f.transform((W, H), Image.AFFINE, (1 / z, 0, zx - hw, 0, 1 / z, zy - hh), resample=Image.BILINEAR)
             top = LAY['logo_xy'][1] + self.logo_small.height + 8
             f.paste(self.paper.crop((0, 0, W, top)), (0, 0))
         if not pl['logo_end']:
