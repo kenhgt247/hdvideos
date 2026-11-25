@@ -1131,7 +1131,10 @@ setMode(store.get('mode', 'ai'));
 const IDEAS = ['Hồ sơ visa Đài Loan cần lưu ý gì', 'TOPIK cấp mấy thì đi Hàn được', 'Chi phí năm đầu du học Hàn gồm những gì',
   'Làm thêm ở Đài Loan: điều cần biết', 'Chọn ngành theo sở thích hay cơ hội việc làm', 'Phỏng vấn visa Hàn thường hỏi gì',
   'Học bổng Đài Loan có những loại nào', 'Sai lầm khi chọn trường du học'];
-$('aiIdeas').innerHTML = IDEAS.map(x => `<button type="button" class="btn sm">${esc(x)}</button>`).join('');
+// Chỉ hiện 2 ví dụ (đổi ngẫu nhiên mỗi lần); đã từng dùng AI viết rồi thì ẩn luôn cho gọn.
+if (store.get('ai_used', false)) $('aiIdeas').style.display = 'none';
+$('aiIdeas').innerHTML = '<span class="hint" style="margin-right:2px">Ví dụ:</span>' +
+  IDEAS.slice().sort(() => Math.random() - 0.5).slice(0, 2).map(x => `<button type="button" class="btn sm">${esc(x)}</button>`).join('');
 $('aiIdeas').querySelectorAll('button').forEach(b => b.onclick = () => { $('aiTopic').value = b.textContent; $('aiTopic').focus(); });
 $('aiTopic').value = store.get('ai_topic', '');
 $('aiTopic').oninput = () => store.set('ai_topic', $('aiTopic').value);
@@ -1258,6 +1261,7 @@ $('aiGo').onclick = async () => {
   $('aiInfo').textContent = mode === 'paid' ? 'Claude đang tra trang chính thức, thường mất 20–60 giây.' : 'Thường mất 5–20 giây.';
   try {
     const d = await api('/api/ai/script', { topic, extra: $('aiExtra').value, mode, duration, by: $('by').value });
+    store.set('ai_used', true);
     $('script').value = fixScript(d.script);
     if (!$('name').value.trim()) $('name').value = topic.slice(0, 50);
     TPL_USED = 'ai_' + mode; store.set('tpl_used', TPL_USED); setDraftLength(duration);
