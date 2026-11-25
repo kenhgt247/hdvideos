@@ -554,6 +554,13 @@ export default {
           pending: moi.filter(f => !f.name.startsWith('.')).map(f => f.name),
         });
       }
+      if (p === '/api/kho/keys') {        // tên + từ khoá của ảnh trong Kho (để ẩn 'hình còn thiếu' đã có hình)
+        const [kho, meta] = await Promise.all([listDir(env, 'engine/assets/kho'), readJson(env, 'engine/assets/kho/_tu_khoa.json')]);
+        const names = kho.filter(f => f.name.endsWith('.png') && !f.name.startsWith('_')).map(f => f.name.slice(0, -4).replace(/_/g, ' '));
+        const keys = [];
+        for (const v of Object.values(meta.data || {})) { if (v.ten) keys.push(v.ten); (v.tu_khoa || []).forEach(k => keys.push(k)); }
+        return json({ names, keys });
+      }
       if (p === '/api/kho' && req.method === 'POST') {
         const b = await req.json();
         const name = slug(b.name);

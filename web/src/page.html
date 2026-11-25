@@ -1941,10 +1941,19 @@ $('paSave').onclick = async () => {
 let MISS = [];
 async function loadMiss() {
   try {
-    const d = await api('/api/list');
+    const [d, kk] = await Promise.all([api('/api/list'), api('/api/kho/keys').catch(() => ({ names: [], keys: [] }))]);
+    const nz = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    const exact = new Set([...kk.names, ...kk.keys].map(nz).filter(Boolean));
+    const multi = [...exact].filter(k => k.split(' ').length >= 2);
+    const covered = t => {                                    // đã có hình trong Kho thì không báo thiếu nữa
+      const x = nz(t); if (!x) return true;
+      if (exact.has(x)) return true;
+      const pad = ' ' + x + ' ';
+      return multi.some(k => pad.includes(' ' + k + ' ') || (' ' + k + ' ').includes(pad));
+    };
     const hide = new Set(store.get('miss_hide', [])), cnt = new Map();
     (d.items || []).forEach(v => (v.missing || []).forEach(t => {
-      const k = t.toLowerCase().trim(); if (!k || hide.has(k)) return;
+      const k = t.toLowerCase().trim(); if (!k || hide.has(k) || covered(t)) return;
       const o = cnt.get(k) || { t, n: 0 }; o.n++; cnt.set(k, o);
     }));
     MISS = [...cnt.values()].sort((a, b) => b.n - a.n).slice(0, 60);
