@@ -30,7 +30,8 @@ jobs:
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
           GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
           CLAUDE_KEY: ${{ secrets.CLAUDE_KEY }}
+          SUPADATA_KEY: ${{ secrets.SUPADATA_KEY }}
         run: |
-          node -e 'const e=process.env,o={GH_TOKEN:e.GH_TOKEN,APP_PASSWORD:e.APP_PASSWORD};for(const k of ["ADMIN_PASSWORD","GEMINI_KEY","CLAUDE_KEY"])if(e[k])o[k]=e[k];process.stdout.write(JSON.stringify(o))' > /tmp/s.json
+          node -e 'const e=process.env,o={GH_TOKEN:e.GH_TOKEN,APP_PASSWORD:e.APP_PASSWORD};for(const k of ["ADMIN_PASSWORD","GEMINI_KEY","CLAUDE_KEY","SUPADATA_KEY"])if(e[k])o[k]=e[k];process.stdout.write(JSON.stringify(o))' > /tmp/s.json
           npx --yes wrangler@4 secret bulk /tmp/s.json
           rm /tmp/s.json

@@ -238,6 +238,15 @@ details.opt>summary{font-weight:700;padding:12px 0;cursor:pointer;color:var(--bl
     <button class="btn main" id="aiGo" style="margin-top:10px">✨ VIẾT KỊCH BẢN</button>
     <div class="hint" id="aiInfo"></div>
     <div id="aiSrc"></div>
+    <details id="lkBox" style="margin-top:12px;border-top:1px solid #e5e7eb;padding-top:10px">
+      <summary style="cursor:pointer;font-weight:600">🔗 Học từ video hot của kênh khác</summary>
+      <div class="hint">Dán link TikTok / Facebook / YouTube. Máy lấy lời video, AI chỉ <b>học ý tưởng</b> rồi viết mới theo giọng Du Học Hải Dương, đúng định dạng, không chép câu của họ. Dùng <b>thời lượng</b> và <b>cách viết</b> đã chọn ở trên (nên chọn 🔎 Kiểm chứng nếu video có số liệu).</div>
+      <input type="text" id="lkUrl" placeholder="Dán link video, ví dụ https://www.tiktok.com/@.../video/..." style="margin-top:8px">
+      <button class="btn" id="lkGet" type="button" style="width:100%;margin-top:8px">📥 Lấy lời video</button>
+      <textarea id="lkText" rows="4" style="min-height:0;margin-top:8px" placeholder="Lời video sẽ hiện ở đây. Không lấy được thì tự dán lời vào ô này."></textarea>
+      <button class="btn main" id="lkGo" type="button" style="margin-top:8px">🔁 VIẾT LẠI THÀNH KỊCH BẢN CỦA MÌNH</button>
+      <div class="hint" id="lkInfo"></div>
+    </details>
   </div>
   <div class="card only-batch" id="bxCard">
     <h2>📅 Làm hàng loạt</h2>
@@ -1274,9 +1283,51 @@ $('aiGo').onclick = async () => {
   } catch (e) { $('aiInfo').textContent = ''; toast(e.message, 6000); }
   clearInterval(tick); btn.disabled = false; btn.textContent = '✨ VIẾT KỊCH BẢN';
 };
+/* ===== HỌC TỪ VIDEO HOT: lấy lời -> AI viết lại, không chép ===== */
+$('lkUrl').value = store.get('lk_url', ''); $('lkText').value = store.get('lk_text', '');
+$('lkUrl').oninput = () => store.set('lk_url', $('lkUrl').value.trim());
+$('lkText').oninput = () => store.set('lk_text', $('lkText').value);
+async function lkFetch() {
+  const url = $('lkUrl').value.trim();
+  if (!/^https?:\/\//.test(url)) { toast('Hãy dán link video trước'); $('lkUrl').focus(); return false; }
+  const btn = $('lkGet'); btn.disabled = true;
+  let sec = 0; const tick = setInterval(() => { sec++; btn.textContent = `⏳ Đang lấy lời... ${sec}s`; }, 1000);
+  try {
+    const d = await api('/api/ai/transcript', { url });
+    $('lkText').value = d.text; store.set('lk_text', d.text);
+    $('lkInfo').textContent = `Đã lấy ${d.text.split(/\s+/).length} chữ lời video. Bấm VIẾT LẠI để AI viết kịch bản của mình.`;
+    return true;
+  } catch (e) { toast(e.message, 6000); $('lkInfo').textContent = e.message; return false; }
+  finally { clearInterval(tick); btn.disabled = false; btn.textContent = '📥 Lấy lời video'; }
+}
+$('lkGet').onclick = lkFetch;
+$('lkGo').onclick = async () => {
+  if ($('lkText').value.trim().length < 20 && !(await lkFetch())) return;
+  if (!needBy()) return;
+  if ($('script').value.trim() && !confirm('Thay kịch bản đang có bằng kịch bản AI viết lại?')) return;
+  const btn = $('lkGo'); if (btn.disabled) return; btn.disabled = true;
+  const mode = aiMode(), duration = $('aiDuration').value;
+  let sec = 0; const tick = setInterval(() => { sec++; btn.textContent = `⏳ AI đang ${mode === 'paid' ? 'kiểm chứng và ' : ''}viết lại... ${sec}s`; }, 1000);
+  try {
+    const d = await api('/api/ai/script', { task: 'remix', content: $('lkText').value, extra: $('aiExtra').value, mode, duration, by: $('by').value });
+    store.set('ai_used', true);
+    $('script').value = fixScript(d.script);
+    if (!$('name').value.trim()) $('name').value = ($('script').value.split('\n')[0] || '').split('||')[0].replace(/\[[^\]]*\]/g, '').replace(/\s\/\s/g, ' ').replace(/\*/g, '').trim().slice(0, 50);
+    TPL_USED = 'ai_remix'; store.set('tpl_used', TPL_USED); setDraftLength(duration);
+    afterEdit(); showAiSources(d);
+    clearInterval(tick); btn.textContent = '🔧 Đang kiểm tra định dạng...';
+    for (let k = 0; k < 2; k++) { const f = await autoFix(btn, duration !== 'quick'); if (!f) break; }
+    const r = runCheck(), c = d.copy;
+    $('lkInfo').innerHTML = (c ? `Độ giống lời gốc: <b style="color:${c.pct > 8 ? '#c2410c' : '#15803d'}">${c.pct}%</b> ${c.pct > 8 ? '(còn hơi giống, nên bấm viết lại lần nữa)' : '(đã viết mới, không chép)'}. ` : '')
+      + (d.limit ? `Đã dùng ${d.used}/${d.limit} lượt hôm nay.` : '');
+    $('scriptCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    toast(r.E.length || r.W.length ? 'Đã viết lại, còn vài chỗ cần sửa: xem ô cam' : 'Đã viết lại xong, đúng định dạng! Xem lại rồi bấm TẠO VIDEO', 4000);
+  } catch (e) { toast(e.message, 6000); }
+  clearInterval(tick); btn.disabled = false; btn.textContent = '🔁 VIẾT LẠI THÀNH KỊCH BẢN CỦA MÌNH';
+};
 function drawAiCfg() {
   const c = AI_CFG; if (!c || !c.admin) return;
-  $('aiKeys').innerHTML = `Khoá Gemini (viết nhanh): <b>${c.has_free ? '✅ đã gắn' : '❌ chưa gắn'}</b> · Khoá Claude (kiểm chứng): <b>${c.has_paid ? '✅ đã gắn' : '❌ chưa gắn'}</b>`;
+  $('aiKeys').innerHTML = `Khoá Gemini (viết nhanh): <b>${c.has_free ? '✅ đã gắn' : '❌ chưa gắn'}</b> · Khoá Claude (kiểm chứng): <b>${c.has_paid ? '✅ đã gắn' : '❌ chưa gắn'}</b> · Khoá lấy lời video (Supadata): <b>${c.has_link ? '✅ đã gắn' : '❌ chưa gắn'}</b>`;
   $('cfFree').value = c.free; $('cfPaid').value = c.paid; $('cfStaff').checked = !!c.paid_staff;
   const t = c.today || {}, rows = Object.entries(t);
   $('aiToday').innerHTML = rows.length ? '<b style="display:block;margin-top:10px">Lượt dùng hôm nay</b><table class="st"><tr><th>Người</th><th>⚡ Nhanh</th><th>🔎 Kiểm chứng</th></tr>' +

@@ -260,6 +260,59 @@ const AI_FIX = `
 - GIỮ NGUYÊN nội dung, ý, số liệu. Chỉ sửa cách trình bày: rút ngắn chữ màn hình (dùng " / " xuống dòng, mỗi dòng ≤22 ký tự), tách cảnh dài, rút gọn câu mở, sửa danh sách, sơ đồ, thẻ.
 - Không thêm thông tin mới, không tóm tắt. Không áp dụng giới hạn tổng số cảnh, tổng số chữ hay thời lượng. Nếu cảnh dài, tách thành nhiều cảnh mà giữ lời đọc và mọi chi tiết. Không bỏ nội dung để xử lý cảnh báo thời lượng hoặc số cảnh. Trả lời đúng PHẦN C; phần NGUỒN ghi "Nội dung do người dùng cung cấp".`;
 
+const AI_REMIX = `
+- NHIỆM VỤ LẦN NÀY: Trong tin nhắn có LỜI CỦA MỘT VIDEO CỦA KÊNH KHÁC (đối thủ). Chỉ được HỌC Ý TƯỞNG / CHỦ ĐỀ, rồi VIẾT MỚI HOÀN TOÀN một kịch bản của Du Học Hải Dương đúng định dạng PHẦN B.
+- CẤM SAO CHÉP: không chép lại bất kỳ câu nào; không được có cụm 6 chữ liên tiếp giống bài gốc. Câu mở phải khác hẳn câu mở của họ. Đổi thứ tự trình bày, đổi ví dụ, đổi cách kết. Giọng tư vấn viên Du Học Hải Dương, nói với "bạn".
+- Bỏ hết tên kênh, tên người, tên trung tâm, số điện thoại, link, mã giảm giá, lời quảng cáo của bên kia. Không nhắc tới video gốc.
+- Nếu bài gốc có thông tin sai, phóng đại hoặc hứa hẹn kiểu môi giới (bao đậu visa, đi làm kiếm nhiều tiền...), KHÔNG lặp lại; chỉ giữ phần đúng và hữu ích.
+- Chữ Trung/Hàn chuyển sang phiên âm và giải nghĩa tiếng Việt.
+- Phần NGUỒN: ghi trang chính thức đã dùng; nếu không tra web thì ghi "Ý tưởng tham khảo, nội dung viết lại".`;
+const AI_REMIX_FREE = `
+- Bạn KHÔNG tra web được, nên KHÔNG giữ con số, mức phí, mốc thời gian, điều kiện cụ thể nào từ bài gốc (chưa kiểm chứng). Viết theo hướng kinh nghiệm, kiến thức chung, "tùy trường", "xem thông báo mới nhất".`;
+const AI_REMIX_PAID = `
+- Mọi con số, quy định lấy từ bài gốc PHẢI kiểm tra bằng web_search trên trang chính thức. Đúng thì dùng (theo số liệu chính thức), không thấy thì bỏ hoặc nói chung chung. Phần NGUỒN liệt kê link đã dùng.`;
+function wordsOf(t) { return String(t || '').toLowerCase().normalize('NFC').replace(/\[[^\]]*\]/g, ' ').split(/[^\p{L}\p{N}]+/u).filter(Boolean); }
+function spokenOf(script) {
+  return script.split('\n').map(l => l.includes('||') ? l.split('||').slice(1).join(' ') : l.replace(/^\s*[-+]\s/, '')).join(' ');
+}
+// Độ giống: % cụm 6 chữ của kịch bản mới xuất hiện trong lời gốc + cụm giống dài nhất
+function copyScore(src, script) {
+  const a = wordsOf(src), b = wordsOf(spokenOf(script)), N = 6;
+  if (b.length < N || a.length < N) return { pct: 0, longest: 0 };
+  const set = new Set();
+  for (let i = 0; i + N <= a.length; i++) set.add(a.slice(i, i + N).join(' '));
+  let hit = 0, run = 0, longest = 0;
+  for (let i = 0; i + N <= b.length; i++) {
+    if (set.has(b.slice(i, i + N).join(' '))) { hit++; run++; longest = Math.max(longest, run + N - 1); } else run = 0;
+  }
+  return { pct: Math.round(100 * hit / (b.length - N + 1)), longest };
+}
+async function getTranscript(env, link) {
+  const H = { 'x-api-key': env.SUPADATA_KEY };
+  let r = await fetch('https://api.supadata.ai/v1/transcript?text=true&mode=auto&url=' + encodeURIComponent(link), { headers: H });
+  let d = await r.json().catch(() => ({}));
+  if (r.status === 202 && d.jobId) {
+    for (let k = 0; k < 40; k++) {
+      await new Promise(ok => setTimeout(ok, 1500));
+      r = await fetch('https://api.supadata.ai/v1/transcript/' + encodeURIComponent(d.jobId), { headers: H });
+      const j = await r.json().catch(() => ({}));
+      if (j.status === 'completed') { d = j; break; }
+      if (j.status === 'failed') throw new Error('Không lấy được lời video này (' + ((j.error && (j.error.message || j.error)) || 'lỗi') + ')');
+      if (k === 39) throw new Error('Video dài, lấy lời quá lâu. Thử lại sau hoặc dán lời vào ô bên dưới.');
+    }
+  } else if (!r.ok || r.status === 206) {
+    if (r.status === 404) throw new Error('Không tìm thấy video (video riêng tư hoặc đã xoá).');
+    if (r.status === 403) throw new Error('Video bị giới hạn, cần đăng nhập mới xem được.');
+    if (r.status === 206) throw new Error('Video này không có lời để lấy.');
+    if (r.status === 401) throw new Error('Khoá Supadata sai. Báo admin kiểm tra.');
+    if (r.status === 429) throw new Error('Hết lượt lấy lời miễn phí tháng này (Supadata).');
+    throw new Error((d && (d.message || d.error)) || ('Lấy lời lỗi ' + r.status));
+  }
+  const c = d.content;
+  const text = (Array.isArray(c) ? c.map(x => x.text).join(' ') : String(c || '')).replace(/\s+/g, ' ').trim();
+  if (text.length < 20) throw new Error('Video này gần như không có lời nói.');
+  return { text: text.slice(0, 12000), lang: d.lang || '' };
+}
 function parseAi(text) {
   const m = text.match(/```[a-zA-Z]*\n?([\s\S]*?)```/);
   const script = (m ? m[1] : text).trim();
@@ -760,7 +813,7 @@ export default {
       if (p === '/api/ai/config' && req.method === 'GET') {
         const { data } = await readJson(env, AI_FILE);
         const cfg = { ...AI_DEF, ...(data.config || {}) };
-        return json({ ...cfg, has_free: !!env.GEMINI_KEY, has_paid: !!env.CLAUDE_KEY, admin, today: admin ? (data.use || {})[today()] || {} : undefined });
+        return json({ ...cfg, has_free: !!env.GEMINI_KEY, has_paid: !!env.CLAUDE_KEY, has_link: !!env.SUPADATA_KEY, admin, today: admin ? (data.use || {})[today()] || {} : undefined });
       }
       if (p === '/api/ai/config' && req.method === 'POST') {
         if (!admin) return err(ADMIN_ONLY, 403);
@@ -780,12 +833,15 @@ export default {
       if (p === '/api/ai/script' && req.method === 'POST') {
         const b = await req.json();
         const fix = b.task === 'fix';
+        const remix = b.task === 'remix';
         const convert = b.task === 'convert' || fix;
         const duration = fix ? 'full' : Object.prototype.hasOwnProperty.call(AI_LENGTHS, b.duration) ? b.duration : convert ? 'full' : 'quick';
         const content = String(b.content || '').trim();
         if (convert && content.length > 12000) return err('Nội dung dài hơn 12.000 ký tự. Hãy chia thành các phần để AI không bỏ sót nội dung.');
         const issues = (Array.isArray(b.issues) ? b.issues : []).slice(0, 12).map(x => String(x).slice(0, 200));
-        const topic = convert ? 'chuyển nội dung' : String(b.topic || '').trim().slice(0, 400);
+        if (remix && content.length > 12000) return err('Lời video dài quá, hãy dán đoạn ngắn hơn.');
+        if (remix && content.length < 20) return err('Chưa có lời video. Dán link hoặc dán lời vào ô.');
+        const topic = convert ? 'chuyển nội dung' : remix ? 'viết lại từ video tham khảo' : String(b.topic || '').trim().slice(0, 400);
         if (convert && content.length < 20) return err('Hãy viết nội dung (ít nhất vài câu) trước khi chuyển');
         const extra = String(b.extra || '').trim().slice(0, 2500);
         const mode = b.mode === 'paid' && !convert ? 'paid' : 'free';   // chuyển/sửa định dạng luôn dùng Gemini miễn phí
@@ -804,14 +860,25 @@ export default {
         const durationRule = duration === 'full'
           ? '\n- CHẾ ĐỘ GIỮ NGUYÊN: Không áp dụng bất kỳ giới hạn tổng số cảnh, tổng số chữ, một điểm kiến thức hoặc thời lượng video ngắn nào ở trên. Giữ nội dung đầy đủ.'
           : '\n- THỜI LƯỢNG ĐƯỢC CHỌN (ưu tiên hơn giới hạn video ngắn ở trên): ' + AI_LENGTHS[duration] + '. Không ép 8–14 hoặc 15–25 cảnh, không giới hạn 60–100 chữ. Chia số cảnh linh hoạt theo lời đọc. Không cố kéo dài khi thiếu thông tin đáng tin cậy.';
-        const sys = (await chatgptPrompt(env)) + common + (fix ? AI_FIX : convert ? (duration === 'full' ? AI_CONVERT : AI_CONVERT_TIMED) : mode === 'paid' ? AI_PAID : AI_FREE) + durationRule;
+        const sys = (await chatgptPrompt(env)) + common + (fix ? AI_FIX : convert ? (duration === 'full' ? AI_CONVERT : AI_CONVERT_TIMED)
+          : remix ? AI_REMIX + (mode === 'paid' ? AI_REMIX_PAID : AI_REMIX_FREE) : mode === 'paid' ? AI_PAID : AI_FREE) + durationRule;
         const user = fix ? `KỊCH BẢN CẦN SỬA:\n\`\`\`\n${content}\n\`\`\`\n\nCÁC LỖI CẦN SỬA:\n${issues.map((x, i) => (i + 1) + '. ' + x).join('\n')}`
           : convert ? `NỘI DUNG CỦA TÔI (chuyển thành kịch bản, giữ nguyên ý và số liệu):\n${content}`
+          : remix ? `LỜI VIDEO CỦA KÊNH KHÁC (chỉ học ý tưởng, viết mới hoàn toàn, không chép câu):\n${content}` + (extra ? `\n\nTHÔNG TIN THÊM (của trung tâm, dùng đúng như vậy):\n${extra}` : '')
           : `CHỦ ĐỀ: ${topic}` + (extra ? `\n\nTHÔNG TIN THÊM (của trung tâm, dùng đúng như vậy):\n${extra}` : '');
-        let out;
-        try { out = mode === 'paid' ? await aiClaude(env, sys, user, !convert) : await aiGemini(env, sys, user); }
-        catch (e) { return err(String(e.message || e), 502); }
-        const res = parseAi(out.text);
+        let out, res, copy = null;
+        try {
+          out = mode === 'paid' ? await aiClaude(env, sys, user, !convert) : await aiGemini(env, sys, user);
+          res = parseAi(out.text);
+          if (remix && res.script) {
+            copy = copyScore(content, res.script);
+            if ((copy.pct > 8 || copy.longest >= 10) && env.GEMINI_KEY) try {   // còn giống bản gốc -> bắt viết lại 1 lần bằng Gemini
+              const again = await aiGemini(env, sys, user + `\n\nBẢN TRƯỚC CÒN GIỐNG BÀI GỐC ${copy.pct}% (cụm giống dài ${copy.longest} chữ). VIẾT LẠI, dùng câu chữ của riêng bạn, giữ nguyên các số liệu đã kiểm chứng trong bản này:\n\`\`\`\n${res.script}\n\`\`\``);
+              const r2 = parseAi(again.text), c2 = r2.script ? copyScore(content, r2.script) : null;
+              if (c2 && c2.pct <= copy.pct) { res = { ...r2, srcTxt: res.srcTxt || r2.srcTxt }; copy = c2; }
+            } catch (e) { /* giữ bản đầu */ }
+          }
+        } catch (e) { return err(String(e.message || e), 502); }
         if (res.script.length > 20000) return err('Kịch bản vượt giới hạn 20.000 ký tự của bộ dựng. Hãy chia bài thành các phần.', 422);
         if (!res.script) return err('AI chưa viết được kịch bản, hãy thử lại hoặc đổi cách nói chủ đề.', 502);
         const urls = [...res.srcTxt.matchAll(/https?:\/\/[^\s)\]]+/g)].map(x => ({ url: x[0], title: '' }));
@@ -821,8 +888,17 @@ export default {
           const rec = aiRecord(env, admin ? 'admin' : who, mode);
           if (ctx && ctx.waitUntil) ctx.waitUntil(rec); else await rec;
         }
-        return json({ script: res.script, caption: res.caption, sources: convert ? [] : sources.slice(0, 8), mode, convert, duration,
+        return json({ script: res.script, caption: res.caption, sources: convert ? [] : sources.slice(0, 8), mode, convert, duration, copy,
           verified: !convert && mode === 'paid' && sources.length > 0, used: used + 1, limit: admin ? null : limit });
+      }
+      if (p === '/api/ai/transcript' && req.method === 'POST') {
+        const b = await req.json();
+        const link = String(b.url || '').trim();
+        if (!/^https?:\/\/([a-z0-9-]+\.)*(tiktok\.com|facebook\.com|fb\.watch|youtube\.com|youtu\.be|instagram\.com|x\.com|twitter\.com)\//i.test(link))
+          return err('Hãy dán link video TikTok, Facebook hoặc YouTube');
+        if (!env.SUPADATA_KEY) return err('Chưa gắn khoá lấy lời video (Supadata). Hãy dán lời video vào ô bên dưới, hoặc nhờ admin gắn khoá.');
+        try { return json(await getTranscript(env, link)); }
+        catch (e) { return err(String(e.message || e), 502); }
       }
       if (p === '/api/phatam' && req.method === 'GET') {
         const { data } = await readJson(env, 'engine/phat_am.json');
