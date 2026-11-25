@@ -2839,5 +2839,45 @@
    "điện thoại"
   ],
   "lo": 75
+ },
+ "quan_an_que_huong_gan_truong": {
+  "ten": "Quán ăn quê hương ngay gần trường",
+  "tu_khoa": [
+   "quán ăn quê hương",
+   "gần trường",
+   "món Việt",
+   "ăn uống"
+  ],
+  "lo": 76
+ },
+ "quan_viet": {
+  "ten": "Quán Việt",
+  "tu_khoa": [
+   "quán Việt",
+   "món Việt",
+   "phở",
+   "đồ ăn Việt Nam"
+  ],
+  "lo": 76
+ },
+ "cho_truyen_thong": {
+  "ten": "Chợ truyền thống",
+  "tu_khoa": [
+   "chợ truyền thống",
+   "đi chợ",
+   "rau quả",
+   "mua đồ ăn"
+  ],
+  "lo": 76
+ },
+ "sim_dien_thoai": {
+  "ten": "Sim điện thoại",
+  "tu_khoa": [
+   "sim điện thoại",
+   "thẻ sim",
+   "liên lạc",
+   "số điện thoại"
+  ],
+  "lo": 76
  }
 }
