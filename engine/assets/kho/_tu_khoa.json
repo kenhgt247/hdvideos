@@ -2959,5 +2959,46 @@
    "xin phép nghỉ"
   ],
   "lo": 78
+ },
+ "xuc_xich_gio_cha_bi_cam": {
+  "ten": "Xúc xích giò chả bị cấm mang theo",
+  "tu_khoa": [
+   "xúc xích",
+   "giò chả",
+   "thịt chế biến",
+   "đồ cấm mang",
+   "hành lý cấm"
+  ],
+  "lo": 79
+ },
+ "hai_quan_lap_bien_ban": {
+  "ten": "Hải quan lập biên bản",
+  "tu_khoa": [
+   "hải quan nhắc nhở",
+   "lập biên bản",
+   "bị kiểm tra hành lý",
+   "vi phạm hải quan"
+  ],
+  "lo": 79
+ },
+ "phat_tien_rat_nang": {
+  "ten": "Phạt tiền rất nặng",
+  "tu_khoa": [
+   "bị phạt rất nặng",
+   "phạt tiền",
+   "tiền phạt",
+   "nộp phạt"
+  ],
+  "lo": 79
+ },
+ "nhan_visa_duoc_duyet": {
+  "ten": "Nhận visa được duyệt",
+  "tu_khoa": [
+   "visa được duyệt",
+   "nhận visa",
+   "có visa",
+   "đậu visa"
+  ],
+  "lo": 79
  }
 }
