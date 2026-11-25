@@ -2176,9 +2176,9 @@ def sfx_track(plans, rate=44100, pen_vol=0.05, seed=7):
                 if n < 64:
                     break
                 x = rng.standard_normal(n + 64).astype(np.float32)
-                hp = x - _smooth(x, 4)                     # tiếng giấy rít (cao)
-                mid = _smooth(x, 3) - _smooth(x, 14)       # thân tiếng bút
-                nz = _norm_noise(0.65 * hp + 0.35 * mid)[32:32 + n]
+                hp = x - _smooth(x, 6)                     # tiếng giấy rít (đã dịu bớt)
+                mid = _smooth(x, 4) - _smooth(x, 24)       # thân tiếng bút (trầm, êm)
+                nz = _norm_noise(0.3 * hp + 0.7 * mid)[32:32 + n]
                 env = np.sin(np.linspace(0, np.pi, n)) ** 0.6
                 env *= 0.75 + 0.25 * np.sin(np.linspace(0, rng.uniform(6, 14) * np.pi, n))
                 a = off + int(t * rate)
@@ -2193,9 +2193,19 @@ def sfx_track(plans, rate=44100, pen_vol=0.05, seed=7):
             k = np.linspace(0, 1, n)
             env = np.abs(np.sin(np.pi * 4 * k)) ** 0.5 * np.minimum(1, (1 - k) * 8)
             a = off + ln - n
-            out[a:a + n] += rub * env * amp * 1.1
+            out[a:a + n] += rub * env * amp * 0.45
         off += ln
-    return out
+    return _soften(out, rate)
+
+
+def _soften(x, rate):
+    """Lọc bỏ tần số chói (>3.5 kHz) và tiếng ù (<250 Hz) để tiếng bút/lau bảng êm tai."""
+    try:
+        from scipy.signal import butter, sosfilt
+        sos = butter(4, [250, 3500], btype='band', fs=rate, output='sos')
+        return sosfilt(sos, x).astype(np.float32) * 1.6
+    except Exception:
+        return _smooth(x, 5)
 
 
 def mix_into_wav(path, track):
@@ -2203,7 +2213,12 @@ def mix_into_wav(path, track):
         ch, sw, fr, nf = w.getnchannels(), w.getsampwidth(), w.getframerate(), w.getnframes()
         data = np.frombuffer(w.readframes(nf), dtype=np.int16).astype(np.float32).reshape(-1, ch)
     m = min(len(data), len(track))
-    data[:m] += track[:m, None]
+    # nhường giọng đọc: khi đang có lời, tiếng bút nhỏ lại còn ~40%
+    voice = np.abs(data[:m].mean(1))
+    k = max(1, int(fr * 0.08))
+    env = np.convolve(voice, np.ones(k, dtype=np.float32) / k, mode='same')
+    duck = 1.0 - 0.6 * np.clip(env / 1500.0, 0, 1)
+    data[:m] += (track[:m] * duck)[:, None]
     with wave.open(path, 'wb') as w:
         w.setnchannels(ch); w.setsampwidth(sw); w.setframerate(fr)
         w.writeframes(np.clip(data, -32768, 32767).astype(np.int16).tobytes())
@@ -2719,7 +2734,7 @@ def render(script_text, opts, progress=lambda msg, frac: None):
                 out.writeframes(data + b'\x00' * (total * 4 - len(data)))
 
         if opts.get('pen_sound', True):
-            mix_into_wav(narr, sfx_track(plans, rate_hz, 0.04 * float(opts.get('pen_vol', 1.0))))
+            mix_into_wav(narr, sfx_track(plans, rate_hz, 0.022 * float(opts.get('pen_vol', 1.0))))
 
         tmp_out = out_path + '.dang-tao.mp4'
         music = opts.get('music')
