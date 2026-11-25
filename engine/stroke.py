@@ -181,6 +181,24 @@ def pen_at(pen, p):
     return float(a[1] + (b[1] - a[1]) * u), float(a[2] + (b[2] - a[2]) * u)
 
 
+def subject_mask(arr, mask):
+    """Đoán phần nhân vật trong hình Kho: điểm da người + áo xanh đồng phục (nới thêm một chút).
+    Trả về None nếu không chắc (quá ít hoặc gần như cả hình)."""
+    r, g, b = [arr[:, :, i].astype(np.int32) for i in range(3)]
+    skin = (r > 205) & (g > 150) & (b > 105) & (r - g > 12) & (r - g < 75) & (g - b > 4) & (r - b < 135)
+    polo = (b > 110) & (b > r + 45) & (b > g + 25)
+    seed_ = (skin | polo) & mask
+    H, W = mask.shape
+    if seed_.sum() < 0.03 * mask.sum():
+        return None
+    sub = ndimage.binary_dilation(seed_, iterations=max(2, int(min(H, W) * 0.008))) & mask
+    sub = ndimage.binary_opening(sub, iterations=1)
+    frac = sub.sum() / max(1, mask.sum())
+    if frac < 0.06 or frac > 0.8:
+        return None
+    return sub
+
+
 def brush(arr, mask, band=None, max_groups=6, seed=3):
     """Tô màu như cầm cọ: chia ảnh theo nhóm màu, tô xong nhóm này mới sang nhóm khác,
     trong mỗi nhóm cọ quét qua lại theo từng dải (mép dải lượn sóng cho giống nét cọ).
@@ -199,10 +217,20 @@ def brush(arr, mask, band=None, max_groups=6, seed=3):
     means = np.array([cols[inv == i].mean(axis=0) for i in big])
     d = ((cols[:, None, :] - means[None, :, :]) ** 2).sum(axis=2)
     grp = np.argmin(d, axis=1)                           # mỗi điểm ảnh thuộc 1 nhóm màu lớn
-    # thứ tự nhóm: mảng lớn trước, chi tiết nhỏ sau
-    sizes = np.bincount(grp, minlength=len(big)).astype(np.float64)
-    order = list(np.argsort(-sizes))
-    weights = np.maximum(sizes / sizes.sum(), 0.08)
+    # nhân vật trước, nền sau: vùng có da người / áo xanh (nới rộng ra) coi là nhân vật
+    part = np.zeros(len(ys), np.int32)
+    try:
+        sub = subject_mask(arr, mask)
+        if sub is not None:
+            part = np.where(sub[ys, xs], 0, 1).astype(np.int32)
+    except Exception:
+        pass
+    G = len(big)
+    grp = grp + G * part                                 # nhóm = (màu, nhân vật/nền)
+    # thứ tự: hết phần nhân vật rồi mới tới nền; trong mỗi phần mảng màu lớn trước, chi tiết nhỏ sau
+    sizes = np.bincount(grp, minlength=2 * G).astype(np.float64)
+    order = [g for p_ in (0, 1) for g in sorted(range(p_ * G, p_ * G + G), key=lambda g: -sizes[g]) if sizes[g] > 0]
+    weights = np.where(sizes > 0, np.maximum(sizes / sizes.sum(), 0.05), 0)
     weights = weights / weights[order].sum()
     rng = np.random.RandomState(seed)
     reveal = np.full((H, W), 2.0, np.float32)

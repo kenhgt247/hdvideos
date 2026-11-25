@@ -275,6 +275,23 @@ class Txt:
 REVEAL = 'net'      # 'net': vẽ từng nét rồi tô bằng cọ | 'quet': quét 3 bước | 'loang': nét đen rồi màu loang theo nét
 
 
+def clean_specks(la, thr=40):
+    """Bỏ các chấm đen nhỏ lẻ (vụn, nhiễu) khỏi bản nét; giữ nét thật."""
+    try:
+        from scipy import ndimage
+    except Exception:
+        return la
+    m = la > thr
+    lab, n = ndimage.label(m, structure=np.ones((3, 3)))
+    if n == 0:
+        return la
+    sizes = np.bincount(lab.ravel())
+    min_px = max(6, int(la.shape[0] * la.shape[1] * 0.00004))
+    small = sizes < min_px
+    small[0] = False
+    return np.where(small[lab], 0, la).astype(np.uint8)
+
+
 def loang_map(ink, alpha):
     """Bản đồ thời điểm tô màu kiểu 'loang': mép màu tràn từ trên xuống, gợn sóng như nước,
     gặp nét viền thì khựng lại rồi mới tràn qua. Trả về float32 HxW trong khoảng 0..1."""
@@ -307,6 +324,7 @@ class CharItem:
             a = np.asarray(im).astype(np.int32)
             mx, mn = a[:, :, :3].max(axis=2), a[:, :, :3].min(axis=2)
             la = np.where((mx < 75) & (mx - mn < 30) & (a[:, :, 3] > 0), a[:, :, 3], 0).astype(np.uint8)
+            la = clean_specks(la)                  # bỏ chấm vụn lấm tấm để nét vẽ ra sạch
             if REVEAL == 'quet':                   # nét chì xám: lấy độ tối của toàn ảnh
                 gray = 255 - a[:, :, :3].mean(axis=2)
                 shade = np.clip(np.where(a[:, :, 3] > 0, gray * 0.45, 0), 0, 95)
