@@ -978,6 +978,22 @@ def kho_rename(path, new_name):
     return dst
 
 
+FX = {'sfx': True, 'punch': True, 'emph': True, 'pop': True}   # hiệu ứng bật/tắt (render.py đặt theo lựa chọn)
+EMPH_RUNG = ('canh bao', 'lua dao', 'bi tu choi', 'truot', 'phat', 'cam ', 'sai', 'gia', 'mat tien', 'bo hoc',
+             'lo lang', 'that bai', 'nguy hiem', 'loi')
+EMPH_NAY = ('cup', 'chien thang', 'nhan visa', 'do visa', 'hoc bong', 'vui mung', 'thanh cong', 've dich',
+            'giay khen', 'tot nghiep', 'diem cao', 'tich', 'dung')
+
+
+def emph_of(name):
+    n = ' ' + norm(name or '') + ' '
+    if any((' ' + k.strip() + ' ') in n for k in EMPH_RUNG):
+        return 'rung'
+    if any((' ' + k.strip() + ' ') in n for k in EMPH_NAY):
+        return 'nay'
+    return None
+
+
 def kho_item(name, cx, cy, h):
     path = kho_index()[norm(name)]
     with Image.open(path) as im:
@@ -986,7 +1002,19 @@ def kho_item(name, cx, cy, h):
     hh = min(h, maxw * h0 / w0)
     it = CharItem(path, cx, cy + hh / 2, hh)
     it.dur = 2.8 if it.bp is not None else 2.4 if it.sp is not None else 1.4
+    it.kname = name
+    it.emph = emph_of(name)
     return [it]
+
+
+def make_pop(parts):
+    """Hình nhỏ (trong danh sách, thẻ) nảy vào nhanh, không cần tay vẽ."""
+    if FX.get('pop') and len(parts) == 1 and isinstance(parts[0], CharItem):
+        parts[0].pop = True
+        parts[0].nohand = True
+        parts[0].dur = 0.42
+        parts[0].sfx = 'bup'
+    return parts
 
 
 def icon_paths(name, cx, cy, h, color, seed):
@@ -2014,10 +2042,11 @@ def layout_scene(scene, idx, has_logo_end):
                     ih = min(rh * 0.95, 150)
                     parts = icon_paths(name, x0 + 64, cy, ih, mark, seed + j)
                     _squeeze(parts, 0.9)
-                    items += parts
+                    items += make_pop(parts)
                 else:
                     items.append(Path(poly([(x0, cy + 2), (x0 + 28, cy + 30), (x0 + 72, cy - 32)], seed=seed + j, bow=3),
                                       mark, 12))
+                    items[-1].sfx = 'tick'
                 items.append(Txt(t, sz, c or INK, cy, left=x0 + ind))
                 items[first].sync = t
         elif b['k'] == 'cards':
@@ -2037,7 +2066,7 @@ def layout_scene(scene, idx, has_logo_end):
                 finally:
                     LMAXW = save_w
                 _squeeze(parts, 1.5)
-                items += parts
+                items += make_pop(parts)
                 items.append(Txt(t, sz, col, top_ + ih + 10 + line_h(sz) * 0.45, cx=x))
                 items[first].sync = t
         elif b['k'] == 'irows':
@@ -2054,13 +2083,14 @@ def layout_scene(scene, idx, has_logo_end):
                 finally:
                     LMAXW = save_w
                 _squeeze(parts, 1.4)
-                items += parts
+                items += make_pop(parts)
                 items.append(Txt(t, sz, col, cy, left=LCX + LMAXW * 0.02))
                 items[first].sync = t
         elif b['k'] == 'big':                                    # số liệu lớn: con số to + nét vẽ nhấn
             sz = b['size']
             cy = y + line_h(sz) * 0.46
             t = Txt(b['text'], sz, b['color'], cy, cx=LCX)
+            t.emph, t.sfx = 'phinh', 'ting'
             items.append(t)
             items.append(Path(wavy(t.left + 20, t.right - 20, cy + sz * 0.5, amp=10), ORANGE, 12))
             for j, ang in enumerate((-2.5, -1.95, -1.4)):          # 3 tia sáng góc trên phải
@@ -2420,7 +2450,78 @@ def _soften(x, rate):
         return _smooth(x, 5)
 
 
-def mix_into_wav(path, track):
+def _fx_sound(kind, rate):
+    """Âm thanh hiệu ứng tự tổng hợp (không cần file, không lo bản quyền)."""
+    rng = np.random.default_rng(len(kind))
+    if kind == 'vut':                                     # vút: tiếng gió lướt qua khi chuyển cảnh
+        n = int(0.42 * rate)
+        x = rng.standard_normal(n + 64).astype(np.float32)
+        k = np.linspace(0, 1, n)
+        lo = _smooth(x, 18)[32:32 + n]
+        hi = (x - _smooth(x, 3))[32:32 + n]
+        nz = lo * (1 - k) + hi * 0.35 * k
+        env = np.sin(np.pi * k) ** 1.6
+        return _norm_noise(nz) * env * 0.55
+    t = np.arange(int(rate * {'ting': 0.55, 'bup': 0.12, 'tick': 0.07, 'bum': 0.5, 'chuong': 1.4}.get(kind, 0.3))) / rate
+    if kind == 'ting':                                    # ting: chuông nhỏ trong trẻo
+        y = np.sin(2 * np.pi * 1760 * t) + 0.45 * np.sin(2 * np.pi * 2640 * t) + 0.2 * np.sin(2 * np.pi * 3520 * t)
+        return (y * np.exp(-t * 7.5) * np.minimum(1, t * 400)).astype(np.float32) * 0.42
+    if kind == 'bup':                                     # bụp: bong bóng bật nhẹ
+        f0 = 620 * np.exp(-t * 22) + 180
+        y = np.sin(2 * np.pi * np.cumsum(f0) / rate)
+        return (y * np.exp(-t * 30) * np.minimum(1, t * 900)).astype(np.float32) * 0.6
+    if kind == 'tick':                                    # tích: gõ nhẹ khi hiện dấu tích
+        y = np.sin(2 * np.pi * 1200 * t) * np.exp(-t * 70)
+        return (y * np.minimum(1, t * 1500)).astype(np.float32) * 0.35
+    if kind == 'bum':                                     # bùm: nhịp trầm mở đầu
+        f0 = 110 * np.exp(-t * 6) + 45
+        y = np.sin(2 * np.pi * np.cumsum(f0) / rate) + 0.15 * rng.standard_normal(len(t)) * np.exp(-t * 60)
+        return (y * np.exp(-t * 7) * np.minimum(1, t * 600)).astype(np.float32) * 0.85
+    if kind == 'chuong':                                  # chuông kết: hai nốt ngân
+        y = np.sin(2 * np.pi * 1046.5 * t) * np.exp(-t * 3.2)
+        t2 = np.clip(t - 0.18, 0, None)
+        y += np.where(t > 0.18, np.sin(2 * np.pi * 1318.5 * t2) * np.exp(-t2 * 3.0), 0)
+        return (y * np.minimum(1, t * 300)).astype(np.float32) * 0.32
+    return np.zeros(1, np.float32)
+
+
+def fx_events(plans):
+    """[(giây tính từ đầu video, loại âm)] lấy từ lịch vẽ của từng cảnh."""
+    ev, off = [], 0.0
+    for i, pl in enumerate(plans):
+        if i == 0 and FX.get('punch'):
+            ev.append((0.0, 'bum'))
+        for it, s0, e0 in pl['sch']:
+            k = getattr(it, 'sfx', None)
+            if k:
+                ev.append((off + max(0.0, s0), k))
+        if pl.get('logo_end'):
+            ev.append((off + 0.15, 'chuong'))
+        if not pl['last'] and not pl.get('keep_next'):
+            ev.append((off + pl['dur'] - ERASE + 0.02, 'vut'))
+        off += pl['n'] / FPS
+    return ev
+
+
+def fx_track(plans, rate=44100, vol=1.0):
+    total = int(sum(pl['n'] for pl in plans) / FPS * rate) + rate
+    out = np.zeros(total, np.float32)
+    cache, last = {}, {}
+    for at, kind in sorted(fx_events(plans)):
+        if kind in ('tick', 'bup') and at - last.get(kind, -9) < 0.12:   # tránh dồn dập
+            continue
+        last[kind] = at
+        snd = cache.get(kind)
+        if snd is None:
+            snd = cache[kind] = _fx_sound(kind, rate)
+        a = int(at * rate)
+        b = min(total, a + len(snd))
+        if b > a:
+            out[a:b] += snd[:b - a]
+    return out * 32767 * 0.16 * vol
+
+
+def mix_into_wav(path, track, duck_amt=0.6):
     with wave.open(path) as w:
         ch, sw, fr, nf = w.getnchannels(), w.getsampwidth(), w.getframerate(), w.getnframes()
         data = np.frombuffer(w.readframes(nf), dtype=np.int16).astype(np.float32).reshape(-1, ch)
@@ -2429,7 +2530,7 @@ def mix_into_wav(path, track):
     voice = np.abs(data[:m].mean(1))
     k = max(1, int(fr * 0.08))
     env = np.convolve(voice, np.ones(k, dtype=np.float32) / k, mode='same')
-    duck = 1.0 - 0.6 * np.clip(env / 1500.0, 0, 1)
+    duck = 1.0 - duck_amt * np.clip(env / 1500.0, 0, 1)
     data[:m] += (track[:m] * duck)[:, None]
     with wave.open(path, 'wb') as w:
         w.setnchannels(ch); w.setsampwidth(sw); w.setframerate(fr)
@@ -2514,7 +2615,8 @@ class Renderer:
             self.logo_big = lg.resize((int(lg.width * bh / lg.height), bh), Image.LANCZOS)
         self.paper = make_paper(bg or 'trang')
         self.subs = bool(subs)
-        self.sub_font = font(60)
+        self.sub_style = 'noibat' if subs == 'noibat' else 'thuong'
+        self.sub_font = font(80 if self.sub_style == 'noibat' else 60)
         self.label = None
         if label and label.strip():
             t = Txt(label.strip().upper(), 40, (255, 255, 255), 0, cx=0)
@@ -2544,6 +2646,51 @@ class Renderer:
                     return warp_r(it, (t - s0) / max(e0 - s0, 1e-3)) >= it.LE
                 return False
         return False
+
+    EMPH_T = 0.75
+
+    @staticmethod
+    def _layer_of(it):
+        """Ảnh đã vẽ xong của một hình (cắt sát) + vị trí, tính một lần."""
+        lay = getattr(it, '_lay', None)
+        if lay is None:
+            tmp = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+            it.draw(tmp, 1.0)
+            bb = tmp.getbbox() or (0, 0, 1, 1)
+            lay = it._lay = (tmp.crop(bb), bb)
+        return lay
+
+    def _paste_scaled(self, f, it, k, dx=0.0, dy=0.0, alpha=1.0):
+        im, (x0, y0, x1, y1) = self._layer_of(it)
+        if k <= 0.02 or alpha <= 0.01:
+            return
+        w, h = max(1, int(im.width * k)), max(1, int(im.height * k))
+        sc = im.resize((w, h), Image.BILINEAR) if (w, h) != im.size else im
+        if alpha < 0.999:
+            sc = with_alpha(sc, alpha)
+        cx, cy = (x0 + x1) / 2 + dx, (y0 + y1) / 2 + dy
+        f.paste(sc, (int(cx - w / 2), int(cy - h / 2)), sc)
+
+    def _draw_item(self, f, it, r, t, e):
+        if getattr(it, 'pop', False) and 0 < r < 1:          # nảy vào: to vượt một chút rồi về đúng cỡ
+            c1 = 1.70158 * 1.4
+            u = clamp(r) - 1
+            k = 1 + (c1 + 1) * u ** 3 + c1 * u ** 2
+            self._paste_scaled(f, it, max(0.05, k), alpha=clamp(r * 3))
+            return
+        em = getattr(it, 'emph', None) if FX.get('emph') else None
+        if em and r >= 1 and e < t < e + self.EMPH_T:
+            u = (t - e) / self.EMPH_T
+            if em == 'phinh':
+                self._paste_scaled(f, it, 1 + 0.09 * math.sin(math.pi * clamp(u * 2) ) * (1 - u * 0.5))
+            elif em == 'rung':
+                self._paste_scaled(f, it, 1.0, dx=14 * math.sin(u * 2 * math.pi * 5) * (1 - u))
+            elif em == 'nay':
+                self._paste_scaled(f, it, 1.0, dy=-34 * abs(math.sin(u * 2 * math.pi)) * (1 - u))
+            else:
+                it.draw(f, r)
+            return
+        it.draw(f, r)
 
     def _make_eraser(self):
         im = Image.new('RGBA', (340, 170), (0, 0, 0, 0))
@@ -2628,6 +2775,20 @@ class Renderer:
                 total = sum(widths) + sp * (len(words) - 1)
                 x = W / 2 - total / 2
                 d = ImageDraw.Draw(f)
+                if self.sub_style == 'noibat':             # kiểu CapCut: chữ trắng viền đậm, từ đang đọc nằm trong ô cam
+                    asc, desc = fnt.getmetrics()
+                    cur = max([j for j, (wa, _) in enumerate(ws) if wa <= t] or [0])
+                    for j, (w_, wd, (wa, wb)) in enumerate(zip(words, widths, ws)):
+                        if j == cur:
+                            pad = 14
+                            d.rounded_rectangle((x - pad, SUB_Y - 4, x + wd + pad, SUB_Y + asc + desc + 2), 18,
+                                                fill=ORANGE)
+                            d.text((x, SUB_Y), w_, font=fnt, fill=(255, 255, 255), stroke_width=3, stroke_fill=ORANGE)
+                        else:
+                            d.text((x, SUB_Y), w_, font=fnt, fill=(255, 255, 255) if t >= wa else (250, 250, 250),
+                                   stroke_width=9, stroke_fill=(25, 28, 40))
+                        x += wd + sp
+                    return
                 for w_, wd, (wa, wb) in zip(words, widths, ws):
                     col = SUB_ON if t >= wa else SUB_OFF
                     d.text((x, SUB_Y), w_, font=fnt, fill=col, stroke_width=7, stroke_fill=(255, 255, 255))
@@ -2707,6 +2868,7 @@ class Renderer:
                     it._pz = (pz_ratio, max(1, min(4, int(it.dur * k / 0.9))))
                 if isinstance(it, Badge):                         # huy hiệu 1/3 tự hiện nhanh, không bắt tay vẽ
                     it.nohand = True
+                    it.sfx = 'bup'
                     sch.append((it, 0.0, 0.3))
                     continue
                 if i == 0 and self.hook and isinstance(it, Txt):   # cảnh mở: chữ hiện ngay từ khung đầu
@@ -2845,7 +3007,7 @@ class Renderer:
                 it.draw(f, warp_r(it, (t - s) / max(e - s, 1e-3)))
         for it, s, e in pl['sch']:
             if not isinstance(it, Fill):
-                it.draw(f, warp_r(it, (t - s) / max(e - s, 1e-3)))
+                self._draw_item(f, it, warp_r(it, (t - s) / max(e - s, 1e-3)), t, e)
         hp = self.hand_pos(pl, t)
         if hp:
             lift = hp[2] if len(hp) > 2 else 0.0
@@ -2856,6 +3018,13 @@ class Renderer:
             f.paste(shadow, (hx + int(14 + 30 * lift), hy + int(18 + 52 * lift)), shadow)
             f.paste(hand, (hx, hy), hand)
         z, zx, zy = self.cam_view(pl, t)
+        if first and FX.get('punch') and t < 0.6:          # phá nhịp giây đầu: bắt đầu sát rồi lùi ra nhanh
+            zp = 1 + 0.14 * (1 - eo(clamp(t / 0.55)))
+            if zp > 1.0005:
+                ay = (TOP_AREA + BOTTOM_AREA) / 2
+                z, zx, zy = z * zp, zx + (W / 2 - zx) * 0.6, zy + (ay - zy) * 0.6
+                hw, hh = W / (2 * z), H / (2 * z)
+                zx, zy = min(max(zx, hw), W - hw), min(max(zy, hh), H - hh)
         if z > 1.0005:                                   # camera phóng nhẹ (logo, nhãn, thanh tiến độ đứng yên)
             hw, hh = W / (2 * z), H / (2 * z)          # phép biến đổi lẻ điểm ảnh: không giật từng 1px
             f = f.transform((W, H), Image.AFFINE, (1 / z, 0, zx - hw, 0, 1 / z, zy - hh), resample=Image.BILINEAR)
@@ -3163,6 +3332,8 @@ def render(script_text, opts, progress=lambda msg, frac: None):
 
         if opts.get('pen_sound', True):
             mix_into_wav(narr, sfx_track(plans, rate_hz, 0.018 * float(opts.get('pen_vol', 1.0))))
+        if FX.get('sfx'):
+            mix_into_wav(narr, fx_track(plans, rate_hz, float(opts.get('fx_vol', 1.0))), duck_amt=0.25)
 
         tmp_out = out_path + '.dang-tao.mp4'
         music = opts.get('music')

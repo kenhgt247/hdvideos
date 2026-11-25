@@ -374,7 +374,13 @@ BÍ QUYẾT GIỮ NGƯỜI XEM:
     <label class="chk"><input type="checkbox" id="stroke" checked> Vẽ từng nét như người thật (chữ, ảnh, nhân vật)</label>
     <label class="chk"><input type="checkbox" id="hook" checked> Câu mở hiện ngay từ giây đầu (không mở đầu bằng bảng trắng)</label>
     <label class="chk"><input type="checkbox" id="cam" checked> Camera phóng nhẹ vào chỗ đang vẽ (video bớt tĩnh)</label>
-    <label class="chk"><input type="checkbox" id="subs"> Hiện phụ đề chạy theo giọng đọc</label>
+    <label class="f" for="subs">Phụ đề chạy theo giọng đọc</label>
+    <select id="subs"><option value="">Tắt</option><option value="1">Phụ đề thường (chữ đổi màu theo lời)</option><option value="noibat">Phụ đề nổi bật kiểu CapCut (chữ to, từ đang đọc nằm trong ô cam)</option></select>
+    <div class="f" style="margin-top:12px">Hiệu ứng giữ chân người xem</div>
+    <label class="chk"><input type="checkbox" id="sfx" checked> Âm thanh hiệu ứng: "vút" khi chuyển cảnh, "ting" khi hiện số, "bụp" khi hình bật ra, chuông kết</label>
+    <label class="chk"><input type="checkbox" id="punch" checked> Phá nhịp giây đầu: cảnh mở phóng nhanh + tiếng "bùm" nhẹ</label>
+    <label class="chk"><input type="checkbox" id="emph" checked> Nhấn mạnh sau khi vẽ: hình cảnh báo rung, số lớn phình, cúp/tích nảy</label>
+    <label class="chk"><input type="checkbox" id="pop" checked> Hình nhỏ trong danh sách nảy vào nhanh (không cần tay vẽ)</label>
     <label class="f" for="pen">Tiếng bút vẽ</label>
     <select id="pen"><option value="0">Tắt</option><option value="0.5">Rất nhỏ</option><option value="1" selected>Nhỏ</option><option value="1.8">Vừa</option></select>
     <label class="chk"><input type="checkbox" id="auto" checked> Tự trang trí (tô màu, gạch chân, hình minh hoạ)</label>
@@ -584,12 +590,13 @@ function fillVoices(list) {
 fillVoices(store.get('voices', []));
 FIELDS.forEach(k => { if (k !== 'voice' && k !== 'name') { const v = store.get(k, null); if (v != null) $(k).value = v; } });
 ['auto', 'logo'].forEach(k => { $(k).checked = store.get(k, true); });
-$('subs').checked = store.get('subs', false);
+{ const sv = store.get('subs', ''); $('subs').value = sv === true ? '1' : sv === false ? '' : sv; }
+['sfx', 'punch', 'emph', 'pop'].forEach(k => { $(k).checked = store.get(k, true); $(k).onchange = () => store.set(k, $(k).checked); });
 $('stroke').checked = store.get('stroke', true);
 $('hook').checked = store.get('hook', true);
 $('cam').checked = store.get('cam', true);
 $('stroke').onchange = () => store.set('stroke', $('stroke').checked);
-$('subs').onchange = () => store.set('subs', $('subs').checked);
+$('subs').onchange = () => store.set('subs', $('subs').value);
 if (!$('bg').value) $('bg').value = 'trang';
 drawBgs();
 if (!$('fmt').value) $('fmt').value = 'doc';
@@ -1480,7 +1487,7 @@ function jobBody(preview) {
   return { script, name, voice, vieneu_voice, rate: $('rate').value, character: $('character').value, label: $('label').value,
     hotline: $('hotline').value, auto: $('auto').checked, logo: $('logo').checked, by: $('by').value,
     clone, music: $('music').value, music_vol: $('music_vol').value, pen: $('pen').value,
-    bg: $('bg').value || 'trang', fmt: $('fmt').value || 'doc', trans: $('trans').value || 'xen', subs: $('subs').checked, stroke: $('stroke').checked, preview: !!preview,
+    bg: $('bg').value || 'trang', fmt: $('fmt').value || 'doc', trans: $('trans').value || 'xen', subs: $('subs').value === 'noibat' ? 'noibat' : !!$('subs').value, sfx: $('sfx').checked, punch: $('punch').checked, emph: $('emph').checked, pop: $('pop').checked, stroke: $('stroke').checked, preview: !!preview,
     reveal: $('reveal').value || 'net', hook: $('hook').checked, cam: $('cam').checked, tpl: TPL_USED || '' };
 }
 $('bGo').onclick = async () => {
