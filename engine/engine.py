@@ -789,10 +789,22 @@ def kho_keywords():
             kw = norm(kw0)
             acronym = kw0.strip().isupper() and len(kw0.strip()) >= 4      # TOPIK, TOCFL, VISA: giữ dù chỉ 1 chữ
             if kw and (len(kw.split()) >= 2 or acronym) and kw not in KHO_GENERIC:   # bỏ từ lẻ 1 chữ để tránh gắn nhầm
-                out.setdefault(n, set()).add(kw)
+                # có dấu -> so khớp CÓ DẤU (để 'trúng tâm' không khớp 'trung tâm')
+                acc = _acc_words(kw0).strip()
+                out.setdefault(n, set()).add(('~' + acc) if acc != kw else kw)
+    # từ khoá dùng chung cho >=4 hình là quá chung chung -> bỏ
+    cnt = {}
+    for ks in out.values():
+        for k in ks:
+            cnt[k] = cnt.get(k, 0) + 1
+    for n in list(out):
+        out[n] = {k for k in out[n] if cnt[k] < 4}
     for n in kho_index():
         w = [x for x in n.split() if x not in KHO_STOP]
         keys = {n}
+        if n in meta:          # hình đã có tên + từ khoá chuẩn: không cắt tên file thành cặp chữ (tránh 'trúng tâm' = 'trung tâm')
+            out[n] = list(keys | set(out.get(n, set())))
+            continue
         for i in range(len(w) - 1):
             bg = w[i] + ' ' + w[i + 1]
             if bg not in KHO_GENERIC:
@@ -1233,8 +1245,15 @@ def _words(t):
     return ' ' + re.sub(r'[^a-z0-9%+]+', ' ', norm(t)) + ' '
 
 
+def _acc_words(t):
+    import unicodedata
+    t = unicodedata.normalize('NFC', t or '').lower()
+    return ' ' + re.sub(r'[^\w%+]+', ' ', t).replace('_', ' ') + ' '
+
+
 def pick_icon(screen, say, avoid=(), with_score=False):
     a, b = _words(screen), _words(say)
+    a2, b2 = _acc_words(screen), _acc_words(say)
     best, best_score = None, 0
     allkeys = dict(ICON_KEYWORDS)
     allkeys.update(_hv.keywords())
@@ -1242,11 +1261,15 @@ def pick_icon(screen, say, avoid=(), with_score=False):
     for icon, keys in allkeys.items():
         sc = 0
         for k in keys:
+            if k.startswith('~'):
+                k = k[1:]; ta, tb = a2, b2
+            else:
+                ta, tb = a, b
             kk = ' %s ' % k.strip()
             wk = 1 + len(k) / 8.0 + (1.2 if kho_has(icon) else 0.6 if _hv.has(icon) else 0)
-            if kk in a:
+            if kk in ta:
                 sc += 2 * wk
-            if kk in b:
+            if kk in tb:
                 sc += wk
         if icon in avoid:
             sc *= 0.25
