@@ -2478,13 +2478,13 @@ class Renderer:
         self.cam = bool(cam)
         self.trans = trans if trans in ('xoa', 'lia', 'xen') else 'xoa'
         self.hook = bool(hook)
-        hj = json.load(open(os.path.join(ASSETS, 'hand.json')))
-        self.hand = Image.open(os.path.join(ASSETS, 'hand.png')).convert('RGBA')
-        self.tip = hj['tip']
-        ha = np.asarray(self.hand)[:, :, 3]                       # bóng tay: hình tay tô đen, làm mờ
-        sh = Image.new('RGBA', self.hand.size, (20, 20, 30, 0))
-        sh.putalpha(Image.fromarray((ha * 0.22).astype(np.uint8)))
-        self.hand_shadow = sh.filter(ImageFilter.GaussianBlur(9))
+        self.hand, self.tip, self.hand_shadow = self._load_hand('hand')
+        self.hand_c = None                                        # tay cầm bút tô màu (nếu có ảnh hand_to.png)
+        if os.path.exists(os.path.join(ASSETS, 'hand_to.png')):
+            try:
+                self.hand_c, self.tip_c, self.shadow_c = self._load_hand('hand_to')
+            except Exception:
+                self.hand_c = None
         lg = load_logo(logo_path if logo_path and os.path.exists(logo_path) else os.path.join(ASSETS, 'logo.png'))
         lw = LAY['logo_w']
         self.logo_small = scaled(lg, lw)
@@ -2506,6 +2506,26 @@ class Renderer:
             im.alpha_composite(t.im, ((w - t.im.width) // 2, (70 - t.im.height) // 2))
             self.label = im
         self.eraser = self._make_eraser()
+
+    @staticmethod
+    def _load_hand(name):
+        hj = json.load(open(os.path.join(ASSETS, name + '.json')))
+        im = Image.open(os.path.join(ASSETS, name + '.png')).convert('RGBA')
+        ha = np.asarray(im)[:, :, 3]                              # bóng tay: hình tay tô đen, làm mờ
+        sh = Image.new('RGBA', im.size, (20, 20, 30, 0))
+        sh.putalpha(Image.fromarray((ha * 0.22).astype(np.uint8)))
+        return im, hj['tip'], sh.filter(ImageFilter.GaussianBlur(9))
+
+    def _coloring(self, pl, t):
+        """Tay đang ở giai đoạn tô màu (tô mảng, tô màu cho hình)?"""
+        for it, s0, e0 in pl['sch']:
+            if s0 <= t <= e0 and not getattr(it, 'nohand', False) and not getattr(it, 'presenter', False):
+                if isinstance(it, Fill):
+                    return True
+                if isinstance(it, CharItem) and it.bp is not None:
+                    return warp_r(it, (t - s0) / max(e0 - s0, 1e-3)) >= it.LE
+                return False
+        return False
 
     def _make_eraser(self):
         im = Image.new('RGBA', (340, 170), (0, 0, 0, 0))
@@ -2796,9 +2816,12 @@ class Renderer:
         hp = self.hand_pos(pl, t)
         if hp:
             lift = hp[2] if len(hp) > 2 else 0.0
-            hx, hy = int(hp[0] - self.tip[0]), int(hp[1] - self.tip[1])
-            f.paste(self.hand_shadow, (hx + int(14 + 30 * lift), hy + int(18 + 52 * lift)), self.hand_shadow)
-            f.paste(self.hand, (hx, hy), self.hand)
+            hand, tip, shadow = self.hand, self.tip, self.hand_shadow
+            if self.hand_c is not None and self._coloring(pl, t):
+                hand, tip, shadow = self.hand_c, self.tip_c, self.shadow_c
+            hx, hy = int(hp[0] - tip[0]), int(hp[1] - tip[1])
+            f.paste(shadow, (hx + int(14 + 30 * lift), hy + int(18 + 52 * lift)), shadow)
+            f.paste(hand, (hx, hy), hand)
         z, zx, zy = self.cam_view(pl, t)
         if z > 1.0005:                                   # camera phóng nhẹ (logo, nhãn, thanh tiến độ đứng yên)
             hw, hh = W / (2 * z), H / (2 * z)
