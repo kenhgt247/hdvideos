@@ -1788,7 +1788,21 @@ function jobCard(j) {
   }
 }
 const POSTS = {}; let postSeq = 0;
+// Video lĩnh vực khác dựng trước khi có bài đăng theo lĩnh vực: thay chữ ký, hashtag du học bằng thương hiệu
+function fixBrand(p) {
+  if (!p || LV === 'duhoc' || !LVC.ten) return p;
+  const tag = '#' + vnNorm(LVC.ten).replace(/[^a-z0-9]/g, '');
+  const extra = (String(LVC.hashtag || '').match(/#\w+/g) || []).map(x => x.toLowerCase());
+  const tags = [tag, ...extra.filter(x => x !== tag)].join(' ');
+  const sign = LVC.ten + (LVC.slogan ? ' – ' + LVC.slogan : '');
+  const f = t => typeof t !== 'string' ? t : t.replace(/🏫 Du Học Hải Dương – Định Hướng Tương Lai/g, '🏠 ' + sign)
+    .replace(/Du Học Hải Dương – Định Hướng Tương Lai/g, sign)
+    .replace(/(^|\n)#duhochaiduong[^\n]*/g, (m, a) => a + tags + (/#shorts/.test(m) ? ' #shorts' : ''))
+    .replace(/#duhochaiduong[^\n]*?(#xuhuong)/g, tags + ' $1');
+  const o = {}; for (const k in p) o[k] = f(p[k]); return o;
+}
 function postsBox(p) {
+  p = fixBrand(p);
   if (!p || !p.facebook) return '';
   const k = 'p' + (++postSeq); POSTS[k] = p;
   return `<div class="posts" id="${k}"><div class="tabs">
