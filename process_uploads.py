@@ -5,7 +5,7 @@ engine/assets/kho_moi/<tên>.<đuôi>        -> engine/assets/kho/<tên>.png
 engine/assets/nhanvat_moi/<anh|chi>_<chao|chi|like>.<đuôi> -> engine/assets/nhanvat/...
 engine/assets/nhanvat_moi/_khoi_phuc      -> khôi phục nhân vật gốc
 """
-import os, sys
+import os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, 'engine'))
@@ -23,11 +23,15 @@ def main():
         base, ext = os.path.splitext(f)
         if ext.lower() not in IMG:
             continue
-        old = os.path.join(E.KHO_DIR, base + '.png')
+        folder = E.KHO_DIR
+        if '__' in base and base.split('__', 1)[0].startswith('kho_'):   # ảnh của lĩnh vực khác: kho_ngoi__ten.png
+            sub, base = base.split('__', 1)
+            folder = os.path.join(E.ASSETS, re.sub(r'[^a-z0-9_]', '', sub))
+        old = os.path.join(folder, base + '.png')
         if os.path.exists(old):          # tải lại cùng tên = thay ảnh cũ
             os.remove(old)
         try:
-            print('Kho:', f, '->', E.kho_add(src, base.replace('_', ' ')))
+            print('Kho:', f, '->', E.kho_add(src, base.replace('_', ' '), folder))
             n += 1
         except Exception as e:
             print('Bỏ qua', f, e)

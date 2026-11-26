@@ -18,6 +18,38 @@ def slug(s):
     return (s or 'video')[:60]
 
 
+def lv_logo(lv, lvc, out_dir):
+    """Logo của lĩnh vực: assets/lv/<lv>/logo.png; chưa có thì tự vẽ logo chữ từ tên thương hiệu."""
+    if lv == 'duhoc' or not lvc:
+        return os.path.join(HERE, 'engine', 'assets', 'logo.png')
+    p = os.path.join(HERE, 'engine', 'assets', 'lv', lv, 'logo.png')
+    if os.path.exists(p):
+        return p
+    from PIL import Image, ImageDraw
+    ten = (lvc.get('ten') or lv).upper()
+    words, lines = ten.split(), []
+    for w in words:                                   # chia 2 dòng cho gọn
+        if lines and len(lines[-1]) + len(w) < max(8, len(ten) // 2 + 1):
+            lines[-1] += ' ' + w
+        else:
+            lines.append(w)
+    f = E.font(120)
+    sizes = [f.getbbox(t, stroke_width=2) for t in lines]
+    W = max(b[2] - b[0] for b in sizes) + 80
+    H = sum(b[3] - b[1] for b in sizes) + 40 * len(lines) + 40
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle((0, 0, W - 1, H - 1), 50, fill=(255, 255, 255, 255), outline=(25, 70, 170, 255), width=10)
+    y = 40
+    for t, b in zip(lines, sizes):
+        d.text(((W - (b[2] - b[0])) / 2 - b[0], y - b[1]), t, font=f, fill=(200, 60, 30) if y > 40 else (25, 70, 170),
+               stroke_width=2, stroke_fill=(200, 60, 30) if y > 40 else (25, 70, 170))
+        y += b[3] - b[1] + 40
+    out = os.path.join(out_dir, 'logo_chu.png')
+    im.save(out)
+    return out
+
+
 def log(msg, frac=None):
     pct = '' if frac is None else ' (%d%%)' % int(frac * 100)
     print('>> %s%s' % (msg, pct), flush=True)
@@ -33,12 +65,26 @@ def main():
             'by': job.get('by', ''), 'script': job.get('script', '')[:3000],
             'tpl': job.get('tpl', ''), 'ab': job.get('ab', ''), 'abg': job.get('abg', ''), 'batch': job.get('batch', '')}
 
+    # ---- lĩnh vực (du học / ngói màu / ...): logo, chữ trên bút, kho hình, hotline riêng
+    lv = re.sub(r'[^a-z0-9_]', '', job.get('lv') or '') or 'duhoc'
+    try:
+        lvs = json.load(open(os.path.join(HERE, 'engine', 'linhvuc.json'), encoding='utf-8'))
+    except Exception:
+        lvs = {}
+    lvc = lvs.get(lv) or {}
+    info['lv'] = lv
+    E.PEN_TEXT = None
+    E.KHO_LV = None
+    if lv != 'duhoc' and lvc:
+        E.PEN_TEXT = lvc.get('but') if lvc.get('but') is not None else lvc.get('ten', '')
+        E.KHO_LV = os.path.join(HERE, 'engine', 'assets', re.sub(r'[^a-z0-9_]', '', lvc.get('kho') or 'kho_' + lv))
+
     voice = job.get('voice') or 'vieneu_nam'
     character = job.get('character') or 'auto'
     opts = {'rate': int(job.get('rate') or 0), 'auto': bool(job.get('auto', True)),
             'label': (job.get('label') or '').strip() or None,
-            'hotline': (job.get('hotline') or '').strip() or None,
-            'logo': os.path.join(HERE, 'engine', 'assets', 'logo.png'),
+            'hotline': (job.get('hotline') or '').strip() or (lvc.get('hotline') or '').strip() or None,
+            'logo': lv_logo(lv, lvc, out_dir),
             'out_path': os.path.join(out_dir, 'video.mp4'), 'cover_path': os.path.join(out_dir, 'bia.jpg')}
     if not job.get('logo', True):
         opts['logo'] = None

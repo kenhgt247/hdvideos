@@ -800,17 +800,34 @@ KHO_GENERIC = {'du hoc', 'han quoc', 'dai loan', 'hoc sinh', 'sinh vien', 'viet 
 KHO_STOP = {'va', 'cua', 'o', 'tai', 'voi', 'cho', 'la', 'cac', 'nhung', 'mot', 'trong', 'tren', 'duoi', 'anh', 'chi'}
 
 
-def kho_index():
-    """{tên chuẩn hóa: đường dẫn} của các ảnh trong Kho hình."""
+KHO_LV = None   # thư mục kho riêng của lĩnh vực khác (vd assets/kho_ngoi); None = kho du học như cũ
+
+
+def _kho_chung():
+    """Tên file trong kho du học dùng chung được cho mọi lĩnh vực (assets/kho/_chung.json)."""
     try:
-        mt = os.path.getmtime(KHO_DIR)
+        with open(os.path.join(KHO_DIR, '_chung.json'), encoding='utf-8') as f:
+            return set(json.load(f))
+    except Exception:
+        return set()
+
+
+def kho_index():
+    """{tên chuẩn hóa: đường dẫn} của các ảnh trong Kho hình (lĩnh vực khác: kho riêng + hình dùng chung)."""
+    try:
+        mt = (KHO_LV, os.path.getmtime(KHO_DIR), os.path.getmtime(KHO_LV) if KHO_LV and os.path.isdir(KHO_LV) else 0)
     except OSError:
         return {}
     if _kho['mtime'] != mt:
         idx = {}
-        for f in sorted(os.listdir(KHO_DIR)):
-            if f.lower().endswith('.png') and not f.startswith('_'):
-                idx[norm(re.sub(r'[_\-]+', ' ', f[:-4]))] = os.path.join(KHO_DIR, f)
+        chung = _kho_chung() if KHO_LV else None
+        dirs = [KHO_DIR] + ([KHO_LV] if KHO_LV and os.path.isdir(KHO_LV) else [])
+        for d in dirs:
+            for f in sorted(os.listdir(d)):
+                if f.lower().endswith('.png') and not f.startswith('_'):
+                    if d == KHO_DIR and chung is not None and f not in chung:
+                        continue
+                    idx[norm(re.sub(r'[_\-]+', ' ', f[:-4]))] = os.path.join(d, f)
         _kho.update(mtime=mt, idx=idx)
     return _kho['idx']
 
@@ -823,11 +840,14 @@ KHO_TUKHOA = os.path.join(KHO_DIR, '_tu_khoa.json')   # {ten_file_khong_duoi: {"
 
 
 def kho_meta():
-    try:
-        with open(KHO_TUKHOA, encoding='utf-8') as f:
-            return json.load(f)
-    except Exception:
-        return {}
+    out = {}
+    for p in [KHO_TUKHOA] + ([os.path.join(KHO_LV, '_tu_khoa.json')] if KHO_LV else []):
+        try:
+            with open(p, encoding='utf-8') as f:
+                out.update(json.load(f))
+        except Exception:
+            pass
+    return out
 
 
 def kho_keywords():
@@ -867,19 +887,20 @@ def big_icon(name):
     return _hv.has(name) or kho_has(name)
 
 
-def _kho_dst(name):
-    os.makedirs(KHO_DIR, exist_ok=True)
+def _kho_dst(name, folder=None):
+    folder = folder or KHO_DIR
+    os.makedirs(folder, exist_ok=True)
     base = re.sub(r'[^a-z0-9]+', '_', norm(name)).strip('_') or 'hinh'
-    dst = os.path.join(KHO_DIR, base + '.png')
+    dst = os.path.join(folder, base + '.png')
     k = 2
     while os.path.exists(dst):
-        dst = os.path.join(KHO_DIR, '%s_%d.png' % (base, k)); k += 1
+        dst = os.path.join(folder, '%s_%d.png' % (base, k)); k += 1
     return dst
 
 
-def kho_add(src, name=None):
-    """Thêm ảnh vào Kho: tách nền, lưu PNG với tên (không dấu, nối bằng _)."""
-    dst = _kho_dst(name or os.path.splitext(os.path.basename(src))[0])
+def kho_add(src, name=None, folder=None):
+    """Thêm ảnh vào Kho (hoặc kho riêng folder): tách nền, lưu PNG với tên (không dấu, nối bằng _)."""
+    dst = _kho_dst(name or os.path.splitext(os.path.basename(src))[0], folder)
     _save_small(remove_bg(src, max_h=1100), dst)
     CharItem._cache.clear()
     return dst
@@ -2601,6 +2622,31 @@ def warp_r(it, r):
     return 1.0
 
 
+PEN_TEXT = None      # None: bút gốc (Du Học Hải Dương); chuỗi: in chữ này lên bút trắng (lĩnh vực khác)
+PEN_COLOR = (25, 70, 170)
+
+
+def _pen_label(im, pen, text):
+    """In tên thương hiệu dọc thân bút (bút đã xoá chữ gốc)."""
+    size = int(pen['h'] * 1.25)
+    f = font(size)
+    while size > 12:
+        bb = f.getbbox(text, stroke_width=1)
+        if bb[2] - bb[0] <= pen['len'] * 1.08 and bb[3] - bb[1] <= pen['h'] * 1.2:
+            break
+        size -= 2
+        f = font(size)
+    bb = f.getbbox(text, stroke_width=1)
+    tw, th = bb[2] - bb[0], bb[3] - bb[1]
+    lay = Image.new('RGBA', (tw + 20, th + 20), (0, 0, 0, 0))
+    ImageDraw.Draw(lay).text((10 - bb[0], 10 - bb[1]), text, font=f, fill=PEN_COLOR + (235,),
+                             stroke_width=1, stroke_fill=PEN_COLOR + (235,))
+    lay = lay.rotate(-pen['ang'], resample=Image.BICUBIC, expand=True)
+    out = im.copy()
+    out.alpha_composite(lay, (int(pen['cx'] - lay.width / 2), int(pen['cy'] - lay.height / 2)))
+    return out
+
+
 class Renderer:
     def __init__(self, logo_path=None, label=None, bg='trang', subs=False, trans='xoa', hook=True, cam=False):
         self.cam = bool(cam)
@@ -2639,7 +2685,13 @@ class Renderer:
     @staticmethod
     def _load_hand(name):
         hj = json.load(open(os.path.join(ASSETS, name + '.json')))
-        im = Image.open(os.path.join(ASSETS, name + '.png')).convert('RGBA')
+        pen = hj.get('pen')
+        if PEN_TEXT is not None and pen and os.path.exists(os.path.join(ASSETS, name + '_trang.png')):
+            im = Image.open(os.path.join(ASSETS, name + '_trang.png')).convert('RGBA')
+            if PEN_TEXT.strip():
+                im = _pen_label(im, pen, PEN_TEXT.strip().upper())
+        else:
+            im = Image.open(os.path.join(ASSETS, name + '.png')).convert('RGBA')
         ha = np.asarray(im)[:, :, 3]                              # bóng tay: hình tay tô đen, làm mờ
         sh = Image.new('RGBA', im.size, (20, 20, 30, 0))
         sh.putalpha(Image.fromarray((ha * 0.22).astype(np.uint8)))

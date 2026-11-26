@@ -1,0 +1,33 @@
+{
+ "duhoc": {
+  "ten": "Du Học Hải Dương",
+  "slogan": "Định Hướng Tương Lai",
+  "nganh": "du học Đài Loan và Hàn Quốc",
+  "khach": "học sinh lớp 12 và phụ huynh",
+  "hotline": "",
+  "kho": "kho"
+ },
+ "ngoi": {
+  "ten": "Ngói màu Nano One",
+  "slogan": "Hiểu đúng mái nhà",
+  "nganh": "ngói màu, mái nhà và thi công khung kèo sắt thép",
+  "khach": "chủ nhà đang chuẩn bị xây mới, sửa hoặc thay mái",
+  "but": "Ngói màu Nano One",
+  "hotline": "",
+  "kho": "kho_ngoi",
+  "hashtag": "#ngoimau #mainha #nanoone",
+  "luu_y": "- KHÔNG đưa thông số kỹ thuật cụ thể (độ dày thép, khoảng cách kèo, khoảng cách li tô, độ dốc mái, số viên ngói trên mét vuông, tải trọng) trừ khi có trong THÔNG TIN THÊM. Viết theo nguyên tắc: \"theo thiết kế kết cấu\", \"theo hướng dẫn của từng loại ngói\", \"cần khảo sát thực tế\".\n- Không nêu giá tiền cụ thể nếu không có trong THÔNG TIN THÊM. Chi phí thì nói các khoản gồm những gì, mời nhắn tin để báo giá theo công trình.\n- Không chê thương hiệu ngói khác, không chê thợ cụ thể. Không hứa \"không bao giờ dột\", \"bền mãi mãi\".\n- Hình vẽ là minh họa nguyên lý, không phải bản vẽ thi công.",
+  "goi_y": [
+   "Vì sao mái ngói mới lợp đã dột",
+   "Ngói màu và ngói đất nung khác gì",
+   "5 sai lầm khi chọn mua ngói",
+   "Cấu tạo một bộ mái ngói",
+   "Nhà sơn trắng nên chọn ngói màu gì",
+   "Có nên tận dụng khung kèo cũ",
+   "Kiểm tra mái trước mùa mưa bão",
+   "Cách nghiệm thu mái ngói"
+  ],
+  "ve": "Thợ lợp mái: áo xanh dương, mũ bảo hộ vàng. Chủ nhà: áo sơ mi trắng. Tư vấn viên: áo xanh dương, đeo thẻ đỏ. Ngói vẽ màu đỏ cam, xanh rêu hoặc xám; khung kèo màu xám bạc.",
+  "vi_du": "ĐÚNG (ví dụ):\n```\nMái mới lợp / sao đã dột? || Mái vừa lợp xong đã dột. Lỗi nằm ở đâu? [vẽ: hỏi]\nKhông hẳn do ngói || Nhiều khi nguyên nhân không nằm ở viên ngói, mà ở cách làm mái.\nĐộ dốc mái [1/3] || Thứ nhất là *độ dốc mái*. Mái quá thoải so với yêu cầu của loại ngói thì nước thoát chậm.\nNước tràn qua khe [tiếp] || Nước chảy chậm sẽ dễ tràn ngược qua các khe nối giữa hai viên ngói.\nLi tô sai khoảng [2/3] || Thứ hai là *li tô sai khoảng cách*, khiến các viên ngói không ăn khớp với nhau.\nNgói hở mép [tiếp] || Ngói không khít thì mép hở, gặp gió mưa là nước tạt vào.\nNóc và khe giao [3/3] || Thứ ba là *nóc mái và khe giao*, hai chỗ dễ dột nhất nếu xử lý ẩu.\nChỗ cần làm kỹ: || Những chỗ cần làm thật kỹ gồm nóc mái, rìa mái và khe giao hai mái.\n- Nóc mái\n- Rìa mái\n- Khe giao\nNgói tốt chưa đủ / cần thợ đúng kỹ thuật || Ngói tốt là chưa đủ, mái bền cần cả thiết kế đúng và đội thợ có chuyên môn. [vẽ: tích]\nKiểm tra → Lợp thử → Nghiệm thu || Hãy kiểm tra khung kèo, lợp thử một đoạn, rồi mới nghiệm thu cả mái.\nMái nhà bạn dột chỗ nào? / Inbox {TEN} || Mái nhà bạn đang dột ở chỗ nào? Comment nhé, hoặc inbox {TEN} để được tư vấn.\n```\nCAPTION:\nMái mới lợp đã dột: ba chỗ hay làm sai.\nLưu lại để kiểm tra mái nhà mình nhé!\n#ngoimau #mainha #nanoone #chongdot\n"
+ }
+}

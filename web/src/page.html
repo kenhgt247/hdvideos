@@ -19,7 +19,7 @@ html,body{margin:0;overflow-x:hidden;max-width:100%;background:var(--bg);color:v
 header{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:10px 16px;padding-top:max(10px,env(safe-area-inset-top))}
 header img{width:36px;height:36px;object-fit:contain}
 header b{display:block;font-size:16px;color:var(--blue)}
-header small{color:var(--mut);font-size:12px}
+header small{color:var(--mut);font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 main{max-width:720px;margin:0 auto;padding:14px 14px 110px}
 nav{position:fixed;left:0;right:0;bottom:0;z-index:5;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
 nav button{flex:1;border:0;background:none;padding:9px 0 8px;font-size:12px;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:3px}
@@ -194,8 +194,9 @@ details.opt>summary{font-weight:700;padding:12px 0;cursor:pointer;color:var(--bl
 </head>
 <body>
 <header>
-  <img src="/img/logo" alt="">
-  <div><b>Video Vẽ Tay</b><small>Du Học Hải Dương · Định Hướng Tương Lai</small></div>
+  <img src="/img/logo" alt="" id="hdLogo">
+  <div style="flex:1;min-width:0"><b>Video Vẽ Tay</b><small id="hdSub">Du Học Hải Dương · Định Hướng Tương Lai</small></div>
+  <select id="lvSel" title="Lĩnh vực làm video" style="width:auto;max-width:46%;flex:none;font-weight:700;color:var(--blue)"><option value="duhoc">🎓 Du học</option></select>
 </header>
 
 <main>
@@ -240,7 +241,7 @@ details.opt>summary{font-weight:700;padding:12px 0;cursor:pointer;color:var(--bl
     <div id="aiSrc"></div>
     <details id="lkBox" style="margin-top:12px;border-top:1px solid #e5e7eb;padding-top:10px">
       <summary style="cursor:pointer;font-weight:600">🔗 Học từ video hot của kênh khác</summary>
-      <div class="hint">Dán link TikTok / Facebook / YouTube. Máy lấy lời video, AI chỉ <b>học ý tưởng</b> rồi viết mới theo giọng Du Học Hải Dương, đúng định dạng, không chép câu của họ. Dùng <b>thời lượng</b> và <b>cách viết</b> đã chọn ở trên (nên chọn 🔎 Kiểm chứng nếu video có số liệu).</div>
+      <div class="hint">Dán link TikTok / Facebook / YouTube. Máy lấy lời video, AI chỉ <b>học ý tưởng</b> rồi viết mới theo giọng <span class="brandTxt">Du Học Hải Dương</span>, đúng định dạng, không chép câu của họ. Dùng <b>thời lượng</b> và <b>cách viết</b> đã chọn ở trên (nên chọn 🔎 Kiểm chứng nếu video có số liệu).</div>
       <input type="text" id="lkUrl" placeholder="Dán link video, ví dụ https://www.tiktok.com/@.../video/..." style="margin-top:8px">
       <button class="btn" id="lkGet" type="button" style="width:100%;margin-top:8px">📥 Lấy lời video</button>
       <textarea id="lkText" rows="4" style="min-height:0;margin-top:8px" placeholder="Lời video sẽ hiện ở đây. Không lấy được thì tự dán lời vào ô này."></textarea>
@@ -504,7 +505,17 @@ BÍ QUYẾT GIỮ NGƯỜI XEM:
     <div id="mList" style="margin-top:8px"></div>
   </div>
   <div class="card">
-    <h2>Logo</h2>
+    <h2>Lĩnh vực đang làm: <span class="brandTxt">Du Học Hải Dương</span></h2>
+    <div class="hint">Mỗi lĩnh vực có tên thương hiệu, logo, hotline, chữ in trên bút, câu lệnh AI và kho hình riêng. Đổi lĩnh vực ở ô góc trên bên phải. Phần mềm, giọng đọc, nhạc, nhân vật dùng chung.</div>
+    <div id="lvForm" style="margin-top:8px"></div>
+    <div class="row adm" style="margin-top:10px">
+      <button class="btn main" id="lvSave" style="margin-top:0">Lưu lĩnh vực này</button>
+      <button class="btn" id="lvNew" style="flex:none">＋ Thêm lĩnh vực</button>
+    </div>
+    <div class="hint staff">Chỉ quản lý mới sửa được thông tin lĩnh vực.</div>
+  </div>
+  <div class="card">
+    <h2>Logo của <span class="brandTxt">Du Học Hải Dương</span></h2>
     <div class="up"><img id="logoImg" src="/img/logo" alt=""><button class="btn adm" id="bLogo">Đổi logo</button></div>
     <input type="file" id="logoFile" accept="image/png,image/*" class="hide">
     <div class="hint">Nên dùng ảnh PNG nền trong suốt.</div>
@@ -530,11 +541,20 @@ BÍ QUYẾT GIỮ NGƯỜI XEM:
 <script>
 const $ = id => document.getElementById(id);
 const store = {
-  get(k, d) { try { const v = localStorage.getItem('hdv_' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
-  set(k, v) { try { localStorage.setItem('hdv_' + k, JSON.stringify(v)); } catch {} },
+  get(k, d) { try { const v = localStorage.getItem('hdv_' + lvKey(k)); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('hdv_' + lvKey(k), JSON.stringify(v)); } catch {} },
 };
 function toast(msg, ms = 2600) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), ms); }
+// Lĩnh vực đang làm (du học, ngói màu...): mỗi lĩnh vực có logo, hotline, nhãn, nháp, câu lệnh AI, kho hình riêng
+const LV = (() => { try { return JSON.parse(localStorage.getItem('hdv_lv')) || 'duhoc'; } catch { return 'duhoc'; } })();
+let LVC = { id: LV, ten: LV === 'duhoc' ? 'Du Học Hải Dương' : '' };
+const PERLV = new Set(['hotline', 'label', 'draft', 'name', 'ai_topic']);
+function lvKey(k) { return LV !== 'duhoc' && PERLV.has(k) ? k + '@' + LV : k; }
+function lvUrl(path) { return LV === 'duhoc' ? path : path + (path.includes('?') ? '&' : '?') + 'lv=' + LV; }
+const BRAND = () => LVC.ten || 'Du Học Hải Dương';
 async function api(path, body) {
+  if (body !== undefined && body && typeof body === 'object' && !Array.isArray(body) && body.lv === undefined) body = { ...body, lv: LV };
+  if (body === undefined) path = lvUrl(path);
   const r = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
   if (r.status === 401) { location.reload(); throw new Error('Chưa đăng nhập'); }
   const d = await r.json().catch(() => ({}));
@@ -654,7 +674,7 @@ $('bPromptLuoi').onclick = () => copyFile('luoi', 'Đã copy câu lệnh lưới
 const textCache = {};
 async function copyFile(f, msg) {
   try {
-    if (!textCache[f] || f === "chatgpt") { const r = await fetch('/api/text?f=' + f); if (!r.ok) throw 0; textCache[f] = await r.text(); }
+    if (!textCache[f] || f === "chatgpt") { const r = await fetch(lvUrl('/api/text?f=' + f)); if (!r.ok) throw 0; textCache[f] = await r.text(); }
     toast(await copyText(textCache[f]) ? msg : 'Không copy được, hãy thử lại');
   } catch { toast('Không tải được câu lệnh'); }
 }
@@ -663,7 +683,7 @@ async function copyFile(f, msg) {
 /* ===== KIỂM TRA KỊCH BẢN ===== */
 const vnNorm = x => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'd').toLowerCase().replace(/[_\s]+/g, ' ').trim();
 let NAMES = null;
-fetch('/api/names').then(r => r.ok ? r.json() : null).then(d => {
+fetch(lvUrl('/api/names')).then(r => r.ok ? r.json() : null).then(d => {
   if (!d) return;
   NAMES = new Set([...d.hv, ...d.kho].map(vnNorm)); runCheck();
   const sel = $('iImg');
@@ -811,7 +831,7 @@ function checkScript(text, preserve = false) {
   if (nScene && nScene < 4) W.push('Kịch bản chỉ có ' + nScene + ' cảnh, hơi ngắn.');
   if (!preserve && nScene > 25) W.push('Kịch bản có ' + nScene + ' cảnh, dài quá (nên 8–14).');
   const last = lines.filter(x => x.trim() && !/^\s*[-+]\s/.test(x)).pop() || '';
-  if (nScene >= 4 && !/inbox|nhắn tin|liên hệ|hải dương/i.test(last)) W.push('Cảnh cuối nên mời inbox Du Học Hải Dương.');
+  if (nScene >= 4 && !/inbox|nhắn tin|liên hệ|hải dương/i.test(last) && !vnNorm(last).includes(vnNorm(BRAND()))) W.push('Cảnh cuối nên mời inbox ' + BRAND() + '.');
   if (nScene >= 8 && !hasList) W.push('Nên có ít nhất 1 danh sách để máy vẽ hình theo lời đọc.');
   if (!preserve && secs > 75) W.push('Video dự kiến dài khoảng ' + Math.round(secs) + ' giây. TikTok/Reels đẹp nhất 20–35 giây, nên cắt bớt hoặc tách thành 2 video.');
   const tail = lines.filter(x => x.trim()).slice(-2).join(' ');
@@ -856,7 +876,7 @@ const ORD = ['nhất', 'hai', 'ba', 'tư', 'năm'];
 const cap = x => x ? x[0].toUpperCase() + x.slice(1) : x;
 const low1 = x => x ? x[0].toLowerCase() + x.slice(1) : x;
 const splitList = x => String(x || '').split(/\s*[,;\n]\s*/).map(y => y.trim()).filter(Boolean);
-const END_HINT = 'inbox Du Học Hải Dương nhé!';
+const END_HINT_ = () => 'inbox ' + BRAND() + ' nhé!';
 const NUMW = ['một', 'hai', 'ba', 'bốn', 'năm'];
 // Chữ trên bảng: chia dòng đều nhau, ưu tiên cắt sau ":" "," hoặc trước từ nối; không cắt ngang cụm *bút dạ*
 const BRK = new Set(['thì', 'là', 'và', 'để', 'khi', 'của', 'mới', 'trước', 'sau', 'vào', 'với', 'cho', 'nhưng', 'hoặc', 'theo', 'ở', 'tại', 'lúc', 'nếu', 'mà', 'có', 'không', 'phải', 'được']);
@@ -921,7 +941,7 @@ const TPLS = {
         L.push(SC(`Sai lầm ${k}: *${v['s' + i]}*`, `Sai lầm thứ ${ORD[k - 1]}: ${v['s' + i]}.`, `[${k}/${n}]`));
         if (v['f' + i]) L.push(SC(`Cách đúng: ${v['f' + i]}`, `Cách đúng là ${low1(v['f' + i])}.`, '[tiếp]'));
       }
-      L.push(SC('Bạn mắc lỗi số mấy?', `Bạn đang mắc lỗi số mấy? Comment cho mình biết, và ${END_HINT}`));
+      L.push(SC('Bạn mắc lỗi số mấy?', `Bạn đang mắc lỗi số mấy? Comment cho mình biết, và ${END_HINT_()}`));
       return L;
     },
   },
@@ -942,7 +962,7 @@ const TPLS = {
       if (v.r1) L.push(SC(cap(v.r1), cap(v.r1) + '.'));
       if (v.r2) L.push(SC(cap(v.r2), cap(v.r2) + '.', '[tiếp]'));
       if (v.tip) L.push(SC(`Lời khuyên: *${v.tip}*`, `Lời khuyên của mình là ${low1(v.tip)}.`));
-      L.push(SC('Bạn còn nghe tin đồn nào?', `Bạn còn nghe tin đồn nào khác? Comment để mình giải đáp, hoặc ${END_HINT}`));
+      L.push(SC('Bạn còn nghe tin đồn nào?', `Bạn còn nghe tin đồn nào khác? Comment để mình giải đáp, hoặc ${END_HINT_()}`));
       return L;
     },
   },
@@ -965,7 +985,7 @@ const TPLS = {
         L.push(`Hàn Quốc vs Đài Loan / ${v['c' + i]}: ${v['h' + i] || '?'} | ${v['d' + i] || '?'} [${k}/${n}] || Về ${low1(v['c' + i])}, Hàn Quốc ${v['h' + i]}, còn Đài Loan ${v['d' + i]}.`);
       }
       if (v.concl) L.push(SC(cap(v.concl), cap(v.concl) + '.'));
-      L.push(SC('Bạn chọn Hàn hay Đài?', `Bạn nghiêng về Hàn Quốc hay Đài Loan? Comment cho mình biết, và ${END_HINT}`));
+      L.push(SC('Bạn chọn Hàn hay Đài?', `Bạn nghiêng về Hàn Quốc hay Đài Loan? Comment cho mình biết, và ${END_HINT_()}`));
       return L;
     },
   },
@@ -984,7 +1004,7 @@ const TPLS = {
       const list = it.length > 1 ? it.slice(0, -1).join(', ') + ' và ' + it[it.length - 1] : it[0] || '';
       L.push(`Cần mang theo: ${list}`);
       if (v.tip) L.push(SC(`Mẹo: *${v.tip}*`, `Mẹo nhỏ: ${low1(v.tip)}.`));
-      L.push(SC('Lưu video lại để khỏi quên nhé!', `Lưu video này lại để khỏi quên, và ${END_HINT}`));
+      L.push(SC('Lưu video lại để khỏi quên nhé!', `Lưu video này lại để khỏi quên, và ${END_HINT_()}`));
       return L;
     },
   },
@@ -1001,7 +1021,7 @@ const TPLS = {
       const st = splitList(v.steps).slice(0, 5), notes = String(v.notes || '').split('\n').map(x => x.trim());
       const L = [hook, st.join(' → ')];
       st.forEach((x, i) => L.push(SC(`Bước ${i + 1}: *${x}*`, notes[i] ? cap(notes[i]) + (/[.!?]$/.test(notes[i]) ? '' : '.') : 'Bước ' + NUMW[i] + ', ' + low1(x) + '.', `[${i + 1}/${st.length}]`)));
-      L.push(SC('Bạn đang ở bước mấy?', `Bạn đang ở bước mấy rồi? Comment cho mình biết, và ${END_HINT}`));
+      L.push(SC('Bạn đang ở bước mấy?', `Bạn đang ở bước mấy rồi? Comment cho mình biết, và ${END_HINT_()}`));
       return L;
     },
   },
@@ -1018,7 +1038,7 @@ const TPLS = {
       const L = [hook, SC(cap(v.fact), cap(v.fact) + '.')];
       if (v.why) L.push(SC('Vì sao quan trọng?', cap(v.why) + '.'));
       if (v.tip) L.push(SC(`Lời khuyên: *${v.tip}*`, `Lời khuyên: ${low1(v.tip)}.`, '[tiếp]'));
-      L.push(SC('Bạn đã biết chưa?', `Bạn đã biết điều này chưa? Comment cho mình biết, và ${END_HINT}`));
+      L.push(SC('Bạn đã biết chưa?', `Bạn đã biết điều này chưa? Comment cho mình biết, và ${END_HINT_()}`));
       return L;
     },
   },
@@ -1142,9 +1162,10 @@ $('mAI').onclick = () => setMode('ai');
 $('mBatch').onclick = () => setMode('batch');
 $('mSelf').onclick = () => setMode('self');
 setMode(store.get('mode', 'ai'));
-const IDEAS = ['Hồ sơ visa Đài Loan cần lưu ý gì', 'TOPIK cấp mấy thì đi Hàn được', 'Chi phí năm đầu du học Hàn gồm những gì',
+let IDEAS = ['Hồ sơ visa Đài Loan cần lưu ý gì', 'TOPIK cấp mấy thì đi Hàn được', 'Chi phí năm đầu du học Hàn gồm những gì',
   'Làm thêm ở Đài Loan: điều cần biết', 'Chọn ngành theo sở thích hay cơ hội việc làm', 'Phỏng vấn visa Hàn thường hỏi gì',
   'Học bổng Đài Loan có những loại nào', 'Sai lầm khi chọn trường du học'];
+if (LV !== 'duhoc') IDEAS = store.get('goi_y_' + LV, []);
 // Chỉ hiện 2 ví dụ (đổi ngẫu nhiên mỗi lần); đã từng dùng AI viết rồi thì ẩn luôn cho gọn.
 if (store.get('ai_used', false)) $('aiIdeas').style.display = 'none';
 $('aiIdeas').innerHTML = '<span class="hint" style="margin-right:2px">Ví dụ:</span>' +
@@ -1717,7 +1738,7 @@ async function openKho(i) {
 function drawKp() {
   const q = slugJs($('kpQ').value).replace(/_/g, ' ');
   $('kpGrid').innerHTML = KHO.filter(it => !q || it.name.includes(q)).map(it =>
-    `<div class="it" onclick="setIcon(${esc(JSON.stringify(it.name))})"><img loading="lazy" src="/img/kho/${it.file}"><div>${esc(it.name)}</div></div>`).join('') || '<div class="empty">Không có hình</div>';
+    `<div class="it" onclick="setIcon(${esc(JSON.stringify(it.name))})"><img loading="lazy" src="${it.url || '/img/kho/' + it.file}"><div>${esc(it.name)}</div></div>`).join('') || '<div class="empty">Không có hình</div>';
 }
 $('kpQ').oninput = drawKp;
 function setIcon(name) {
@@ -2026,8 +2047,10 @@ async function loadKho() {
     const d = await api('/api/kho');
     $('khoN').textContent = '(' + d.items.length + ')';
     $('khoPending').textContent = d.pending.length ? 'Đang tách nền ' + d.pending.length + ' ảnh mới...' : '';
-    $('khoGrid').innerHTML = d.items.length ? d.items.map(it => `<div class="it"><img loading="lazy" src="/img/kho/${it.file}"><div>${esc(it.name)}</div>
-      <button class="x adm" onclick="delKho('${it.file}')">✕</button></div>`).join('') : '<div class="empty">Kho đang trống</div>';
+    const own = d.items.filter(it => !it.chung).length;
+    if (LV !== 'duhoc') $('khoN').textContent = '(' + own + ' hình riêng + ' + (d.items.length - own) + ' hình dùng chung)';
+    $('khoGrid').innerHTML = d.items.length ? d.items.map(it => `<div class="it"><img loading="lazy" src="${it.url || '/img/kho/' + it.file}"><div>${esc(it.name)}${it.chung ? ' <small style="color:#888">(chung)</small>' : ''}</div>
+      ${it.chung ? '' : `<button class="x adm" onclick="delKho('${it.file}')">✕</button>`}</div>`).join('') : '<div class="empty">Kho đang trống</div>';
     if (d.pending.length && curTab === 'kho') setTimeout(loadKho, 20000);
   } catch (e) { $('khoGrid').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
@@ -2081,13 +2104,13 @@ $('bMissCopy').onclick = () => {
   if (!MISS.length) { toast('Chưa có câu nào thiếu hình'); return; }
   const top = MISS.slice(0, 40), lots = [];
   for (let i = 0; i < top.length; i += 4) lots.push(`Lô ${lots.length + 1}: ` + top.slice(i, i + 4).map(m => m.t).join('; '));
-  const txt = `Vẽ tranh minh hoạ cho trung tâm du học, GIỐNG HỆT phong cách ảnh mẫu đính kèm.
+  const txt = `Vẽ tranh minh hoạ cho ${LV === 'duhoc' ? 'trung tâm du học' : BRAND() + ' (' + (LVC.nganh || '') + ')'}, GIỐNG HỆT phong cách ảnh mẫu đính kèm.
 
 QUY TẮC:
 - Ảnh NGANG 3:2, lưới 2×2 = 4 hình riêng biệt, NỀN TRẮNG TINH, khoảng trắng rộng giữa các hình, không khung, không vẽ phông phòng/cửa sổ phía sau.
 - Nét viền đen DÀY như sticker, màu phẳng, biểu cảm rõ, vài nét nhấn cam.
 - KHÔNG viết chữ, số nào vào ảnh. Không cờ, không logo.
-- Nam sinh: áo polo XANH DƯƠNG. Nữ sinh: áo polo XANH DƯƠNG, tóc buộc NƠ CAM. Tư vấn viên: áo vest xanh dương, đeo thẻ đỏ.
+- ${LV !== 'duhoc' && LVC.ve ? LVC.ve : 'Nam sinh: áo polo XANH DƯƠNG. Nữ sinh: áo polo XANH DƯƠNG, tóc buộc NƠ CAM. Tư vấn viên: áo vest xanh dương, đeo thẻ đỏ.'}
 - Mỗi ô là 1 hình minh hoạ cho ý được ghi (vẽ cảnh hoặc đồ vật thể hiện ý đó).
 
 Mỗi lần vẽ 1 lô = 1 ảnh. Thứ tự 4 hình: trên-trái, trên-phải, dưới-trái, dưới-phải.
@@ -2336,12 +2359,72 @@ $('goMusic').onclick = e => { e.preventDefault(); goCard('bMFile'); };
 $('bLogo').onclick = () => $('logoFile').click();
 $('logoFile').onchange = async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-  try { const im = await readImage(f, 1000); await api('/api/logo', { data: im.data }); $('logoImg').src = im.preview; toast('Đã đổi logo cho các video sau.'); } catch (er) { toast(er.message); }
+  try { const im = await readImage(f, 1000); await api('/api/logo', { data: im.data }); $('logoImg').src = $('hdLogo').src = im.preview; toast('Đã đổi logo của ' + BRAND() + ' cho các video sau.'); } catch (er) { toast(er.message); }
 };
 $('bOut').onclick = async () => { await fetch('/api/logout'); location.reload(); };
 
+// ---------- LĨNH VỰC
+const LV_F = [['ten', 'Tên thương hiệu (hiện trên logo chữ, AI dùng khi mời inbox)'], ['slogan', 'Slogan'],
+  ['nganh', 'Lĩnh vực (AI hiểu mình bán / tư vấn gì)'], ['khach', 'Khách hàng là ai'], ['but', 'Chữ in trên bút vẽ (để trống = bút trắng)'],
+  ['hotline', 'Hotline mặc định cuối video'], ['hashtag', 'Hashtag cố định'], ['luu_y', 'Lưu ý riêng cho AI (điều không được nói, cách nói)', 1],
+  ['goi_y', 'Gợi ý chủ đề (mỗi dòng 1 chủ đề)', 1], ['ve', 'Cách vẽ nhân vật, đồ vật khi làm câu lệnh vẽ hình kho', 1]];
+let LVS = [];
+function applyLv() {
+  $('hdSub').textContent = BRAND() + (LVC.slogan ? ' · ' + LVC.slogan : '');
+  document.title = 'Video Vẽ Tay – ' + BRAND();
+  $('hdLogo').src = $('logoImg').src = lvUrl('/img/logo');
+  document.querySelectorAll('.brandTxt').forEach(x => { x.textContent = BRAND(); });
+  if (LV === 'duhoc') return;
+  if (!$('hotline').value && LVC.hotline) $('hotline').value = LVC.hotline;
+  $('aiTopic').placeholder = 'Ví dụ: ' + ((LVC.goi_y || [])[0] || 'chủ đề video');
+  $('label').placeholder = '';
+  const sp = $('aimPaid').querySelector('span');
+  if (sp) sp.textContent = 'Claude tra nguồn tin cậy (nhà sản xuất, tiêu chuẩn, cơ quan nhà nước) rồi mới viết, kèm nguồn. Dùng khi video có thông số, giá, quy định.';
+}
+function drawLvForm() {
+  const ro = !document.body.classList.contains('admin');
+  $('lvForm').innerHTML = LV_F.filter(([k]) => !(LV === 'duhoc' && ['but', 'luu_y', 've', 'hashtag', 'nganh', 'khach'].includes(k))).map(([k, t, big]) => {
+    const v = k === 'goi_y' ? (LVC.goi_y || []).join('\n') : (LVC[k] || '');
+    return `<label class="f" for="lvf_${k}">${t}</label>` + (big ? `<textarea id="lvf_${k}" rows="3" ${ro ? 'readonly' : ''}>${esc(v)}</textarea>`
+      : `<input type="text" id="lvf_${k}" value="${esc(v)}" ${ro ? 'readonly' : ''}>`);
+  }).join('');
+}
+async function loadLv() {
+  try {
+    const d = await api('/api/linhvuc');
+    LVS = d.items || [];
+    const cur = LVS.find(x => x.id === LV);
+    if (!cur && LV !== 'duhoc') { localStorage.setItem('hdv_lv', '"duhoc"'); location.reload(); return; }
+    LVC = cur || LVS[0] || LVC;
+    const icon = { duhoc: '🎓', ngoi: '🏠' };
+    $('lvSel').innerHTML = LVS.map(x => `<option value="${x.id}">${icon[x.id] || '📁'} ${esc(x.ten)}</option>`).join('');
+    $('lvSel').value = LV;
+    store.set('goi_y_' + LV, LVC.goi_y || []);
+    applyLv(); drawLvForm();
+  } catch (e) { /* giữ mặc định */ }
+}
+$('lvSel').onchange = () => { localStorage.setItem('hdv_lv', JSON.stringify($('lvSel').value)); location.reload(); };
+async function saveLv(id, extra) {
+  const b = { id };
+  LV_F.forEach(([k]) => { const el = $('lvf_' + k); if (el) b[k] = k === 'goi_y' ? el.value.split('\n').map(x => x.trim()).filter(Boolean) : el.value; });
+  Object.assign(b, extra || {});
+  await api('/api/linhvuc', b);
+}
+$('lvSave').onclick = async () => {
+  try { await saveLv(LV); toast('Đã lưu. Video và kịch bản AI sau sẽ dùng thông tin mới.'); loadLv(); } catch (e) { toast(e.message); }
+};
+$('lvNew').onclick = async () => {
+  const ten = prompt('Tên thương hiệu của lĩnh vực mới (ví dụ: Nội Thất ABC):'); if (!ten || !ten.trim()) return;
+  const id = prompt('Mã ngắn, chữ thường không dấu, không cách (ví dụ: noithat):', vnNorm(ten).replace(/[^a-z0-9]/g, '').slice(0, 16)); if (!id) return;
+  try {
+    await api('/api/linhvuc', { id: id.trim(), ten: ten.trim(), but: ten.trim(), nganh: '', khach: '', lv: 'duhoc' });
+    localStorage.setItem('hdv_lv', JSON.stringify(id.trim())); toast('Đã tạo. Hãy điền lĩnh vực, khách hàng rồi bấm Lưu.'); setTimeout(() => location.reload(), 900);
+  } catch (e) { toast(e.message); }
+};
+loadLv();
+
 api('/api/me').then(d => {
-  document.body.classList.toggle('admin', !!d.admin);
+  document.body.classList.toggle('admin', !!d.admin); drawLvForm();
   $('roleTxt').textContent = d.admin ? 'Bạn đang dùng quyền QUẢN LÝ (xoá ảnh, xoá video, nhạc, giọng, sửa nhân vật chung, logo).' : 'Bạn đang dùng quyền nhân viên. Muốn xoá ảnh/video, sửa nhân vật chung hay logo, hãy đăng xuất rồi đăng nhập bằng mật khẩu quản lý.';
 }).catch(() => {});
 // lấy danh sách giọng VieNeu (nếu đã từng dựng)

@@ -208,14 +208,22 @@ async function aiFetch(url, init) {
 const AI_FILE = 'thongke/ai.json';
 const AI_DEF = { free: 20, paid: 5, paid_staff: true };
 const OFFICIAL = ['roc-taiwan.org', 'studyintaiwan.org', 'edu.tw', 'gov.tw', 'go.kr', 'ac.kr', 'gov.vn', 'mofa.go.kr'];
-async function chatgptPrompt(env) {
+async function chatgptPrompt(env, lv) {
+  const dh = !lv || lv.id === 'duhoc';
   const [txt, kho] = await Promise.all([
-    gh(env, '/contents/engine/LENH_CHATGPT.txt', { headers: { accept: 'application/vnd.github.raw' } }).then(r => r.text()),
-    listDir(env, 'engine/assets/kho'),
+    gh(env, dh ? '/contents/engine/LENH_CHATGPT.txt' : '/contents/engine/linhvuc/_mau.txt', { headers: { accept: 'application/vnd.github.raw' } }).then(r => r.text()),
+    khoItems(env, lv),
   ]);
-  const names = kho.filter(x => x.name.endsWith('.png') && !x.name.startsWith('_')).map(x => x.name.slice(0, -4).replace(/_/g, ' '));
-  const extra = names.length ? `\n\nẢNH TRONG KHO (ưu tiên dùng, viết có dấu cũng được, ví dụ [vẽ: hồ sơ du học]):\n${names.join(', ')}\n` : '';
-  return txt.replace(/^﻿/, '') + extra;
+  const names = kho.map(x => x.name);
+  const vd = dh ? 'hồ sơ du học' : (names[0] || 'tên hình');
+  const extra = names.length ? `\n\nẢNH TRONG KHO (ưu tiên dùng, viết có dấu cũng được, ví dụ [vẽ: ${vd}]):\n${names.join(', ')}\n` : '';
+  let t = txt.replace(/^\uFEFF/, '');
+  if (!dh) {
+    const f = { TEN: lv.ten, SLOGAN: lv.slogan || lv.ten, NGANH: lv.nganh || '', KHACH: lv.khach || 'khách hàng', LUU_Y: lv.luu_y || '',
+      HASHTAG: lv.hashtag || '', VI_DU: String(lv.vi_du || '').replace(/\{TEN\}/g, lv.ten) };
+    t = t.replace(/\{(TEN|SLOGAN|NGANH|KHACH|LUU_Y|HASHTAG|VI_DU)\}/g, (_, k) => f[k]);
+  }
+  return t + extra;
 }
 const AI_COMMON = `
 
@@ -358,9 +366,9 @@ async function aiGemini(env, sys, user) {
   }
   throw new Error(last);
 }
-async function aiClaude(env, sys, user, search = true) {
-  const tool = { type: 'web_search_20250305', name: 'web_search', max_uses: 4, allowed_domains: OFFICIAL };
-  let useDomains = true, stop = '', diag = [];
+async function aiClaude(env, sys, user, search = true, domains = OFFICIAL) {
+  const tool = { type: 'web_search_20250305', name: 'web_search', max_uses: 4, ...(domains ? { allowed_domains: domains } : {}) };
+  let useDomains = !!domains, stop = '', diag = [];
   const blocks = [];                                   // toàn bộ nội dung trợ lý (kể cả các lượt tạm dừng)
   const call = async (messages, extra = {}) => {
     for (let k = 0; k < 2; k++) {
@@ -492,7 +500,7 @@ async function listVideos(env) {
       id: r.tag_name.slice(4), name: info.name || r.tag_name, created: info.created || Date.parse(r.created_at) / 1000,
       ok: !!info.ok && (r.assets || []).some(a => a.name.endsWith('.mp4')), error: info.error || '',
       voice: info.voice || '', by: info.by || '', fallback: info.fallback || '', script: info.script || '', credit: info.credit || '', posts: info.posts || null,
-      tpl: info.tpl || '', ab: info.ab || '', abg: info.abg || '', fmt: info.fmt || '',
+      tpl: info.tpl || '', ab: info.ab || '', lv: info.lv || '', abg: info.abg || '', fmt: info.fmt || '',
       missing: Array.isArray(info.thieu_hinh) ? info.thieu_hinh.slice(0, 30) : [], batch: info.batch || '',
       cover: (r.assets || []).some(a => a.name === 'bia.jpg'),
     });
@@ -528,6 +536,63 @@ async function listDir(env, path) {
   return Array.isArray(d) ? d : [];
 }
 
+// ---- LĨNH VỰC (du học, ngói màu...): mỗi lĩnh vực có tên thương hiệu, logo, chữ trên bút, câu lệnh AI, kho hình riêng
+const LV_FILE = 'engine/linhvuc.json';
+const LV_ID = /^[a-z][a-z0-9]{1,15}$/;
+const LV_KEYS = ['ten', 'slogan', 'nganh', 'khach', 'but', 'hotline', 'hashtag', 'luu_y', 've'];
+async function lvAll(env) {
+  const { data } = await readJson(env, LV_FILE);
+  const d = data && typeof data === 'object' && !Array.isArray(data) ? data : {};
+  if (!d.duhoc) d.duhoc = { ten: 'Du Học Hải Dương', slogan: 'Định Hướng Tương Lai', nganh: 'du học Đài Loan và Hàn Quốc', khach: 'học sinh và phụ huynh' };
+  return d;
+}
+function lvPick(all, id) {
+  const k = LV_ID.test(id || '') && all[id] ? id : 'duhoc';
+  const c = all[k] || {};
+  return { ...c, id: k, kho: k === 'duhoc' ? 'kho' : (/^kho_[a-z0-9]+$/.test(c.kho || '') ? c.kho : 'kho_' + k) };
+}
+async function lvOf(env, url, b) {
+  return lvPick(await lvAll(env), (b && b.lv) || url.searchParams.get('lv') || 'duhoc');
+}
+// Câu lệnh chung (viết cho du học) -> đổi tên thương hiệu, bỏ chữ riêng của du học
+function lvText(lv, s) {
+  if (!lv || lv.id === 'duhoc') return s;
+  return s.replace(/trung tâm tư vấn du học Du Học Hải Dương \(du học Đài Loan và Hàn Quốc\)/g, `${lv.ten} (${lv.nganh})`)
+    .replace(/trung tâm Du Học Hải Dương \(du học Đài Loan, Hàn Quốc\)/g, `${lv.ten} (${lv.nganh})`)
+    .replace(/học sinh và phụ huynh Việt Nam/g, lv.khach || 'khách hàng')
+    .replace(/Du Học Hải Dương/g, lv.ten)
+    .replace(/trang CHÍNH THỨC|trang chính thức/g, 'nguồn tin cậy (nhà sản xuất, tiêu chuẩn, cơ quan nhà nước)')
+    .replace(/điều kiện visa/g, 'thông số kỹ thuật').replace(/"tùy trường"/g, '"tùy công trình"')
+    .replace(/bao đậu visa, đi làm kiếm nhiều tiền/g, 'cam kết tuyệt đối, rẻ nhất thị trường')
+    .replace(/của trung tâm/g, 'của chúng tôi').replace(/du học Đài Loan tháng 12/g, (lv.goi_y && lv.goi_y[0]) || lv.nganh || '');
+}
+// Ảnh trong kho của lĩnh vực: du học = kho chung; lĩnh vực khác = kho riêng + một số hình dùng chung
+async function khoItems(env, lv) {
+  const png = f => f.name.endsWith('.png') && !f.name.startsWith('_');
+  const nm = f => f.name.slice(0, -4).replace(/_/g, ' ');
+  if (!lv || lv.id === 'duhoc') return (await listDir(env, 'engine/assets/kho')).filter(png).map(f => ({ file: f.name, name: nm(f), url: '/img/kho/' + f.name }));
+  const [own, chung] = await Promise.all([listDir(env, 'engine/assets/' + lv.kho), readJson(env, 'engine/assets/kho/_chung.json')]);
+  const mine = own.filter(png).map(f => ({ file: f.name, name: nm(f), url: `/img/khod/${lv.kho}/${f.name}` }));
+  const have = new Set(mine.map(x => x.name));
+  const shared = (Array.isArray(chung.data) ? chung.data : []).map(f => ({ name: f }))
+    .filter(f => /^[a-z0-9_]+\.png$/.test(f.name) && !have.has(nm(f))).map(f => ({ file: f.name, name: nm(f), url: '/img/kho/' + f.name, chung: true }));
+  return mine.concat(shared);
+}
+function svgLogo(lv) {
+  const e = x => String(x || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  return new Response(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect x="16" y="16" width="480" height="480" rx="90" fill="#fff" stroke="#1946aa" stroke-width="20"/>
+<text x="256" y="250" font-family="Arial,sans-serif" font-weight="700" font-size="64" text-anchor="middle" fill="#1946aa">${e((lv.ten || '').split(' ').slice(0, 2).join(' '))}</text>
+<text x="256" y="330" font-family="Arial,sans-serif" font-weight="700" font-size="64" text-anchor="middle" fill="#c83c1e">${e((lv.ten || '').split(' ').slice(2).join(' '))}</text></svg>`,
+    { headers: { 'content-type': 'image/svg+xml', 'cache-control': 'private, max-age=300' } });
+}
+async function lvLogo(req, env, ctx, url) {
+  const id = url.searchParams.get('lv') || '';
+  if (!id || id === 'duhoc' || !LV_ID.test(id)) return edgeCached(req, ctx, 3600, () => rawFile(env, 'engine/assets/logo.png', 'image/png'));
+  const r = await gh(env, `/contents/engine/assets/lv/${id}/logo.png`, { headers: { accept: 'application/vnd.github.raw' } });
+  if (r.ok) return new Response(r.body, { headers: { 'content-type': 'image/png', 'cache-control': 'private, max-age=600' } });
+  return svgLogo(lvPick(await lvAll(env), id));
+}
+
 const LOGIN = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Đăng nhập – Video Vẽ Tay</title><style>
 body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f4f6fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#1d2433}
@@ -536,7 +601,7 @@ h1{font-size:20px;margin:0 0 4px;color:#1f46aa}p{margin:0 0 18px;color:#667;font
 input,button{width:100%;box-sizing:border-box;font-size:17px;padding:13px 14px;border-radius:12px}
 input{border:1.5px solid #d5dbe8;margin-bottom:12px}button{border:0;background:#1f46aa;color:#fff;font-weight:600}
 .e{color:#d62632;font-size:14px;min-height:18px;margin-top:10px}</style></head><body>
-<form id="f"><h1>Video Vẽ Tay</h1><p>Du Học Hải Dương · nhập mật khẩu</p>
+<form id="f"><h1>Video Vẽ Tay</h1><p>Nhập mật khẩu</p>
 <input id="p" type="password" placeholder="Mật khẩu" autocomplete="current-password" autofocus>
 <button>Vào</button><div class="e" id="e"></div></form>
 <script>document.getElementById('f').onsubmit=async e=>{e.preventDefault();
@@ -550,7 +615,7 @@ export default {
     const p = url.pathname;
     try {
       if (p === '/manifest.webmanifest') return new Response(MANIFEST, { headers: { 'content-type': 'application/manifest+json' } });
-      if (p === '/img/logo') return edgeCached(req, ctx, 3600, () => rawFile(env, 'engine/assets/logo.png', 'image/png'));
+      if (p === '/img/logo') return lvLogo(req, env, ctx, url);
       if (p === '/api/login' && req.method === 'POST') {
         const { password } = await req.json().catch(() => ({}));
         const admin = !!env.ADMIN_PASSWORD && password === env.ADMIN_PASSWORD;
@@ -588,7 +653,9 @@ export default {
         if (script.length < 5) return err('Kịch bản đang trống');
         if (script.length > 20000) return err('Kịch bản quá dài');
         const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        const lvj = await lvOf(env, url, b);
         const job = {
+          lv: lvj.id,
           name: (b.name || '').slice(0, 80), script, voice: b.voice || 'vieneu_nam', vieneu_voice: b.vieneu_voice || '',
           character: b.character || 'auto', label: (b.label || '').slice(0, 30), hotline: (b.hotline || '').slice(0, 40),
           auto: b.auto !== false, logo: b.logo !== false, rate: Math.max(-30, Math.min(30, parseInt(b.rate || 0, 10) || 0)),
@@ -622,7 +689,37 @@ export default {
       }
       let m = p.match(/^\/api\/jobs\/([a-z0-9]+)$/);
       if (m) return json(await jobStatus(env, m[1]));
-      if (p === '/api/list') return json(await listVideos(env));
+      if (p === '/api/list') {
+        const L = await listVideos(env), q = url.searchParams.get('lv') || 'duhoc';
+        L.items = L.items.filter(x => (x.lv || 'duhoc') === q);
+        return json(L);
+      }
+      if (p === '/api/linhvuc' && req.method === 'GET') {
+        const all = await lvAll(env);
+        return json({ items: Object.keys(all).map(id => { const c = lvPick(all, id); const o = { id, goi_y: c.goi_y || [] }; LV_KEYS.forEach(k => { o[k] = c[k] == null ? '' : c[k]; }); return o; }) });
+      }
+      if (p === '/api/linhvuc' && req.method === 'POST') {
+        if (!admin) return err(ADMIN_ONLY, 403);
+        const b = await req.json();
+        const id = String(b.id || '').trim();
+        if (!LV_ID.test(id)) return err('Mã lĩnh vực chỉ gồm chữ thường không dấu và số, 2–16 ký tự (ví dụ: noithat)');
+        if (!String(b.ten || '').trim()) return err('Hãy nhập tên thương hiệu');
+        for (let i = 0; i < 3; i++) {
+          const { data, sha } = await readJson(env, LV_FILE);
+          const all = data && typeof data === 'object' && !Array.isArray(data) ? data : {};
+          const cur = all[id] || (id === 'duhoc' ? {} : { kho: 'kho_' + id });
+          for (const k of LV_KEYS) if (b[k] !== undefined) cur[k] = String(b[k]).slice(0, k === 'luu_y' || k === 've' ? 2000 : 200).trim();
+          if (Array.isArray(b.goi_y)) cur.goi_y = b.goi_y.map(x => String(x).trim().slice(0, 120)).filter(Boolean).slice(0, 20);
+          all[id] = cur;
+          const bytes = new TextEncoder().encode(JSON.stringify(all, null, 1) + '\n');
+          let bin = ''; bytes.forEach(x => { bin += String.fromCharCode(x); });
+          const body = { message: `Lĩnh vực: ${cur.ten || id}`, content: btoa(bin), branch: 'main' };
+          if (sha) body.sha = sha;
+          const r = await gh(env, `/contents/${LV_FILE}`, { method: 'PUT', body: JSON.stringify(body) });
+          if (r.ok) return json({ ok: true });
+        }
+        return err('Không lưu được, thử lại', 502);
+      }
       if (p === '/api/stats' && req.method === 'GET') return json((await readJson(env, STATS)).data);
       m = p.match(/^\/api\/stats\/([a-z0-9]+)$/);
       if (m && req.method === 'POST') {
@@ -658,36 +755,50 @@ export default {
 
       // ---- kho hình
       if (p === '/api/kho' && req.method === 'GET') {
-        const [kho, moi] = await Promise.all([listDir(env, 'engine/assets/kho'), listDir(env, 'engine/assets/kho_moi')]);
+        const lv = await lvOf(env, url);
+        const [items, moi] = await Promise.all([khoItems(env, lv), listDir(env, 'engine/assets/kho_moi')]);
+        const pre = lv.kho + '__';
+        const pend = moi.map(f => f.name).filter(n => !n.startsWith('.'));
         return json({
-          items: kho.filter(f => f.name.endsWith('.png') && !f.name.startsWith('_')).map(f => ({ file: f.name, name: f.name.slice(0, -4).replace(/_/g, ' ') })),
-          pending: moi.filter(f => !f.name.startsWith('.')).map(f => f.name),
+          items, lv: lv.id,
+          pending: lv.id === 'duhoc' ? pend.filter(n => !/^kho_[a-z0-9]+__/.test(n)) : pend.filter(n => n.startsWith(pre)).map(n => n.slice(pre.length)),
         });
       }
       if (p === '/api/kho/keys') {        // tên + từ khoá của ảnh trong Kho (để ẩn 'hình còn thiếu' đã có hình)
-        const [kho, meta] = await Promise.all([listDir(env, 'engine/assets/kho'), readJson(env, 'engine/assets/kho/_tu_khoa.json')]);
-        const names = kho.filter(f => f.name.endsWith('.png') && !f.name.startsWith('_')).map(f => f.name.slice(0, -4).replace(/_/g, ' '));
+        const lv = await lvOf(env, url);
+        const [items, meta, meta2] = await Promise.all([khoItems(env, lv), readJson(env, 'engine/assets/kho/_tu_khoa.json'),
+          lv.id === 'duhoc' ? { data: {} } : readJson(env, `engine/assets/${lv.kho}/_tu_khoa.json`)]);
+        const names = items.map(x => x.name);
+        const ok = new Set(items.map(x => x.file.slice(0, -4)));
         const keys = [];
-        for (const v of Object.values(meta.data || {})) { if (v.ten) keys.push(v.ten); (v.tu_khoa || []).forEach(k => keys.push(k)); }
+        for (const [f, v] of Object.entries({ ...(meta.data || {}), ...(meta2.data || {}) })) {
+          if (lv.id !== 'duhoc' && !ok.has(f)) continue;
+          if (v.ten) keys.push(v.ten); (v.tu_khoa || []).forEach(k => keys.push(k));
+        }
         return json({ names, keys });
       }
       if (p === '/api/kho' && req.method === 'POST') {
         const b = await req.json();
+        const lv = await lvOf(env, url, b);
         const name = slug(b.name);
         if (!name) return err('Hãy đặt tên ảnh (ví dụ: ký túc xá)');
         if (!b.data) return err('Thiếu ảnh');
-        await putFile(env, `engine/assets/kho_moi/${name}.png`, b.data, `Kho: thêm ${name}`);
+        await putFile(env, `engine/assets/kho_moi/${lv.id === 'duhoc' ? '' : lv.kho + '__'}${name}.png`, b.data, `Kho${lv.id === 'duhoc' ? '' : ' ' + lv.ten}: thêm ${name}`);
         return json({ ok: true, name });
       }
       m = p.match(/^\/api\/kho\/([a-z0-9_]+\.png)\/delete$/);
       if (m && req.method === 'POST') {
-        const cur = await ghJson(env, `/contents/engine/assets/kho/${m[1]}`);
-        if (cur) await gh(env, `/contents/engine/assets/kho/${m[1]}`, { method: 'DELETE', body: JSON.stringify({ message: `Kho: xoá ${m[1]}`, sha: cur.sha, branch: 'main' }) });
-        await caches.default.delete(new Request(new URL('/img/kho/' + m[1], req.url).toString())).catch(() => {});
+        const b = await req.json().catch(() => ({}));
+        const lv = await lvOf(env, url, b);
+        const cur = await ghJson(env, `/contents/engine/assets/${lv.kho}/${m[1]}`);
+        if (cur) await gh(env, `/contents/engine/assets/${lv.kho}/${m[1]}`, { method: 'DELETE', body: JSON.stringify({ message: `Kho: xoá ${m[1]}`, sha: cur.sha, branch: 'main' }) });
+        await caches.default.delete(new Request(new URL((lv.id === 'duhoc' ? '/img/kho/' : `/img/khod/${lv.kho}/`) + m[1], req.url).toString())).catch(() => {});
         return json({ ok: true });
       }
       m = p.match(/^\/img\/kho\/([a-z0-9_]+\.png)$/);
       if (m) return edgeCached(req, ctx, 21600, () => rawFile(env, `engine/assets/kho/${m[1]}`, 'image/png'));
+      m = p.match(/^\/img\/khod\/(kho_[a-z0-9]+)\/([a-z0-9_]+\.png)$/);
+      if (m) return edgeCached(req, ctx, 21600, () => rawFile(env, `engine/assets/${m[1]}/${m[2]}`, 'image/png'));
 
       // ---- nhạc nền, giọng mẫu (nhân bản)
       if (p === '/api/media' && req.method === 'GET') {
@@ -777,7 +888,7 @@ export default {
         }
         return rawFile(env, `engine/assets/nhanvat/${m[1]}`, 'image/png');
       }
-      if (p === '/img/logo') return edgeCached(req, ctx, 3600, () => rawFile(env, 'engine/assets/logo.png', 'image/png'));
+      if (p === '/img/logo') return lvLogo(req, env, ctx, url);
       if (p === '/api/nhanvat' && req.method === 'GET') {
         const who = slug(url.searchParams.get('who') || '');
         const mine = who ? (await listDir(env, `engine/assets/nhanvat_rieng/${who}`)).map(f => f.name).filter(n => NVF.test(n)) : [];
@@ -814,6 +925,11 @@ export default {
       if (p === '/api/logo' && req.method === 'POST') {
         const b = await req.json();
         if (!b.data) return err('Thiếu ảnh');
+        const lv = await lvOf(env, url, b);
+        if (lv.id !== 'duhoc') {
+          await putFile(env, `engine/assets/lv/${lv.id}/logo.png`, b.data, `Đổi logo ${lv.ten}`);
+          return json({ ok: true });
+        }
         await putFile(env, 'engine/assets/logo.png', b.data, 'Đổi logo');
         await caches.default.delete(new Request(new URL('/img/logo', req.url).toString())).catch(() => {});
         return json({ ok: true });
@@ -870,16 +986,17 @@ export default {
         const durationRule = duration === 'full'
           ? '\n- CHẾ ĐỘ GIỮ NGUYÊN: Không áp dụng bất kỳ giới hạn tổng số cảnh, tổng số chữ, một điểm kiến thức hoặc thời lượng video ngắn nào ở trên. Giữ nội dung đầy đủ.'
           : '\n- THỜI LƯỢNG ĐƯỢC CHỌN (ưu tiên hơn giới hạn video ngắn ở trên): ' + AI_LENGTHS[duration] + '. Không ép 8–14 hoặc 15–25 cảnh, không giới hạn 60–100 chữ. Chia số cảnh linh hoạt theo lời đọc. Không cố kéo dài khi thiếu thông tin đáng tin cậy.';
-        const sys = (await chatgptPrompt(env)) + common + (fix ? AI_FIX : convert ? (duration === 'full' ? AI_CONVERT : AI_CONVERT_TIMED)
+        const lv = await lvOf(env, url, b);
+        const sys = (await chatgptPrompt(env, lv)) + lvText(lv, common + (fix ? AI_FIX : convert ? (duration === 'full' ? AI_CONVERT : AI_CONVERT_TIMED)
           : remix ? AI_REMIX + (mode === 'paid' ? AI_REMIX_PAID : AI_REMIX_FREE) : mode === 'paid' ? AI_PAID : AI_FREE) + durationRule
-          + (b.style === 'bay' ? AI_BAY : '');
+          + (b.style === 'bay' ? AI_BAY : ''));
         const user = fix ? `KỊCH BẢN CẦN SỬA:\n\`\`\`\n${content}\n\`\`\`\n\nCÁC LỖI CẦN SỬA:\n${issues.map((x, i) => (i + 1) + '. ' + x).join('\n')}`
           : convert ? `NỘI DUNG CỦA TÔI (chuyển thành kịch bản, giữ nguyên ý và số liệu):\n${content}`
           : remix ? (b.focus ? `CHỈ VIẾT VỀ: ${String(b.focus).slice(0, 200)}\n\n` : '') + `LỜI VIDEO CỦA KÊNH KHÁC (chỉ học ý tưởng, viết mới hoàn toàn, không chép câu):\n${content}` + (extra ? `\n\nTHÔNG TIN THÊM (của trung tâm, dùng đúng như vậy):\n${extra}` : '')
           : `CHỦ ĐỀ: ${topic}` + (extra ? `\n\nTHÔNG TIN THÊM (của trung tâm, dùng đúng như vậy):\n${extra}` : '');
         let out, res, copy = null;
         try {
-          out = mode === 'paid' ? await aiClaude(env, sys, user, !convert) : await aiGemini(env, sys, user);
+          out = mode === 'paid' ? await aiClaude(env, sys, user, !convert, lv.id === 'duhoc' ? OFFICIAL : null) : await aiGemini(env, sys, user);
           res = parseAi(out.text);
           if (remix && res.script) {
             copy = copyScore(content, res.script);
@@ -908,10 +1025,11 @@ export default {
         const content = String(b.content || '').trim().slice(0, 12000);
         if (content.length < 200) return err('Lời video ngắn, không cần tách. Bấm VIẾT LẠI là được.');
         if (!env.GEMINI_KEY) return err('Chưa gắn khoá Gemini. Admin xem hướng dẫn trong mục Cài đặt.');
-        const sys = `Bạn lên kế hoạch video ngắn (30–60 giây) cho trung tâm Du Học Hải Dương (du học Đài Loan, Hàn Quốc), khán giả là học sinh và phụ huynh Việt Nam.
+        const lv = await lvOf(env, url, b);
+        const sys = lvText(lv, `Bạn lên kế hoạch video ngắn (30–60 giây) cho trung tâm Du Học Hải Dương (du học Đài Loan, Hàn Quốc), khán giả là học sinh và phụ huynh Việt Nam.
 Tin nhắn là LỜI MỘT VIDEO DÀI CỦA KÊNH KHÁC (có thể là bản dịch máy, lộn xộn). Hãy tách thành 2 đến 8 chủ đề video ngắn, mỗi chủ đề đúng MỘT ý, viết bằng tiếng Việt, bằng lời của bạn (không chép câu gốc), hấp dẫn kiểu "sai lầm", "cảnh báo", "bạn có biết", "checklist".
 Bỏ phần quảng cáo, tên trung tâm/kênh của họ, lời hứa kiểu môi giới. Ý nào trùng nhau thì gộp. Không đưa con số vào tên chủ đề.
-CHỈ trả về JSON: [{"topic":"tên chủ đề video, dưới 15 chữ"}]`;
+CHỈ trả về JSON: [{"topic":"tên chủ đề video, dưới 15 chữ"}]`);
         let out;
         try { out = await aiGemini(env, sys, content); } catch (e) { return err(String(e.message || e), 502); }
         const txt = out.text.replace(/```(json)?/g, '');
@@ -965,11 +1083,12 @@ CHỈ trả về JSON: [{"topic":"tên chủ đề video, dưới 15 chữ"}]`;
         if (!env.GEMINI_KEY) return err('Chưa gắn khoá Gemini. Admin xem hướng dẫn trong mục Cài đặt.');
         const n = Math.max(3, Math.min(30, parseInt(b.count || 10, 10) || 10));
         const done = (Array.isArray(b.done) ? b.done : []).slice(0, 80).map(x => String(x).slice(0, 80));
-        const sys = `Bạn là người lên lịch nội dung video ngắn (TikTok/Facebook Reels, 30–60 giây) cho trung tâm tư vấn du học Du Học Hải Dương (du học Đài Loan và Hàn Quốc), khán giả là học sinh và phụ huynh Việt Nam.
+        const lv = await lvOf(env, url, b);
+        const sys = lvText(lv, `Bạn là người lên lịch nội dung video ngắn (TikTok/Facebook Reels, 30–60 giây) cho trung tâm tư vấn du học Du Học Hải Dương (du học Đài Loan và Hàn Quốc), khán giả là học sinh và phụ huynh Việt Nam.
 Hãy đề xuất đúng ${n} chủ đề video, mỗi chủ đề là MỘT ý cụ thể, hấp dẫn, dễ làm thành video vẽ tay.
-Trộn đều các dạng: sai lầm thường gặp, cảnh báo, so sánh, checklist, quy trình từng bước, "bạn có biết", trả lời câu hỏi phụ huynh hay hỏi.
+Trộn đều các dạng: sai lầm thường gặp, cảnh báo, so sánh, checklist, quy trình từng bước, "bạn có biết", trả lời câu hỏi khách hay hỏi.
 Không bịa con số, mức phí hay quy định cụ thể trong tên chủ đề. Không trùng các chủ đề đã làm.
-CHỈ trả về JSON, dạng: [{"topic":"...","dang":"canh_bao|sai_lam|so_sanh|checklist|quy_trinh|ban_co_biet|hoi_dap"}]`;
+CHỈ trả về JSON, dạng: [{"topic":"...","dang":"canh_bao|sai_lam|so_sanh|checklist|quy_trinh|ban_co_biet|hoi_dap"}]`);
         const user = `HƯỚNG CHỦ ĐỀ: ${theme}` + (done.length ? `\n\nCHỦ ĐỀ ĐÃ LÀM (không lặp lại):\n- ${done.join('\n- ')}` : '');
         let out;
         try { out = await aiGemini(env, sys, user); } catch (e) { return err(String(e.message || e), 502); }
@@ -982,24 +1101,19 @@ CHỈ trả về JSON, dạng: [{"topic":"...","dang":"canh_bao|sai_lam|so_sanh|
         return json({ ideas });
       }
       if (p === '/api/names') {
+        const lv = await lvOf(env, url);
         const [hv, kho] = await Promise.all([
           gh(env, '/contents/engine/TEN_HINH.txt', { headers: { accept: 'application/vnd.github.raw' } }).then(r => r.ok ? r.text() : ''),
-          listDir(env, 'engine/assets/kho'),
+          khoItems(env, lv),
         ]);
-        const khoNames = kho.filter(x => x.name.endsWith('.png') && !x.name.startsWith('_')).map(x => x.name.slice(0, -4).replace(/_/g, ' '));
-        return json({ hv: hv.split('\n').map(s => s.trim()).filter(Boolean), kho: khoNames });
+        return json({ hv: hv.split('\n').map(s => s.trim()).filter(Boolean), kho: kho.map(x => x.name) });
       }
       if (p === '/api/text') {
         const f = { chatgpt: 'engine/LENH_CHATGPT.txt', anh: 'engine/KHO_HINH_CAU_LENH.txt', luoi: 'engine/KHO_HINH_LUOI.txt' }[url.searchParams.get('f')];
         if (!f) return err('Không có');
         if (url.searchParams.get('f') === 'chatgpt') {
-          const [txt, kho] = await Promise.all([
-            gh(env, `/contents/${f}`, { headers: { accept: 'application/vnd.github.raw' } }).then(r => r.text()),
-            listDir(env, 'engine/assets/kho'),
-          ]);
-          const names = kho.filter(x => x.name.endsWith('.png') && !x.name.startsWith('_')).map(x => x.name.slice(0, -4).replace(/_/g, ' '));
-          const extra = names.length ? `\n\nẢNH TRONG KHO (ưu tiên dùng, viết có dấu cũng được, ví dụ [vẽ: hồ sơ du học]):\n${names.join(', ')}\n` : '';
-          return new Response(txt.replace(/^\uFEFF/, '') + extra, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } });
+          const txt = await chatgptPrompt(env, await lvOf(env, url));
+          return new Response(txt, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } });
         }
         return rawFile(env, f, 'text/plain; charset=utf-8');
       }
