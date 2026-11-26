@@ -452,5 +452,41 @@
    "sửa nhà",
    "nhà cải tạo"
   ]
+ },
+ "gio_bao_toc_mai": {
+  "ten": "gió bão tốc mái",
+  "tu_khoa": [
+   "tốc mái",
+   "gió bão",
+   "bão",
+   "ngói bay",
+   "gió lớn"
+  ]
+ },
+ "mua_lon_tren_mai": {
+  "ten": "mưa lớn trên mái",
+  "tu_khoa": [
+   "mưa lớn",
+   "mưa to",
+   "nước mưa",
+   "mùa mưa"
+  ]
+ },
+ "ngoi_bi_reu_moc": {
+  "ten": "ngói bị rêu mốc",
+  "tu_khoa": [
+   "rêu mốc",
+   "rêu xanh",
+   "mái bị rêu"
+  ]
+ },
+ "ngoi_phai_mau": {
+  "ten": "ngói phai màu",
+  "tu_khoa": [
+   "phai màu",
+   "bạc màu",
+   "nắng gắt",
+   "ngói cũ"
+  ]
  }
 }
