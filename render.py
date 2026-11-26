@@ -75,6 +75,9 @@ def main():
     info['lv'] = lv
     E.PEN_TEXT = None
     E.KHO_LV = None
+    E.CHAR_LV = None
+    if lv != 'duhoc' and os.path.isdir(os.path.join(HERE, 'engine', 'assets', 'lv', lv, 'nhanvat')):
+        E.CHAR_LV = os.path.join(HERE, 'engine', 'assets', 'lv', lv, 'nhanvat')
     if lv != 'duhoc' and lvc:
         E.PEN_TEXT = lvc.get('but') if lvc.get('but') is not None else lvc.get('ten', '')
         E.KHO_LV = os.path.join(HERE, 'engine', 'assets', re.sub(r'[^a-z0-9_]', '', lvc.get('kho') or 'kho_' + lv))

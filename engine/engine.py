@@ -426,10 +426,11 @@ NV_DIR = os.path.join(ASSETS, 'nhanvat')
 
 
 CHAR_OVERRIDE = None   # thư mục nhân vật riêng của từng nhân viên (bản web)
+CHAR_LV = None         # thư mục nhân vật của lĩnh vực (vd assets/lv/ngoi/nhanvat): ưu tiên hơn nhân vật du học
 
 
 def char_path(gender, pose):
-    for d in (CHAR_OVERRIDE, NV_DIR):
+    for d in ((CHAR_LV, CHAR_OVERRIDE, NV_DIR) if CHAR_LV else (CHAR_OVERRIDE, NV_DIR)):
         if d:
             p = os.path.join(d, '%s_%s.png' % (gender, pose))
             if os.path.exists(p):
