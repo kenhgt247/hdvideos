@@ -321,5 +321,70 @@
    "tường ố",
    "ẩm mốc"
   ]
+ },
+ "ngoi_song": {
+  "ten": "ngói sóng",
+  "tu_khoa": [
+   "ngói sóng",
+   "ngói màu sóng",
+   "ngói lượn sóng"
+  ]
+ },
+ "ngoi_phang": {
+  "ten": "ngói phẳng",
+  "tu_khoa": [
+   "ngói phẳng",
+   "ngói dẹt"
+  ]
+ },
+ "ngoi_dat_nung": {
+  "ten": "ngói đất nung",
+  "tu_khoa": [
+   "đất nung",
+   "ngói đỏ truyền thống",
+   "ngói nung"
+  ]
+ },
+ "vien_ngoi_bi_nut": {
+  "ten": "viên ngói bị nứt",
+  "tu_khoa": [
+   "ngói nứt",
+   "ngói vỡ",
+   "ngói bị vỡ",
+   "ngói kém chất lượng"
+  ]
+ },
+ "ngoi_noc": {
+  "ten": "ngói nóc",
+  "tu_khoa": [
+   "ngói nóc",
+   "bờ nóc",
+   "nóc mái"
+  ]
+ },
+ "ngoi_ria": {
+  "ten": "ngói rìa",
+  "tu_khoa": [
+   "ngói rìa",
+   "rìa mái",
+   "mép mái"
+  ]
+ },
+ "ngoi_cuoi_noc": {
+  "ten": "ngói cuối nóc",
+  "tu_khoa": [
+   "cuối nóc",
+   "đầu nóc",
+   "ngói chạc"
+  ]
+ },
+ "phu_kien_ngoi": {
+  "ten": "phụ kiện ngói",
+  "tu_khoa": [
+   "phụ kiện",
+   "phụ kiện đồng bộ",
+   "băng keo chống thấm",
+   "tấm chống thấm"
+  ]
  }
 }
