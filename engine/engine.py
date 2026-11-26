@@ -3144,16 +3144,16 @@ class Renderer:
             elif len(sch) >= 2 and sch[1][1] - sch[0][1] >= 1.4:
                 first, s0, s1 = sch[0][0], sch[0][1], sch[1][1]
             if first is not None:
+                lay = Image.new('RGBA', (W, H), (0, 0, 0, 0))     # khung thật của chữ/hình (không đoán theo nét bút)
                 try:
-                    pts = [first.pos(r_, 0.0) for r_ in np.linspace(0, 1, 25)]
-                    pts = [p_ for p_ in pts if p_]
+                    first.draw(lay, 1.0)
+                    bb = lay.getbbox()
                 except Exception:
-                    pts = []
-                if len(pts) >= 3:
-                    x0 = min(p_[0] for p_ in pts) - 70; x1 = max(p_[0] for p_ in pts) + 70
-                    y0 = min(p_[1] for p_ in pts) - 70; y1 = max(p_[1] for p_ in pts) + 70
-                    Z = min(1.6, 0.9 * W / max(1, x1 - x0), 0.7 * H / max(1, y1 - y0))
-                    if Z >= 1.12:
+                    bb = None
+                if bb:
+                    x0, y0, x1, y1 = bb[0] - 60, bb[1] - 60, bb[2] + 60, bb[3] + 60
+                    Z = min(1.4, W / max(1, x1 - x0), 0.6 * H / max(1, y1 - y0))
+                    if Z >= 1.1:
                         st = (Z, (x0 + x1) / 2, (y0 + y1) / 2, s0, s1)
             pl['_story'] = st
         if not st:
@@ -3174,6 +3174,33 @@ class Renderer:
                 hw, hh = W / (2 * z), H / (2 * z)
                 zx, zy = min(max(zx, hw), W - hw), min(max(zy, hh), H - hh)
         return x + zx * sc, y + zy * sc, sc / z
+
+    @staticmethod
+    def _item_bb(it):
+        bb = getattr(it, '_bbx', 0)
+        if bb == 0:
+            lay = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+            try:
+                it.draw(lay, 1.0)
+                bb = lay.getbbox()
+            except Exception:
+                bb = None
+            try:
+                it._bbx = bb
+            except Exception:
+                pass
+        return bb
+
+    def _drawn_bb(self, pl, t):
+        """Khung bao các chữ/hình đã bắt đầu vẽ tới lúc t (bỏ người dẫn, huy hiệu, hình nền)."""
+        u = None
+        for it, s_, e_ in pl['sch']:
+            if s_ > t or isinstance(it, (Fill, Badge)) or getattr(it, 'presenter', False):
+                continue
+            bb = self._item_bb(it)
+            if bb:
+                u = bb if u is None else (min(u[0], bb[0]), min(u[1], bb[1]), max(u[2], bb[2]), max(u[3], bb[3]))
+        return u
 
     def _bgc(self):
         c = getattr(self, '_bg_c', None)
@@ -3303,6 +3330,16 @@ class Renderer:
                 z = z * sz
                 zx, zy = zx + (fc[0] - zx) * u, zy + (fc[1] - zy) * u
                 hw, hh = W / (2 * z), H / (2 * z)
+                zx, zy = min(max(zx, hw), W - hw), min(max(zy, hh), H - hh)
+        if z > 1.0005:                                     # đừng để camera cắt mất chữ/hình đã vẽ (nếu khung đủ chứa)
+            ub = self._drawn_bb(pl, t)
+            if ub:
+                hw, hh = W / (2 * z), H / (2 * z)
+                if ub[2] - ub[0] <= 2 * hw:
+                    zx = min(max(zx, ub[2] - hw), ub[0] + hw)
+                tb = (LAY['logo_xy'][1] + self.logo_small.height + 8) / z     # dải logo trên cùng bị phủ giấy
+                if ub[3] - ub[1] <= 2 * hh - tb:
+                    zy = min(max(zy, ub[3] - hh), ub[1] + hh - tb)
                 zx, zy = min(max(zx, hw), W - hw), min(max(zy, hh), H - hh)
         if first and FX.get('punch') and t < 0.6:          # phá nhịp giây đầu: bắt đầu sát rồi lùi ra nhanh
             zp = 1 + 0.14 * (1 - eo(clamp(t / 0.55)))
