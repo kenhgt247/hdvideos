@@ -222,14 +222,6 @@
    "bắt vít"
   ]
  },
- "may_han": {
-  "ten": "máy hàn",
-  "tu_khoa": [
-   "mối hàn",
-   "hàn khung",
-   "hàn kèo"
-  ]
- },
  "tho_lop_ngoi_tren_mai": {
   "ten": "thợ lợp ngói trên mái",
   "tu_khoa": [
@@ -250,7 +242,11 @@
   "ten": "thợ hàn khung kèo",
   "tu_khoa": [
    "thợ hàn",
-   "hàn khung kèo"
+   "hàn khung kèo",
+   "mối hàn",
+   "hàn khung",
+   "hàn kèo",
+   "máy hàn"
   ]
  },
  "tho_deo_day_an_toan": {
