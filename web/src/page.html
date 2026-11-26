@@ -1847,24 +1847,29 @@ async function saveVideo(btn, id, name) {
     VBLOB[id] = new Blob(parts, { type: 'video/mp4' });
     btn.disabled = false;
     const f = new File([VBLOB[id]], fname, { type: 'video/mp4' });
-    if (navigator.canShare && navigator.canShare({ files: [f] })) {
-      setBtn(btn, isIOS() ? '📲 Bấm để lưu vào Ảnh' : '📲 Bấm để lưu / chia sẻ', 100);
-      toast(isIOS() ? 'Tải xong! Bấm nút xanh rồi chọn "Lưu video".' : 'Tải xong! Bấm nút xanh để lưu.', 4500);
+    if (useShare(f)) {
+      setBtn(btn, '📲 Bấm để lưu vào Ảnh', 100);
+      toast('Tải xong! Bấm nút xanh rồi chọn "Lưu video".', 4500);
     } else {
       shareOrDownload(btn, VBLOB[id], fname, name);
     }
   } catch (e) { btn.disabled = false; setBtn(btn, '💾 Thử lưu lại', 0); toast(e.message || 'Lỗi mạng, thử lại', 5000); }
 }
+function isAndroid() { return /Android/i.test(navigator.userAgent); }
+// Chỉ iPhone/iPad mới cần bảng Chia sẻ ("Lưu video" vào Ảnh). Android và máy tính: tải thẳng về máy.
+function useShare(f) { return isIOS() && navigator.canShare && navigator.canShare({ files: [f] }); }
 function isIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
 async function shareOrDownload(btn, blob, fname, name) {
   const f = new File([blob], fname, { type: 'video/mp4' });
-  if (navigator.canShare && navigator.canShare({ files: [f] })) {
+  if (useShare(f)) {
     try { await navigator.share({ files: [f], title: name }); setBtn(btn, '✓ Đã mở bảng lưu – bấm lại nếu cần', 100); return; }
     catch (e) { if (e && e.name === 'AbortError') return; }
   }
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname;
   document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
-  setBtn(btn, '✓ Đã lưu vào Tải xuống', 100);
+  setBtn(btn, '✓ Đã lưu – bấm lại nếu cần', 100);
+  toast(isAndroid() ? 'Đã lưu vào thư mục Tải xuống (Download). Mở Thư viện ảnh hoặc Files để xem.'
+    : 'Đã lưu vào thư mục Downloads (Tải xuống) của máy tính.', 5000);
 }
 function dismiss(id) { store.set('jobs', store.get('jobs', []).filter(j => j.id !== id)); delete jobState[id]; renderJobs(); }
 let polling = null;
@@ -1930,7 +1935,7 @@ function showCover(btn, id) {
   b.onclick = async () => {
     const f = COVER[id] || await ready;
     if (!f) { toast('Không tải được ảnh bìa, thử lại'); return; }
-    if (navigator.canShare && navigator.canShare({ files: [f] })) {
+    if (useShare(f)) {
       try { await navigator.share({ files: [f] }); return; }
       catch (e) { if (e && e.name === 'AbortError') return; toast('Bấm lại lần nữa để mở bảng lưu ảnh'); return; }
     }
