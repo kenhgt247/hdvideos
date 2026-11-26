@@ -39,7 +39,13 @@ TAGS = [
 ]
 
 
-def make_posts(script, name='', hotline='', credit='', fmt='doc'):
+def _tag(s):
+    return '#' + re.sub(r'[^a-z0-9]', '', _norm(s))
+
+
+def make_posts(script, name='', hotline='', credit='', fmt='doc', brand=None):
+    """brand: thông tin lĩnh vực (ten, slogan, hashtag). None = Du Học Hải Dương như cũ."""
+    dh = not brand
     lines = [l.rstrip() for l in (script or '').replace('\r', '').split('\n') if l.strip()]
     lines = [l for l in lines if not l.strip().startswith('===') and not l.lower().startswith('đọc:')]
     rows = []
@@ -67,11 +73,20 @@ def make_posts(script, name='', hotline='', credit='', fmt='doc'):
             points.append(('pt', r['say'] or r['screen']))
     points = points[:10]
     full = ' ' + _norm(script) + ' '
-    tags = ['#duhochaiduong']
-    for keys, tg in TAGS:
-        if any(k in full for k in keys):
-            tags += [t for t in tg if t not in tags]
-    tags += ['#duhoc', '#tuvanduhoc']
+    if dh:
+        tags = ['#duhochaiduong']
+        for keys, tg in TAGS:
+            if any(k in full for k in keys):
+                tags += [t for t in tg if t not in tags]
+        tags += ['#duhoc', '#tuvanduhoc']
+        sign, icon = 'Du Học Hải Dương – Định Hướng Tương Lai', '🏫'
+    else:
+        tags = [_tag(brand.get('ten', ''))]
+        for t in re.findall(r'#\w+', brand.get('hashtag', '') or ''):
+            if t.lower() not in tags:
+                tags.append(t.lower())
+        sign = (brand.get('ten') or '') + ((' – ' + brand['slogan']) if brand.get('slogan') else '')
+        icon = '🏠'
     hl = ('📞 Hotline/Zalo: ' + hotline.strip()) if (hotline or '').strip() else '📩 Inbox fanpage để được tư vấn miễn phí'
     if not (hotline or '').strip() and 'inbox' in _norm(cta):
         hl = ''
@@ -84,13 +99,13 @@ def make_posts(script, name='', hotline='', credit='', fmt='doc'):
             if k == 'sub':
                 out.append('   ' + sym_sub + ' ' + t[:1].upper() + t[1:])
             else:
-                out.append((sym_lead if k == 'lead' else sym_pt) + ' ' + (_sentence(t) if k == 'pt' else t[:1].upper() + t[1:] + ':'))
+                out.append((sym_lead if k == 'lead' else sym_pt) + ' ' + (_sentence(t) if k == 'pt' else t[:1].upper() + t[1:].rstrip('.:!?…') + ':'))
         return '\n'.join(out)
     if points:
         fb += fmt('✅', '📌', '▫️') + '\n\n'
     if cta:
         fb += '👉 ' + _sentence(cta) + '\n'
-    fb += (hl + '\n' if hl else '') + '🏫 Du Học Hải Dương – Định Hướng Tương Lai' + cr + '\n\n' + ' '.join(tags)
+    fb += (hl + '\n' if hl else '') + icon + ' ' + sign + cr + '\n\n' + ' '.join(tags)
 
     tt_tags = tags[:6] + ['#xuhuong', '#learnontiktok']
     tt = _sentence(hook) + ' 👇'
@@ -105,5 +120,5 @@ def make_posts(script, name='', hotline='', credit='', fmt='doc'):
     if points:
         yt_desc += fmt('•', '•', '-') + '\n\n'
     short = fmt in ('doc', 'doc45')
-    yt_desc += (('👉 ' + _sentence(cta) + '\n') if cta else '') + (hl + '\n' if hl else '') + 'Du Học Hải Dương – Định Hướng Tương Lai' + cr + '\n\n' + ' '.join(tags[:8]) + (' #shorts' if short else '')
+    yt_desc += (('👉 ' + _sentence(cta) + '\n') if cta else '') + (hl + '\n' if hl else '') + sign + cr + '\n\n' + ' '.join(tags[:8]) + (' #shorts' if short else '')
     return {'facebook': fb, 'tiktok': tt, 'youtube_title': title + (' #shorts' if short else ''), 'youtube': yt_desc}

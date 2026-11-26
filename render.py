@@ -194,7 +194,7 @@ def main():
         info['ok'] = True
         try:
             from posts import make_posts
-            info['posts'] = make_posts(job.get('script', ''), name, job.get('hotline', ''), info.get('credit', ''), info.get('fmt', 'doc'))
+            info['posts'] = make_posts(job.get('script', ''), name, (job.get('hotline') or lvc.get('hotline') or ''), info.get('credit', ''), info.get('fmt', 'doc'), lvc if lv != 'duhoc' else None)
         except Exception as e:
             print('Không soạn được bài đăng:', e)
         info['seconds'] = int(time.time() - t0)
