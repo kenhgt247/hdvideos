@@ -386,5 +386,71 @@
    "băng keo chống thấm",
    "tấm chống thấm"
   ]
+ },
+ "tho_trat_tuong": {
+  "ten": "thợ trát tường",
+  "tu_khoa": [
+   "trát tường",
+   "trát vữa",
+   "xây tường"
+  ]
+ },
+ "tho_son_tuong": {
+  "ten": "thợ sơn tường",
+  "tu_khoa": [
+   "sơn tường",
+   "sơn nhà",
+   "lăn sơn"
+  ]
+ },
+ "tho_lat_gach_nen": {
+  "ten": "thợ lát gạch nền",
+  "tu_khoa": [
+   "lát gạch",
+   "lát nền",
+   "gạch nền"
+  ]
+ },
+ "nha_mai_ngoi_do_hoan_thien": {
+  "ten": "nhà mái ngói đỏ hoàn thiện",
+  "tu_khoa": [
+   "nhà mới",
+   "nhà hoàn thiện",
+   "ngôi nhà mới"
+  ]
+ },
+ "tho_kiem_tra_vet_nut_tuong": {
+  "ten": "thợ kiểm tra vết nứt tường",
+  "tu_khoa": [
+   "vết nứt",
+   "nứt tường",
+   "kiểm tra nhà",
+   "khảo sát hiện trạng"
+  ]
+ },
+ "tho_trat_vet_nut": {
+  "ten": "thợ trát vết nứt",
+  "tu_khoa": [
+   "trát vết nứt",
+   "vá tường",
+   "xử lý vết nứt"
+  ]
+ },
+ "tho_son_lai_tuong": {
+  "ten": "thợ sơn lại tường",
+  "tu_khoa": [
+   "sơn lại",
+   "sơn sửa",
+   "làm mới tường"
+  ]
+ },
+ "nha_sau_khi_sua_chua": {
+  "ten": "nhà sau khi sửa chữa",
+  "tu_khoa": [
+   "sau sửa chữa",
+   "cải tạo nhà",
+   "sửa nhà",
+   "nhà cải tạo"
+  ]
  }
 }
