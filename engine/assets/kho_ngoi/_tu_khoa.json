@@ -629,5 +629,43 @@
    "giao hàng tận nơi",
    "chở ngói"
   ]
+ },
+ "do_doc_mai": {
+  "ten": "độ dốc mái",
+  "tu_khoa": [
+   "độ dốc",
+   "góc dốc",
+   "mái thoải",
+   "mái dốc",
+   "độ dốc mái"
+  ]
+ },
+ "nuoc_chay_tren_mai": {
+  "ten": "nước chảy trên mái",
+  "tu_khoa": [
+   "nước chảy",
+   "thoát nước mái",
+   "rãnh ngói",
+   "nước thoát"
+  ]
+ },
+ "khe_giao_hai_mai": {
+  "ten": "khe giao hai mái",
+  "tu_khoa": [
+   "khe giao",
+   "rãnh chữ V",
+   "hai mái gặp nhau",
+   "khe giao mái"
+  ]
+ },
+ "nuoc_tran_nguoc_qua_khe_ngoi": {
+  "ten": "nước tràn ngược qua khe ngói",
+  "tu_khoa": [
+   "tràn ngược",
+   "khe hở",
+   "nước tràn",
+   "ngói hở mép",
+   "khe nối"
+  ]
  }
 }
