@@ -667,5 +667,40 @@
    "ngói hở mép",
    "khe nối"
   ]
+ },
+ "bang_mau_ngoi": {
+  "ten": "bảng màu ngói",
+  "tu_khoa": [
+   "bảng màu",
+   "chọn màu ngói",
+   "các màu ngói",
+   "màu ngói",
+   "phối màu"
+  ]
+ },
+ "nha_trang_ngoi_do": {
+  "ten": "nhà trắng ngói đỏ",
+  "tu_khoa": [
+   "nhà sơn trắng",
+   "ngói đỏ",
+   "nhà trắng mái đỏ"
+  ]
+ },
+ "nha_kem_ngoi_nau": {
+  "ten": "nhà kem ngói nâu",
+  "tu_khoa": [
+   "nhà màu kem",
+   "ngói nâu",
+   "sơn kem"
+  ]
+ },
+ "nha_xam_ngoi_ghi": {
+  "ten": "nhà xám ngói ghi",
+  "tu_khoa": [
+   "nhà sơn xám",
+   "ngói ghi",
+   "ngói xám",
+   "tông xám"
+  ]
  }
 }
