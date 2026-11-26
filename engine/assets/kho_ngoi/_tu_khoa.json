@@ -132,5 +132,198 @@
    "ngói xanh rêu",
    "ngói màu xám"
   ]
+ },
+ "mai_nhat": {
+  "ten": "mái Nhật",
+  "tu_khoa": [
+   "mái nhật",
+   "nhà mái nhật",
+   "mái thấp"
+  ]
+ },
+ "mai_thai": {
+  "ten": "mái Thái",
+  "tu_khoa": [
+   "mái thái",
+   "nhà mái thái",
+   "mái dốc"
+  ]
+ },
+ "nha_cap_4_mai_ngoi": {
+  "ten": "nhà cấp 4 mái ngói",
+  "tu_khoa": [
+   "nhà cấp 4",
+   "nhà cấp bốn",
+   "mái ngói đỏ"
+  ]
+ },
+ "biet_thu_mai_ngoi": {
+  "ten": "biệt thự mái ngói",
+  "tu_khoa": [
+   "biệt thự",
+   "nhà 2 tầng",
+   "nhà hai tầng"
+  ]
+ },
+ "khung_keo_thep": {
+  "ten": "khung kèo thép",
+  "tu_khoa": [
+   "khung kèo",
+   "kèo thép",
+   "kèo sắt",
+   "hệ khung kèo"
+  ]
+ },
+ "cau_phong": {
+  "ten": "cầu phong",
+  "tu_khoa": [
+   "cầu phong",
+   "thanh cầu phong"
+  ]
+ },
+ "li_to": {
+  "ten": "li tô",
+  "tu_khoa": [
+   "li tô",
+   "thanh li tô",
+   "khoảng cách li tô"
+  ]
+ },
+ "xa_go_thep_hop": {
+  "ten": "xà gồ thép hộp",
+  "tu_khoa": [
+   "xà gồ",
+   "thép hộp",
+   "sắt hộp"
+  ]
+ },
+ "thep_ma_kem": {
+  "ten": "thép mạ kẽm",
+  "tu_khoa": [
+   "mạ kẽm",
+   "thép mạ",
+   "thép không gỉ"
+  ]
+ },
+ "khung_keo_bi_gi": {
+  "ten": "khung kèo bị gỉ",
+  "tu_khoa": [
+   "bị gỉ",
+   "gỉ sét",
+   "han gỉ",
+   "khung kèo gỉ"
+  ]
+ },
+ "vit_ban_mai": {
+  "ten": "vít bắn mái",
+  "tu_khoa": [
+   "vít bắn",
+   "ốc vít",
+   "bắt vít"
+  ]
+ },
+ "may_han": {
+  "ten": "máy hàn",
+  "tu_khoa": [
+   "mối hàn",
+   "hàn khung",
+   "hàn kèo"
+  ]
+ },
+ "tho_lop_ngoi_tren_mai": {
+  "ten": "thợ lợp ngói trên mái",
+  "tu_khoa": [
+   "thợ lợp",
+   "lợp ngói",
+   "thợ lợp mái"
+  ]
+ },
+ "tho_do_li_to": {
+  "ten": "thợ đo li tô",
+  "tu_khoa": [
+   "đo li tô",
+   "thước đo",
+   "đo khoảng cách"
+  ]
+ },
+ "tho_han_khung_keo": {
+  "ten": "thợ hàn khung kèo",
+  "tu_khoa": [
+   "thợ hàn",
+   "hàn khung kèo"
+  ]
+ },
+ "tho_deo_day_an_toan": {
+  "ten": "thợ đeo dây an toàn",
+  "tu_khoa": [
+   "dây an toàn",
+   "an toàn lao động",
+   "bảo hộ"
+  ]
+ },
+ "chu_nha_lo_lang_nhin_mai": {
+  "ten": "chủ nhà lo lắng nhìn mái",
+  "tu_khoa": [
+   "chủ nhà lo lắng",
+   "băn khoăn",
+   "phân vân chọn ngói"
+  ]
+ },
+ "chu_nha_xem_bao_gia": {
+  "ten": "chủ nhà xem báo giá",
+  "tu_khoa": [
+   "báo giá",
+   "xem báo giá",
+   "dự toán"
+  ]
+ },
+ "tu_van_vien_dua_mau_ngoi": {
+  "ten": "tư vấn viên đưa mẫu ngói",
+  "tu_khoa": [
+   "mẫu ngói",
+   "tư vấn chọn ngói",
+   "chọn màu ngói"
+  ]
+ },
+ "chu_nha_bat_tay_tho": {
+  "ten": "chủ nhà bắt tay thợ",
+  "tu_khoa": [
+   "bắt tay",
+   "ký hợp đồng",
+   "hợp tác"
+  ]
+ },
+ "mai_bi_dot": {
+  "ten": "mái bị dột",
+  "tu_khoa": [
+   "dột mái",
+   "mái dột",
+   "thấm dột",
+   "trời mưa"
+  ]
+ },
+ "nuoc_tham_tran_nha": {
+  "ten": "nước thấm trần nhà",
+  "tu_khoa": [
+   "thấm trần",
+   "trần nhà thấm",
+   "nước nhỏ giọt"
+  ]
+ },
+ "xo_hung_nuoc_dot": {
+  "ten": "xô hứng nước dột",
+  "tu_khoa": [
+   "hứng nước",
+   "xô hứng nước"
+  ]
+ },
+ "vet_o_tren_tran": {
+  "ten": "vết ố trên trần",
+  "tu_khoa": [
+   "vết ố",
+   "ố vàng",
+   "tường ố",
+   "ẩm mốc"
+  ]
  }
 }
