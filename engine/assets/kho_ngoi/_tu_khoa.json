@@ -488,5 +488,41 @@
    "nắng gắt",
    "ngói cũ"
   ]
+ },
+ "vo_chong_chon_mau_ngoi": {
+  "ten": "vợ chồng chọn mẫu ngói",
+  "tu_khoa": [
+   "gia đình chọn ngói",
+   "vợ chồng",
+   "chọn mẫu ngói",
+   "tư vấn gia đình"
+  ]
+ },
+ "doi_tho_thi_cong_mai": {
+  "ten": "đội thợ thi công mái",
+  "tu_khoa": [
+   "đội thợ",
+   "thi công mái",
+   "lợp mái",
+   "bắn vít ngói"
+  ]
+ },
+ "ngoi_chong_nang_chong_mua": {
+  "ten": "ngói chống nắng chống mưa",
+  "tu_khoa": [
+   "chống nắng",
+   "chống mưa",
+   "chống thấm",
+   "cách nhiệt",
+   "chịu thời tiết"
+  ]
+ },
+ "nha_mai_ngoi_nhieu_mai": {
+  "ten": "nhà mái ngói nhiều mái",
+  "tu_khoa": [
+   "nhà nhiều mái",
+   "mái ngói đẹp",
+   "nhà mái ngói đỏ"
+  ]
  }
 }
