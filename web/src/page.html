@@ -383,7 +383,7 @@ BÍ QUYẾT GIỮ NGƯỜI XEM:
     <input type="hidden" id="bg">
     <div class="bgs" id="bgs"></div>
     <label class="f" for="trans">Chuyển cảnh</label>
-    <select id="trans"><option value="xen">Xen kẽ: xoá bảng và lia ngang</option><option value="bang">Bảng liền: cảnh cũ thu nhỏ lên trên, vẽ tiếp bên dưới (không mất nội dung)</option><option value="bay">Camera bay: không xoá, bay sang chỗ trống trên bảng lớn</option><option value="xoa">Xoá bảng</option><option value="lia">Lia ngang</option></select>
+    <select id="trans"><option value="xen">Xen kẽ: xoá bảng và lia ngang</option><option value="bang">Bảng liền: cảnh cũ thu nhỏ lên trên, vẽ tiếp bên dưới (không mất nội dung)</option><option value="bay">Camera bay (như video kiến thức): tự gộp từng góc bảng, cận cảnh rồi lùi ra, bay giữa các góc</option><option value="xoa">Xoá bảng</option><option value="lia">Lia ngang</option></select>
     <label class="f" for="reveal">Kiểu vẽ hình</label>
     <select id="reveal"><option value="net">Vẽ nét đen rồi tô màu bằng cọ</option><option value="quet">Quét 3 bước: nét chì → tô màu</option><option value="loang">Vẽ nét đen rồi màu loang theo nét (như tô nước)</option></select>
     <label class="chk"><input type="checkbox" id="stroke" checked> Vẽ từng nét như người thật (chữ, ảnh, nhân vật)</label>
@@ -1274,7 +1274,7 @@ $('aiGo').onclick = async () => {
   let sec = 0; const tick = setInterval(() => { sec++; btn.textContent = `⏳ AI đang ${mode === 'paid' ? 'tra nguồn và ' : ''}viết... ${sec}s`; }, 1000);
   $('aiInfo').textContent = mode === 'paid' ? 'Claude đang tra trang chính thức, thường mất 20–60 giây.' : 'Thường mất 5–20 giây.';
   try {
-    const d = await api('/api/ai/script', { topic, extra: $('aiExtra').value, mode, duration, by: $('by').value });
+    const d = await api('/api/ai/script', { topic, extra: $('aiExtra').value, mode, duration, by: $('by').value, style: $('trans').value });
     store.set('ai_used', true);
     $('script').value = fixScript(d.script);
     if (!$('name').value.trim()) $('name').value = topic.slice(0, 50);
@@ -1333,7 +1333,7 @@ $('lkGo').onclick = async () => {
   const mode = aiMode(), duration = $('aiDuration').value;
   let sec = 0; const tick = setInterval(() => { sec++; btn.textContent = `⏳ AI đang ${mode === 'paid' ? 'kiểm chứng và ' : ''}viết lại... ${sec}s`; }, 1000);
   try {
-    const d = await api('/api/ai/script', { task: 'remix', content: $('lkText').value, extra: $('aiExtra').value, mode, duration, by: $('by').value });
+    const d = await api('/api/ai/script', { task: 'remix', content: $('lkText').value, extra: $('aiExtra').value, mode, duration, by: $('by').value, style: $('trans').value });
     store.set('ai_used', true);
     $('script').value = fixScript(d.script);
     if (!$('name').value.trim()) $('name').value = ($('script').value.split('\n')[0] || '').split('||')[0].replace(/\[[^\]]*\]/g, '').replace(/\s\/\s/g, ' ').replace(/\*/g, '').trim().slice(0, 50);
@@ -1437,7 +1437,7 @@ async function bxFix(text) {
   const list = issuesOf(text);
   if (!list.length) return text;
   try {
-    const d = await api('/api/ai/script', { task: 'fix', content: text, issues: list, mode: 'free', by: $('by').value });
+    const d = await api('/api/ai/script', { task: 'fix', content: text, issues: list, mode: 'free', by: $('by').value, style: $('trans').value });
     const after = fixScript(d.script);
     if (issuesOf(after).length < list.length) return after;
   } catch {}
@@ -1455,8 +1455,8 @@ $('bxWrite').onclick = async () => {
     if (!BX_RUN) break;
     it.busy = 'AI đang viết...'; it.err = ''; bxDraw();
     try {
-      const d = await api('/api/ai/script', it.src ? { task: 'remix', content: it.src, focus: it.topic, mode: 'free', duration: 'quick', by: $('by').value }
-        : { topic: it.topic, mode: 'free', duration: 'quick', by: $('by').value });
+      const d = await api('/api/ai/script', it.src ? { task: 'remix', content: it.src, focus: it.topic, mode: 'free', duration: 'quick', by: $('by').value, style: $('trans').value }
+        : { topic: it.topic, mode: 'free', duration: 'quick', by: $('by').value, style: $('trans').value });
       let t = fixScript(d.script);
       it.busy = 'Đang tự sửa định dạng...'; bxDraw();
       t = await bxFix(t);
@@ -1509,7 +1509,7 @@ async function autoFix(btn, preserve = false) {
   if (!list.length) return 0;
   if (btn) btn.textContent = `🔧 Đang tự sửa ${list.length} lỗi...`;
   try {
-    const d = await api('/api/ai/script', { task: 'fix', content: before, issues: list, mode: 'free', by: $('by').value });
+    const d = await api('/api/ai/script', { task: 'fix', content: before, issues: list, mode: 'free', by: $('by').value, style: $('trans').value });
     const after = fixScript(d.script);
     const left = issuesOf(after, preserve);
     if (preserve && narrationWords(after, true) < narrationWords(before, true) * 0.97) return 0;
@@ -1533,7 +1533,7 @@ async function aiConvert(content, mode, btn, label, info) {
   btn.disabled = true;
   let sec = 0; const tick = setInterval(() => { sec++; btn.textContent = `⏳ AI đang chuyển... ${sec}s`; }, 1000);
   try {
-    const d = await api('/api/ai/script', { task: 'convert', content, mode, duration, by: $('by').value });
+    const d = await api('/api/ai/script', { task: 'convert', content, mode, duration, by: $('by').value, style: $('trans').value });
     const converted = fixScript(d.script);
     const inputWords = narrationWords(content, btn.id === 'bFixAi');
     const outputWords = narrationWords(converted, true);

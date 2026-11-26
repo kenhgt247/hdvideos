@@ -260,6 +260,13 @@ const AI_FIX = `
 - GIỮ NGUYÊN nội dung, ý, số liệu. Chỉ sửa cách trình bày: rút ngắn chữ màn hình (dùng " / " xuống dòng, mỗi dòng ≤22 ký tự), tách cảnh dài, rút gọn câu mở, sửa danh sách, sơ đồ, thẻ.
 - Không thêm thông tin mới, không tóm tắt. Không áp dụng giới hạn tổng số cảnh, tổng số chữ hay thời lượng. Nếu cảnh dài, tách thành nhiều cảnh mà giữ lời đọc và mọi chi tiết. Không bỏ nội dung để xử lý cảnh báo thời lượng hoặc số cảnh. Trả lời đúng PHẦN C; phần NGUỒN ghi "Nội dung do người dùng cung cấp".`;
 
+const AI_BAY = `
+- PHONG CÁCH CAMERA BAY (ưu tiên hơn quy tắc B5 về [tiếp]): video kể theo từng "GÓC BẢNG", camera bay giữa các góc. Mỗi góc bảng là MỘT ý, gồm 2–3 dòng cảnh liền nhau vẽ dần vào cùng một chỗ.
+- Dòng ĐẦU của mỗi góc: câu ngắn nêu ý (có thể kèm huy hiệu [1/3], [2/3]... khi kể theo từng phần). Các dòng SAU trong cùng góc: thêm thẻ [tiếp] ở cuối phần chữ màn hình (ngay trước ||).
+- Dòng đầu video (câu mở) và dòng kết (mời bình luận/inbox) đứng riêng, không thêm [tiếp]. Bảng so sánh "A vs B" và dòng số liệu lớn đứng riêng một góc.
+- Trong một góc, mỗi dòng nên có hình [vẽ: ...] hoặc danh sách ngắn để camera có thứ cận cảnh rồi lùi ra.
+- Mỗi góc tối đa 3 dòng. Khi SỬA kịch bản: giữ nguyên các thẻ [tiếp], chỉ sửa lỗi được nêu.`;
+
 const AI_REMIX = `
 - NHIỆM VỤ LẦN NÀY: Trong tin nhắn có LỜI CỦA MỘT VIDEO CỦA KÊNH KHÁC (đối thủ). Chỉ được HỌC Ý TƯỞNG / CHỦ ĐỀ, rồi VIẾT MỚI HOÀN TOÀN một kịch bản của Du Học Hải Dương đúng định dạng PHẦN B.
 - CẤM SAO CHÉP: không chép lại bất kỳ câu nào; không được có cụm 6 chữ liên tiếp giống bài gốc. Câu mở phải khác hẳn câu mở của họ. Đổi thứ tự trình bày, đổi ví dụ, đổi cách kết. Giọng tư vấn viên Du Học Hải Dương, nói với "bạn".
@@ -864,7 +871,8 @@ export default {
           ? '\n- CHẾ ĐỘ GIỮ NGUYÊN: Không áp dụng bất kỳ giới hạn tổng số cảnh, tổng số chữ, một điểm kiến thức hoặc thời lượng video ngắn nào ở trên. Giữ nội dung đầy đủ.'
           : '\n- THỜI LƯỢNG ĐƯỢC CHỌN (ưu tiên hơn giới hạn video ngắn ở trên): ' + AI_LENGTHS[duration] + '. Không ép 8–14 hoặc 15–25 cảnh, không giới hạn 60–100 chữ. Chia số cảnh linh hoạt theo lời đọc. Không cố kéo dài khi thiếu thông tin đáng tin cậy.';
         const sys = (await chatgptPrompt(env)) + common + (fix ? AI_FIX : convert ? (duration === 'full' ? AI_CONVERT : AI_CONVERT_TIMED)
-          : remix ? AI_REMIX + (mode === 'paid' ? AI_REMIX_PAID : AI_REMIX_FREE) : mode === 'paid' ? AI_PAID : AI_FREE) + durationRule;
+          : remix ? AI_REMIX + (mode === 'paid' ? AI_REMIX_PAID : AI_REMIX_FREE) : mode === 'paid' ? AI_PAID : AI_FREE) + durationRule
+          + (b.style === 'bay' ? AI_BAY : '');
         const user = fix ? `KỊCH BẢN CẦN SỬA:\n\`\`\`\n${content}\n\`\`\`\n\nCÁC LỖI CẦN SỬA:\n${issues.map((x, i) => (i + 1) + '. ' + x).join('\n')}`
           : convert ? `NỘI DUNG CỦA TÔI (chuyển thành kịch bản, giữ nguyên ý và số liệu):\n${content}`
           : remix ? (b.focus ? `CHỈ VIẾT VỀ: ${String(b.focus).slice(0, 200)}\n\n` : '') + `LỜI VIDEO CỦA KÊNH KHÁC (chỉ học ý tưởng, viết mới hoàn toàn, không chép câu):\n${content}` + (extra ? `\n\nTHÔNG TIN THÊM (của trung tâm, dùng đúng như vậy):\n${extra}` : '')

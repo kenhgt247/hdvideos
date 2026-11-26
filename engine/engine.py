@@ -2506,7 +2506,8 @@ def fx_events(plans):
         if pl.get('logo_end'):
             ev.append((off + 0.15, 'chuong'))
         if not pl['last'] and not pl.get('keep_next') and TRANS_SND in ('vut', 'giay'):
-            ev.append((off + pl['dur'] - pl.get('tr', ERASE) + 0.02, TRANS_SND))
+            if pl.get('_tt') != 'glide':
+                ev.append((off + pl['dur'] - pl.get('tr', ERASE) + 0.02, TRANS_SND))
         off += pl['n'] / FPS
     return ev
 
@@ -2805,6 +2806,8 @@ class Renderer:
 
     def plan(self, scenes, audio_durs, gender=None):
         global LCX, LMAXW, BOTTOM_AREA
+        if self.trans == 'bay':
+            self._auto_group(scenes)
         plans = []
         old_bottom = BOTTOM_AREA
         if self.subs:
@@ -2823,6 +2826,8 @@ class Renderer:
         for i, sc in enumerate(scenes):
             logo_end = any('logo' in tags for _, tags in sc['lines'])
             pose = poses[i] if not (poses[i] and not logo_end and scene_kind(sc) == 'vs') else None
+            if self.trans == 'bay' and sc.get('keep') and i > 0:    # trong cùng góc bảng: người dẫn đã đứng ở trang đầu
+                pose = None
             if pose == 'like':
                 LCX, LMAXW = LAY['col_like']
             elif pose:
@@ -2832,7 +2837,7 @@ class Renderer:
             snap = None
             nxt_logo_any = i + 1 < len(scenes) and any('logo' in tg for _, tg in scenes[i + 1]['lines'])
             chain = self.trans == 'bang' and i > 0 and not logo_end     # bảng liền: cảnh cũ thu nhỏ lên trên, vẽ tiếp bên dưới
-            if (sc.get('keep') or chain) and plans and not plans[-1]['logo_end']:
+            if (sc.get('keep') or chain) and plans and not plans[-1]['logo_end'] and self.trans != 'bay':
                 snap = self._snapshot(plans[-1], big=chain and not sc.get('keep'))
             if snap:
                 old_top = TOP_AREA
@@ -2898,9 +2903,10 @@ class Renderer:
             dur = max(ed + EXIT + hold, (A + 0.45) if A else 0)
             last = i == len(scenes) - 1
             tr = ERASE
-            if self.trans == 'bay':                            # camera bay sang chỗ trống thay vì xoá
+            if self.trans == 'bay':                            # camera bay: lướt trong góc bảng, bay giữa các góc
                 nxt_logo = i + 1 < len(scenes) and any('logo' in tg for _, tg in scenes[i + 1]['lines'])
-                tr = 1.9 if (nxt_logo and i >= 2) else 0.9
+                nxt_cont = i + 1 < len(scenes) and scenes[i + 1].get('keep') and not nxt_logo
+                tr = 2.6 if (nxt_logo and i >= 2) else 0.8 if nxt_cont else 2.1
             if not last:
                 dur += tr
             nfr = int(math.ceil(dur * FPS))
@@ -2909,7 +2915,8 @@ class Renderer:
                 'lia' if (self.trans == 'bang' and nxt_logo_any) else \
                 'lia' if (self.trans == 'lia' or (self.trans == 'xen' and i % 2 == 1)) else 'xoa'
             plans.append({'sch': sch, 'ed': ed, 'n': nfr, 'dur': nfr / FPS, 'logo_end': logo_end, 'last': last,
-                          'lcx': lcx, 'subs': subs, 'trans': trans, 'tr': tr})
+                          'lcx': lcx, 'subs': subs, 'trans': trans, 'tr': tr,
+                          'cont': bool(self.trans == 'bay' and sc.get('keep') and i > 0 and not logo_end)})
         BOTTOM_AREA = old_bottom
         if self.trans == 'bay':
             self._board(plans)
@@ -2932,12 +2939,29 @@ class Renderer:
                 return it
         return None
 
+    @staticmethod
+    def _auto_group(scenes):
+        """Camera bay: gộp 2–3 dòng liền nhau thành một "góc bảng" (nếu kịch bản chưa tự đánh dấu [tiếp])."""
+        if any(sc.get('keep') for sc in scenes):
+            return
+        n = 0
+        for i, sc in enumerate(scenes):
+            tags = [tg for _, tg in sc.get('lines', [])]
+            logo = any('logo' in tg for tg in tags)
+            if i <= 1 or logo or sc.get('count') or n >= 3 or scene_kind(sc) in ('vs', 'big'):
+                n = 1                                          # cảnh mở đầu, cảnh có số [1/3], bảng so sánh: mở góc mới
+                continue
+            sc['keep'] = True
+            n += 1
+
     def _board(self, plans):
+        """Đặt các trang lên tấm bảng lớn. Trong một góc bảng, các trang nối nhau sát mép nội dung
+        (dọc: xếp xuống dưới, ngang: xếp sang phải); các góc bảng nằm cạnh nhau theo hình zic-zắc."""
         for i, p_ in enumerate(plans):
             p_['_i'] = i
             p_['_all'] = plans
         for i, p_ in enumerate(plans):                      # chữ/số mở đầu cảnh mới vẽ sẵn: camera tới là thấy
-            if i == 0 or plans[i - 1].get('keep_next'):
+            if i == 0:
                 continue
             sd = self._seed_of(p_)
             if sd is None:
@@ -2945,61 +2969,124 @@ class Renderer:
             p_['sch'] = [(it, -1.0, -0.999) if it is sd else (it, a_, b_) for it, a_, b_ in p_['sch']]
             sd.nohand = True
             p_['_seed'] = sd
-        gx, gy = W * 1.04, H * 1.03
+        tall = H >= W
+        groups, cur = [], []
+        for p_ in plans:
+            if cur and not p_.get('cont'):
+                groups.append(cur)
+                cur = []
+            cur.append(p_)
+        if cur:
+            groups.append(cur)
+        gid = 0
+        for g in groups:
+            for p_ in g:
+                p_['_g'] = gid
+            gid += 1
+        # vị trí trong góc: xếp theo khung nội dung thật
+        for g in groups:
+            x, y = 0.0, 0.0
+            prev_bb = None
+            for p_ in g:
+                bb = self._ink(p_, p_['dur'] - p_.get('tr', ERASE)).getbbox() or (0, TOP_AREA, W, BOTTOM_AREA)
+                if prev_bb is not None:
+                    if tall:
+                        y = y + prev_bb[3] + 70 - bb[1]
+                    else:
+                        x = x + prev_bb[2] + 80 - bb[0]
+                p_['_rel'] = (x, y)
+                prev_bb = bb
+            # khung bao cả góc (toạ độ góc, chưa nhân tỉ lệ)
+            xs0 = min(p_['_rel'][0] for p_ in g); ys0 = min(p_['_rel'][1] for p_ in g)
+            xs1 = max(p_['_rel'][0] + W for p_ in g); ys1 = max(p_['_rel'][1] + H for p_ in g)
+            for p_ in g:
+                p_['_gbox'] = (xs0, ys0, xs1, ys1)
+        # đặt các góc lên bảng: dọc thì đi ngang (zic-zắc xuống), ngang thì đi dọc (zic-zắc sang phải)
+        DIRS = [(1, 0), (1, 0), (0, 1), (-1, 0), (-1, 0), (0, 1)] if tall else [(0, 1), (0, 1), (1, 0), (0, -1), (0, -1), (1, 0)]
+        ox, oy, sc_ = 0.0, 0.0, 1.0
         step = 0
-        plans[0]['_wp'] = (0.0, 0.0, 1.0)
-        for i in range(1, len(plans)):
-            prv, cur = plans[i - 1], plans[i]
-            px, py, ps = prv['_wp']
-            if prv.get('keep_next'):
-                cur['_wp'] = prv['_wp']
-                continue
-            prv['_tt'] = 'recap' if prv.get('tr', ERASE) > 1.5 else 'fly'
-            spot = None
-            if prv['_tt'] == 'fly' and isinstance(cur.get('_seed'), Badge):
-                spot = self._dive_spot(prv, cur)
-            if spot:
-                q, ox, oy = spot
-                cur['_wp'] = (px + ox * ps, py + oy * ps, ps * q)
-                prv['_tt'] = 'dive'
-                add = int(0.45 * FPS)                          # lặn cần lâu hơn bay một chút
-                prv['n'] += add
-                prv['dur'] = prv['n'] / FPS
-                prv['tr'] = prv.get('tr', ERASE) + add / FPS
-                continue
-            dx, dy = self.DIRS[step % len(self.DIRS)]
-            step += 1
-            cur['_wp'] = (px + dx * gx * ps, py + dy * gy * ps, ps)
+        prev_box = None
+        boxes = []
+        for gi, g in enumerate(groups):
+            gx0, gy0, gx1, gy1 = g[0]['_gbox']
+            if gi > 0:
+                prv = groups[gi - 1][-1]
+                px, py, ps = prv['_wp']
+                prv['_tt'] = 'recap' if prv.get('tr', ERASE) > 2.3 else 'fly'
+                spot = None
+                if prv['_tt'] == 'fly' and isinstance(g[0].get('_seed'), Badge):
+                    spot = self._dive_spot(prv, g[0])
+                if spot:
+                    q, sx, sy = spot
+                    sc_ = ps * q
+                    ox = px + sx * ps - g[0]['_rel'][0] * sc_
+                    oy = py + sy * ps - g[0]['_rel'][1] * sc_
+                    prv['_tt'] = 'dive'
+                else:
+                    bx0, by0, bx1, by1 = prev_box
+                    gap = 0.12
+
+                    def cand(d):
+                        dx, dy = d
+                        if dx > 0:
+                            return bx1 + gap * W * sc_ - gx0 * sc_, by0 - gy0 * sc_
+                        if dx < 0:
+                            return bx0 - gap * W * sc_ - gx1 * sc_, by0 - gy0 * sc_
+                        if dy > 0:
+                            return bx0 - gx0 * sc_, by1 + gap * H * sc_ - gy0 * sc_
+                        return bx0 - gx0 * sc_, by0 - gap * H * sc_ - gy1 * sc_
+
+                    def free(o):                               # không đè lên góc bảng nào đã vẽ
+                        nb = (o[0] + gx0 * sc_, o[1] + gy0 * sc_, o[0] + gx1 * sc_, o[1] + gy1 * sc_)
+                        m = 0.05 * W * sc_
+                        return all(nb[2] + m <= q[0] or nb[0] >= q[2] + m or nb[3] + m <= q[1] or nb[1] >= q[3] + m
+                                   for q in boxes)
+
+                    pref = DIRS[step % len(DIRS)]
+                    step += 1
+                    o = None
+                    for d in [pref, (1, 0), (0, 1), (-1, 0), (0, -1)]:
+                        c_ = cand(d)
+                        if free(c_):
+                            o = c_
+                            break
+                    if o is None:                              # hết chỗ quanh đây: sang hẳn hàng mới bên dưới tất cả
+                        o = (bx0 - gx0 * sc_, max(q[3] for q in boxes) + gap * H * sc_ - gy0 * sc_)
+                    ox, oy = o
+            for p_ in g:
+                rx, ry = p_['_rel']
+                p_['_wp'] = (ox + rx * sc_, oy + ry * sc_, sc_)
+            prev_box = (ox + gx0 * sc_, oy + gy0 * sc_, ox + gx1 * sc_, oy + gy1 * sc_)
+            boxes.append(prev_box)
+            for p_ in g[:-1]:
+                p_['_tt'] = 'glide'
 
     def _dive_spot(self, prv, cur):
-        """Tìm chỗ trống trên cảnh cũ để đặt số mở đầu cảnh mới (bé xíu). Trả (tỉ lệ, gốc x, gốc y) hoặc None."""
-        sd = cur['_seed']
-        lay = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-        sd.draw(lay, 1.0)
-        bb = lay.getbbox()
-        if not bb:
-            return None
-        sw, sh = bb[2] - bb[0], bb[3] - bb[1]
-        q = min(0.32, 150.0 / max(sw, 1), 110.0 / max(sh, 1))
+        """Tìm chỗ trống trên trang cũ đủ chứa cả góc bảng mới (thu nhỏ) để camera phóng xuyên vào.
+        Trả (tỉ lệ, gốc x, gốc y của trang đầu góc mới trong toạ độ trang cũ) hoặc None."""
+        gx0, gy0, gx1, gy1 = cur['_gbox']
+        rx, ry = cur['_rel']
+        gw, gh = gx1 - gx0, gy1 - gy0
         ink = np.asarray(self._ink(prv, prv['dur'] - prv.get('tr', ERASE)))[:, :, 3] > 20
         cs = 8
         hh, ww = H // cs, W // cs
         m = ink[:hh * cs, :ww * cs].reshape(hh, cs, ww, cs).any(axis=(1, 3)).astype(np.int32)
         ii = np.pad(m.cumsum(0).cumsum(1), ((1, 0), (1, 0)))
-        bw, bh = int(sw * q / cs) + 12, int(sh * q / cs) + 12       # chừa lề ~48px quanh số
-        top, bot = int((TOP_AREA + 40) / cs), int((BOTTOM_AREA - 40) / cs)
-        best = None
-        for y in range(top, bot - bh, 2):
-            for x in range(4, ww - bw - 4, 2):
-                if ii[y + bh, x + bw] - ii[y, x + bw] - ii[y + bh, x] + ii[y, x] == 0:
-                    score = y + 0.6 * x                       # ưu tiên góc dưới bên phải
-                    if best is None or score > best[0]:
-                        best = (score, x, y)
-        if not best:
-            return None
-        _, x, y = best
-        sx, sy = (x + 6) * cs, (y + 6) * cs                     # góc trên-trái của số trên cảnh cũ
-        return q, sx - bb[0] * q, sy - bb[1] * q
+        top, bot = int((TOP_AREA + 30) / cs), int((BOTTOM_AREA - 30) / cs)
+        for q in (0.26, 0.2, 0.15, 0.11):
+            bw, bh = int(gw * q / cs) + 6, int(gh * q / cs) + 6
+            best = None
+            for y in range(top, bot - bh, 2):
+                for x in range(3, ww - bw - 3, 2):
+                    if ii[y + bh, x + bw] - ii[y, x + bw] - ii[y + bh, x] + ii[y, x] == 0:
+                        score = y + 0.6 * x                   # ưu tiên góc dưới bên phải
+                        if best is None or score > best[0]:
+                            best = (score, x, y)
+            if best:
+                _, x, y = best
+                X, Y = (x + 3) * cs, (y + 3) * cs                # góc trên-trái của cả góc bảng mới
+                return q, X + (rx - gx0) * q, Y + (ry - gy0) * q
+        return None
 
     def _content(self, pl, t):
         """Giấy + mọi thứ đã vẽ tới thời điểm t (chưa có tay, camera, logo nhỏ, phụ đề)."""
@@ -3055,70 +3142,94 @@ class Renderer:
         x, y, sc = p_['_wp']
         return x + W * sc / 2, y + H * sc / 2, sc
 
+    def _gview(self, p_):
+        """Camera nhìn trọn cả góc bảng chứa trang p_."""
+        x, y, sc = p_['_wp']
+        rx, ry = p_['_rel']
+        gx0, gy0, gx1, gy1 = p_['_gbox']
+        ox, oy = x - rx * sc, y - ry * sc
+        bw, bh = (gx1 - gx0) * sc, (gy1 - gy0) * sc
+        v = max(bw / W, bh / H) / 0.94
+        return ox + (gx0 + gx1) / 2 * sc, oy + (gy0 + gy1) / 2 * sc, max(v, sc)
+
+    @staticmethod
+    def _lerpv(a, b, u):
+        return (a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u,
+                math.exp(math.log(a[2]) + (math.log(b[2]) - math.log(a[2])) * u))
+
+    def _arc(self, a, b, u):
+        """Bay từ view a sang view b, giữa đường lùi ra một chút để thấy cả hai nơi."""
+        cx, cy, vb = self._lerpv(a, b, u)
+        dx, dy = abs(b[0] - a[0]) / vb, abs(b[1] - a[1]) / vb
+        A = min(1.2, max(0.0, max(dx / W, dy / H) - 0.15))
+        return cx, cy, vb * (1 + A * math.sin(math.pi * u))
+
+    def _end_view(self, p_):
+        """Camera lúc trang vừa vẽ xong (khung đầy đủ của trang)."""
+        return self._view(p_)
+
+    def _compose(self, upto, cx, cy, vs, skip=None, special=None, dim=None):
+        g = self.paper.copy()
+        allp = upto[0]['_all'] if upto else []
+        for p_ in upto:
+            if p_ is skip:
+                continue
+            if special is not None and p_ is special[0]:
+                ink = special[1]
+            else:
+                ink = self._ink(p_, p_['dur'] - p_.get('tr', ERASE))
+            if p_['_wp'][2] / vs > 1.7 and not (dim and p_ is dim[0]):
+                continue                                       # trang quá to (đã phóng xuyên qua): bỏ cho khỏi rối
+            self._put(g, ink, p_['_wp'], cx, cy, vs, dim[1] if (dim and p_ is dim[0]) else 1.0)
+        return g
+
     def fly(self, pl, e, first, prog):
         allp, i = pl['_all'], pl['_i']
         nxt = allp[i + 1]
         tt = pl.get('_tt', 'fly')
-        cx0, cy0, v0 = self._view(pl)
-        cx1, cy1, v1 = self._start_view(nxt)
+        a = self._end_view(pl)
+        b = self._start_view(nxt)
         k = clamp(e)
-        old_a, seed_k = 1.0, 1.0
-        if tt == 'dive':                                      # số bé xíu hiện ra, rồi camera phóng xuyên vào nó
-            seed_k = eo(clamp(k / 0.25))
-            u = eio(clamp((k - 0.25) / 0.75))
+        nxt_ink = self._ink(nxt, 0.0)
+        dim = None
+        if tt == 'glide':                                     # trong góc bảng: lướt nhẹ sang phần vẽ tiếp
+            cx, cy, vs = self._lerpv(a, b, eio(k))
+        elif tt == 'dive':                                    # số bé xíu hiện ra, rồi camera phóng xuyên vào nó
+            seed_k = eo(clamp(k / 0.22))
+            u = eio(clamp((k - 0.22) / 0.78))
+            v0, v1 = a[2], b[2]
             vs = math.exp(math.log(v0) + (math.log(v1) - math.log(v0)) * u)
             r_ = (vs - v1) / (v0 - v1) if abs(v0 - v1) > 1e-9 else 1 - u
-            cx, cy = cx1 + (cx0 - cx1) * r_, cy1 + (cy0 - cy1) * r_
-            old_a = 1 - clamp((u - 0.5) / 0.35)
-        elif tt == 'recap':
-            pts = [p_['_wp'] for p_ in allp[:i + 2]]
-            xs0 = min(x for x, y, s_ in pts); ys0 = min(y for x, y, s_ in pts)
-            xs1 = max(x + W * s_ for x, y, s_ in pts); ys1 = max(y + H * s_ for x, y, s_ in pts)
-            cm = ((xs0 + xs1) / 2, (ys0 + ys1) / 2)
-            vm = max((xs1 - xs0) / W, (ys1 - ys0) / H) / 0.9
-            vm = max(vm, v0, v1)
-            if k < 0.42:
-                u = eio(k / 0.42)
-                cx, cy = cx0 + (cm[0] - cx0) * u, cy0 + (cm[1] - cy0) * u
-                vs = math.exp(math.log(v0) + (math.log(vm) - math.log(v0)) * u)
-            elif k < 0.6:
-                cx, cy, vs = cm[0], cm[1], vm
+            cx, cy = b[0] + (a[0] - b[0]) * r_, b[1] + (a[1] - b[1]) * r_
+            dim = (pl, 1 - clamp((u - 0.5) / 0.35))
+            if seed_k < 0.999:
+                sd = nxt.get('_seed')
+                lay = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+                if sd is not None:
+                    bb = self._item_bb(sd)
+                    if bb:
+                        c_ = ((bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2)
+                        s2 = max(0.05, seed_k)
+                        im = nxt_ink.resize((max(1, int(W * s2)), max(1, int(H * s2))), Image.BILINEAR)
+                        lay.paste(im, (int(c_[0] - c_[0] * s2), int(c_[1] - c_[1] * s2)), im)
+                nxt_ink = lay
+        else:
+            gv = self._gview(pl)                              # lùi ra nhìn trọn góc bảng vừa vẽ xong
+            if tt == 'recap':                                 # trước cảnh kết: lùi thật xa cho thấy cả tấm bảng
+                pts = [p_['_wp'] for p_ in allp[:i + 2]]
+                xs0 = min(x for x, y, s_ in pts); ys0 = min(y for x, y, s_ in pts)
+                xs1 = max(x + W * s_ for x, y, s_ in pts); ys1 = max(y + H * s_ for x, y, s_ in pts)
+                gv = ((xs0 + xs1) / 2, (ys0 + ys1) / 2, max(max((xs1 - xs0) / W, (ys1 - ys0) / H) / 0.92, a[2], b[2]))
+            if k < 0.34:
+                cx, cy, vs = self._lerpv(a, gv, eio(k / 0.34))
+            elif k < 0.5:
+                cx, cy, vs = gv
             else:
-                u = eio((k - 0.6) / 0.4)
-                cx, cy = cm[0] + (cx1 - cm[0]) * u, cm[1] + (cy1 - cm[1]) * u
-                vs = math.exp(math.log(vm) + (math.log(v1) - math.log(vm)) * u)
-        else:                                                 # bay: lùi ra cho thấy cả trang cũ lẫn trang mới
-            u = eio(k)
-            cx, cy = cx0 + (cx1 - cx0) * u, cy0 + (cy1 - cy0) * u
-            vb = math.exp(math.log(v0) + (math.log(v1) - math.log(v0)) * u)
-            dx, dy = abs(cx1 - cx0) / vb, abs(cy1 - cy0) / vb
-            A = min(1.4, max(0.3, max(dx / W, dy / H) + 0.1))
-            vs = vb * (1 + A * math.sin(math.pi * u))
-        g = self.paper.copy()
-        for j, p_ in enumerate(allp[:i + 2]):
-            if j <= i and p_.get('keep_next'):
-                continue
-            if j == i + 1:
-                ink = self._ink(p_, 0.0)
-                if seed_k < 0.999:                            # số "nảy" ra tại chỗ trống
-                    lay = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-                    sd = p_.get('_seed')
-                    if sd is not None:
-                        lay2 = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-                        sd.draw(lay2, 1.0)
-                        bb = lay2.getbbox()
-                        if bb:
-                            c_ = ((bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2)
-                            s2 = max(0.05, seed_k)
-                            im = lay2.resize((max(1, int(W * s2)), max(1, int(H * s2))), Image.BILINEAR)
-                            lay.paste(im, (int(c_[0] - c_[0] * s2), int(c_[1] - c_[1] * s2)), im)
-                    ink = lay
-                self._put(g, ink, p_['_wp'], cx, cy, vs)
-            else:
-                if p_['_wp'][2] / vs > 1.7 and not (j == i and tt == 'dive'):
-                    continue                                  # trang "mẹ" phóng quá to: bỏ cho khỏi rối
-                self._put(g, self._ink(p_, p_['dur'] - p_.get('tr', ERASE)), p_['_wp'], cx, cy, vs,
-                          old_a if j == i else 1.0)
+                cx, cy, vs = self._arc(gv, b, eio((k - 0.5) / 0.5))
+        g = self._compose(allp[:i + 1] + [nxt], cx, cy, vs, special=(nxt, nxt_ink), dim=dim)
+        return self._overlay(g, pl, prog)
+
+    def _overlay(self, g, pl, prog):
         if not pl['logo_end']:
             g.paste(self.logo_small, LAY['logo_xy'], self.logo_small)
         if self.label is not None:
@@ -3129,6 +3240,16 @@ class Renderer:
             d.rounded_rectangle((bx0, by0, bx1, by0 + 12), 6, fill=(232, 232, 228))
             d.rounded_rectangle((bx0, by0, bx0 + max(12, int((bx1 - bx0) * clamp(prog))), by0 + 12), 6, fill=ORANGE)
         return g
+
+    def _neighbors(self, f, pl):
+        """Camera bay: vẽ các trang đã xong nằm quanh trang hiện tại (cùng góc bảng hoặc góc cạnh bên)."""
+        allp, i = pl['_all'], pl['_i']
+        x, y, sc = pl['_wp']
+        cx, cy = x + W * sc / 2, y + H * sc / 2
+        for p_ in allp[:i]:
+            if p_['_wp'][2] / sc > 1.7:
+                continue
+            self._put(f, self._ink(p_, p_['dur'] - p_.get('tr', ERASE)), p_['_wp'], cx, cy, sc)
 
     def _story(self, pl, t):
         """Camera kể chuyện: cận cảnh chữ/hình đầu tiên, tới khi vẽ hình kế tiếp thì lùi ra lấy chỗ vẽ thêm."""
@@ -3312,7 +3433,12 @@ class Renderer:
         if pl.get('trans') == 'bay' and '_all' in pl and not pl['last'] and not pl.get('keep_next') \
                 and t > pl['dur'] - TR:
             return self.fly(pl, (t - (pl['dur'] - TR)) / TR, first, prog)
-        f = self._content(pl, t)
+        if pl.get('trans') == 'bay' and '_wp' in pl and pl['_i'] > 0:
+            f = self.paper.copy()
+            self._neighbors(f, pl)
+            self._paint(f, pl, t)
+        else:
+            f = self._content(pl, t)
         hp = self.hand_pos(pl, t)
         if hp:
             lift = hp[2] if len(hp) > 2 else 0.0
