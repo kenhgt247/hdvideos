@@ -702,5 +702,75 @@
    "ngói xám",
    "tông xám"
   ]
+ },
+ "nghiem_thu_mai": {
+  "ten": "nghiệm thu mái",
+  "tu_khoa": [
+   "nghiệm thu",
+   "bàn giao",
+   "kiểm tra mái mới"
+  ]
+ },
+ "phieu_bao_hanh": {
+  "ten": "phiếu bảo hành",
+  "tu_khoa": [
+   "bảo hành",
+   "cam kết",
+   "giấy bảo hành",
+   "chính sách bảo hành"
+  ]
+ },
+ "tho_bao_tri_mai": {
+  "ten": "thợ bảo trì mái",
+  "tu_khoa": [
+   "bảo trì",
+   "bảo dưỡng",
+   "sửa chữa mái",
+   "kiểm tra định kỳ"
+  ]
+ },
+ "khach_va_doi_tho_vui_ve": {
+  "ten": "khách và đội thợ vui vẻ",
+  "tu_khoa": [
+   "hài lòng",
+   "cảm ơn khách",
+   "đội ngũ",
+   "uy tín"
+  ]
+ },
+ "chu_nha_chi_cho_hong_tren_mai": {
+  "ten": "chủ nhà chỉ chỗ hỏng trên mái",
+  "tu_khoa": [
+   "chỗ hỏng",
+   "báo lỗi",
+   "khảo sát mái",
+   "chỉ chỗ dột"
+  ]
+ },
+ "tu_van_vien_giam_sat_tho": {
+  "ten": "tư vấn viên giám sát thợ",
+  "tu_khoa": [
+   "giám sát",
+   "giám sát thi công",
+   "theo dõi công trình"
+  ]
+ },
+ "tay_dat_ngoi_noc": {
+  "ten": "tay đặt ngói nóc",
+  "tu_khoa": [
+   "đặt ngói",
+   "cận cảnh ngói nóc",
+   "lắp ngói",
+   "tỉ mỉ"
+  ]
+ },
+ "nha_duoc_bao_hanh": {
+  "ten": "nhà được bảo hành",
+  "tu_khoa": [
+   "an tâm",
+   "được bảo hành",
+   "bảo vệ ngôi nhà",
+   "khiên bảo vệ"
+  ]
  }
 }
