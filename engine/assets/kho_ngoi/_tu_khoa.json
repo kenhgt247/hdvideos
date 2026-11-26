@@ -524,5 +524,39 @@
    "mái ngói đẹp",
    "nhà mái ngói đỏ"
   ]
+ },
+ "lop_cach_nhiet_duoi_mai": {
+  "ten": "lớp cách nhiệt dưới mái",
+  "tu_khoa": [
+   "cách nhiệt",
+   "tấm cách nhiệt",
+   "túi khí cách nhiệt",
+   "chống nóng"
+  ]
+ },
+ "mai_ton_nong": {
+  "ten": "mái tôn nóng",
+  "tu_khoa": [
+   "mái tôn",
+   "tôn nóng",
+   "hấp nhiệt",
+   "nóng hầm hập"
+  ]
+ },
+ "mai_ngoi_mat": {
+  "ten": "mái ngói mát",
+  "tu_khoa": [
+   "mái ngói mát",
+   "mát hơn",
+   "giảm nóng"
+  ]
+ },
+ "nhiet_ke": {
+  "ten": "nhiệt kế",
+  "tu_khoa": [
+   "nhiệt độ",
+   "nóng lạnh",
+   "đông ấm hè mát"
+  ]
  }
 }
