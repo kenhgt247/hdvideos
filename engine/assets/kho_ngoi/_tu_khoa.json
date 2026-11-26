@@ -1,0 +1,136 @@
+{
+ "mai_ngoi_xanh_nhin_tu_tren_cao": {
+  "ten": "mái ngói xanh nhìn từ trên cao",
+  "tu_khoa": [
+   "mái ngói nhìn từ trên",
+   "mái ngói xanh dương",
+   "công trình thực tế"
+  ]
+ },
+ "nha_2_tang_mai_ngoi_xanh_duong": {
+  "ten": "nhà 2 tầng mái ngói xanh dương",
+  "tu_khoa": [
+   "nhà hai tầng",
+   "mái ngói xanh dương",
+   "nhà sơn trắng ngói xanh"
+  ]
+ },
+ "biet_thu_mai_ngoi_xanh_duong": {
+  "ten": "biệt thự mái ngói xanh dương",
+  "tu_khoa": [
+   "biệt thự mái ngói",
+   "nhà mái thái",
+   "công trình đã hoàn thiện"
+  ]
+ },
+ "nha_mai_thai_ngoi_xanh": {
+  "ten": "nhà mái thái ngói xanh",
+  "tu_khoa": [
+   "mái thái",
+   "nhà mái thái",
+   "mái ngói đẹp"
+  ]
+ },
+ "cong_trinh_mai_ngoi_xanh_dang_hoan_thien": {
+  "ten": "công trình mái ngói xanh đang hoàn thiện",
+  "tu_khoa": [
+   "đang hoàn thiện",
+   "công trình đang thi công",
+   "sắp bàn giao"
+  ]
+ },
+ "nha_2_tang_mai_ngoi_xam": {
+  "ten": "nhà 2 tầng mái ngói xám",
+  "tu_khoa": [
+   "mái ngói xám",
+   "ngói màu xám",
+   "nhà sơn xám trắng"
+  ]
+ },
+ "mai_ngoi_xam_co_cua_so_mai": {
+  "ten": "mái ngói xám có cửa sổ mái",
+  "tu_khoa": [
+   "cửa sổ mái",
+   "mái nhiều mặt",
+   "mái phức tạp"
+  ]
+ },
+ "nha_cap_4_mai_thai_ngoi_den": {
+  "ten": "nhà cấp 4 mái thái ngói đen",
+  "tu_khoa": [
+   "nhà cấp 4",
+   "nhà cấp bốn",
+   "mái ngói đen",
+   "ngói xám đen"
+  ]
+ },
+ "nha_cap_4_giua_vuon": {
+  "ten": "nhà cấp 4 giữa vườn",
+  "tu_khoa": [
+   "nhà vườn",
+   "nhà quê",
+   "nhà ở nông thôn"
+  ]
+ },
+ "nha_cap_4_mai_ngoi_xam_den": {
+  "ten": "nhà cấp 4 mái ngói xám đen",
+  "tu_khoa": [
+   "nhà cấp 4 mái ngói",
+   "nhà sơn xanh trắng",
+   "phối màu ngói"
+  ]
+ },
+ "mai_thai_nhin_tu_tren_cao": {
+  "ten": "mái thái nhìn từ trên cao",
+  "tu_khoa": [
+   "nóc mái",
+   "khe giao mái",
+   "bờ nóc",
+   "mái nhiều khe giao"
+  ]
+ },
+ "mai_nha_hoan_thien": {
+  "ten": "mái nhà hoàn thiện",
+  "tu_khoa": [
+   "mái nhà hoàn thiện",
+   "nhà mới xây",
+   "bàn giao công trình"
+  ]
+ },
+ "tho_dung_khung_keo_thep": {
+  "ten": "thợ dựng khung kèo thép",
+  "tu_khoa": [
+   "khung kèo thép",
+   "dựng khung kèo",
+   "thi công khung kèo",
+   "kèo sắt"
+  ]
+ },
+ "ngoi_nano_one_no_01_xam_den": {
+  "ten": "ngói Nano One NO-01 xám đen",
+  "tu_khoa": [
+   "NO-01",
+   "ngói xám đen",
+   "ngói màu đen",
+   "ngói nano one"
+  ]
+ },
+ "ngoi_nano_one_no_02_xanh_duong": {
+  "ten": "ngói Nano One NO-02 xanh dương",
+  "tu_khoa": [
+   "NO-02",
+   "ngói xanh dương",
+   "ngói màu xanh",
+   "viên ngói màu"
+  ]
+ },
+ "ngoi_nano_one_no_03_xanh_xam": {
+  "ten": "ngói Nano One NO-03 xanh xám",
+  "tu_khoa": [
+   "NO-03",
+   "ngói xanh xám",
+   "ngói xanh rêu",
+   "ngói màu xám"
+  ]
+ }
+}
