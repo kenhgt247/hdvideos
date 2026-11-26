@@ -558,5 +558,41 @@
    "nóng lạnh",
    "đông ấm hè mát"
   ]
+ },
+ "tho_gan_ngoi_noc": {
+  "ten": "thợ gắn ngói nóc",
+  "tu_khoa": [
+   "gắn ngói nóc",
+   "lợp nóc",
+   "xử lý nóc mái",
+   "bờ nóc"
+  ]
+ },
+ "mang_xoi": {
+  "ten": "máng xối",
+  "tu_khoa": [
+   "máng xối",
+   "ống thoát nước",
+   "thoát nước mưa",
+   "máng nước"
+  ]
+ },
+ "o_thong_gio_mai": {
+  "ten": "ô thông gió mái",
+  "tu_khoa": [
+   "thông gió",
+   "thông gió mái",
+   "thoáng khí",
+   "gác mái"
+  ]
+ },
+ "chu_nha_hai_long_voi_mai_moi": {
+  "ten": "chủ nhà hài lòng với mái mới",
+  "tu_khoa": [
+   "hài lòng",
+   "khách hài lòng",
+   "mái mới",
+   "nhận nhà"
+  ]
  }
 }
