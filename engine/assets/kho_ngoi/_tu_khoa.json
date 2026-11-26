@@ -594,5 +594,40 @@
    "mái mới",
    "nhận nhà"
   ]
+ },
+ "tho_do_mai": {
+  "ten": "thợ đo mái",
+  "tu_khoa": [
+   "đo mái",
+   "đo diện tích",
+   "khảo sát mái",
+   "diện tích mái"
+  ]
+ },
+ "may_tinh_du_toan": {
+  "ten": "máy tính dự toán",
+  "tu_khoa": [
+   "dự toán",
+   "tính chi phí",
+   "lên dự toán",
+   "tính số lượng ngói"
+  ]
+ },
+ "ban_ve_mai_nha": {
+  "ten": "bản vẽ mái nhà",
+  "tu_khoa": [
+   "bản vẽ",
+   "thiết kế mái",
+   "thiết kế kết cấu"
+  ]
+ },
+ "xe_cho_ngoi": {
+  "ten": "xe chở ngói",
+  "tu_khoa": [
+   "giao ngói",
+   "vận chuyển",
+   "giao hàng tận nơi",
+   "chở ngói"
+  ]
  }
 }
