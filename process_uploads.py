@@ -49,6 +49,14 @@ def main():
         if '__' in base:                       # nhân vật riêng: <người>__<anh|chi>_<tư thế>
             who, rest = base.split('__', 1)
             parts = rest.split('_')
+            if who.startswith('lv_') and len(parts) == 2 and parts[0] in dict(E.GENDERS) and parts[1] in dict(E.POSES):
+                dst_dir = os.path.join(E.ASSETS, 'lv', re.sub(r'[^a-z0-9]', '', who[3:]), 'nhanvat')
+                os.makedirs(dst_dir, exist_ok=True)
+                E.remove_bg(src).save(os.path.join(dst_dir, rest + '.png'))
+                print('Nhân vật lĩnh vực:', who, rest)
+                n += 1
+                os.remove(src)
+                continue
             if who and len(parts) == 2 and parts[0] in dict(E.GENDERS) and parts[1] in dict(E.POSES):
                 dst_dir = os.path.join(E.ASSETS, 'nhanvat_rieng', who)
                 os.makedirs(dst_dir, exist_ok=True)

@@ -881,6 +881,11 @@ export default {
       const NVF = /^(anh|chi)_(chao|chi|like)\.png$/;
       m = p.match(/^\/img\/nv\/((anh|chi)_(chao|chi|like)\.png)$/);
       if (m) {
+        const lvq = url.searchParams.get('lv') || '';
+        if (lvq && lvq !== 'duhoc' && LV_ID.test(lvq)) {
+          const r = await gh(env, `/contents/engine/assets/lv/${lvq}/nhanvat/${m[1]}`, { headers: { accept: 'application/vnd.github.raw' } });
+          if (r.ok) return new Response(r.body, { headers: { 'content-type': 'image/png', 'cache-control': 'no-store' } });
+        }
         const who = slug(url.searchParams.get('who') || '');
         if (who) {
           const r = await gh(env, `/contents/engine/assets/nhanvat_rieng/${who}/${m[1]}`, { headers: { accept: 'application/vnd.github.raw' } });
@@ -890,6 +895,12 @@ export default {
       }
       if (p === '/img/logo') return lvLogo(req, env, ctx, url);
       if (p === '/api/nhanvat' && req.method === 'GET') {
+        const lvq = url.searchParams.get('lv') || '';
+        if (lvq && lvq !== 'duhoc' && LV_ID.test(lvq)) {
+          const mine = (await listDir(env, `engine/assets/lv/${lvq}/nhanvat`)).map(f => f.name).filter(n => NVF.test(n));
+          const pending = (await listDir(env, 'engine/assets/nhanvat_moi')).map(f => f.name).filter(n => n.startsWith('lv_' + lvq + '__'));
+          return json({ mine, pending, lv: lvq });
+        }
         const who = slug(url.searchParams.get('who') || '');
         const mine = who ? (await listDir(env, `engine/assets/nhanvat_rieng/${who}`)).map(f => f.name).filter(n => NVF.test(n)) : [];
         const pending = (await listDir(env, 'engine/assets/nhanvat_moi')).map(f => f.name).filter(n => !n.startsWith('.'));
@@ -898,6 +909,11 @@ export default {
       if (p === '/api/nhanvat' && req.method === 'POST') {
         const b = await req.json();
         if (!['anh', 'chi'].includes(b.gender) || !['chao', 'chi', 'like'].includes(b.pose) || !b.data) return err('Thiếu thông tin');
+        if (b.lv && b.lv !== 'duhoc' && LV_ID.test(b.lv)) {
+          if (!admin) return err(ADMIN_ONLY, 403);
+          await putFile(env, `engine/assets/nhanvat_moi/lv_${b.lv}__${b.gender}_${b.pose}.png`, b.data, `Nhân vật ${b.lv}: thay ${b.gender}_${b.pose}`);
+          return json({ ok: true });
+        }
         if (b.scope === 'chung') {
           if (!admin) return err(ADMIN_ONLY, 403);
           await putFile(env, `engine/assets/nhanvat_moi/${b.gender}_${b.pose}.png`, b.data, `Nhân vật chung: thay ${b.gender}_${b.pose}`);

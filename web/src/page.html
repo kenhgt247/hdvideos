@@ -478,7 +478,7 @@ BÍ QUYẾT GIỮ NGƯỜI XEM:
     <button class="btn" id="paSave" type="button" style="width:100%;margin-top:8px">Lưu từ điển phát âm</button>
   </div>
   <div class="card">
-    <h2>Nhân vật của tôi</h2>
+    <h2 id="nvTitle">Nhân vật của tôi</h2>
     <div class="hint" id="nvWho"></div>
     <label class="chk adm"><input type="checkbox" id="nvChung"> Sửa bộ nhân vật CHUNG của trung tâm</label>
     <div class="nv" id="nvGrid" style="margin-top:10px"></div>
@@ -2146,7 +2146,24 @@ let nvTarget = null;
 const whoName = () => ($('by').value || store.get('by', '') || '').trim();
 const isAdm = () => document.body.classList.contains('admin');
 const nvChung = () => isAdm() && $('nvChung').checked;
+async function loadNvLv() {
+  const v = Date.now(), adm = document.body.classList.contains('admin');
+  $('nvChung').closest('label').style.display = 'none'; $('bRestore').style.display = 'none';
+  $('nvTitle').textContent = 'Nhân vật của ' + BRAND();
+  $('nvWho').innerHTML = 'Nhân vật dẫn video của <b>' + esc(BRAND()) + '</b>. ' + (adm ? 'Bấm vào ảnh để thay.' : 'Chỉ quản lý mới thay được.')
+    + ' Ô nào chưa có thì video tạm dùng nhân vật du học.';
+  let info = { mine: [], pending: [] };
+  try { info = await api('/api/nhanvat'); } catch {}
+  $('nvGrid').innerHTML = NV.map(([g, p, t]) => {
+    const f = g + '_' + p + '.png', mine = info.mine.includes(f);
+    return `<div class="it" onclick="pickNv('${g}','${p}')"><img src="/img/nv/${f}?lv=${LV}&v=${v}"><div>${t}</div>
+      <div class="tg">${mine ? 'của ' + esc(BRAND()) : 'tạm dùng nhân vật du học'}</div></div>`;
+  }).join('');
+  $('nvPending').textContent = info.pending.length ? 'Đang tách nền ' + info.pending.length + ' ảnh, khoảng 1–2 phút...' : '';
+  if (info.pending.length && curTab === 'cai') setTimeout(loadNv, 20000);
+}
 async function loadNv() {
+  if (LV !== 'duhoc') return loadNvLv();
   const who = nvChung() ? '' : whoName(), v = Date.now();
   $('nvWho').innerHTML = nvChung() ? 'Đang sửa <b>bộ chung</b> (ai chưa có nhân vật riêng sẽ dùng bộ này).'
     : who ? 'Nhân vật riêng của <b>' + esc(who) + '</b>. Bấm vào ảnh để thay. Chỉ video do bạn tạo (ô "Người tạo" = ' + esc(who) + ') mới dùng bộ này.'
@@ -2164,6 +2181,7 @@ async function loadNv() {
 }
 $('nvChung').onchange = loadNv;
 function pickNv(g, p) {
+  if (LV !== 'duhoc') { if (!document.body.classList.contains('admin')) { toast('Chỉ quản lý mới thay được nhân vật của ' + BRAND()); return; } nvTarget = [g, p]; $('nvFile').click(); return; }
   if (!nvChung() && !whoName()) { toast('Hãy nhập tên ở ô "Người tạo" trước'); showTab('tao'); $('by').focus(); return; }
   nvTarget = [g, p]; $('nvFile').click();
 }
