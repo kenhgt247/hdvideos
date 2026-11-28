@@ -3547,5 +3547,40 @@
    "nhà hàng",
    "giao hàng"
   ]
+ },
+ "tro_cap_bao_nhieu": {
+  "ten": "trợ cấp bao nhiêu",
+  "tu_khoa": [
+   "trợ cấp",
+   "tiền trợ cấp",
+   "mức trợ cấp"
+  ]
+ },
+ "nhan_tro_cap_hang_thang": {
+  "ten": "nhận trợ cấp hàng tháng",
+  "tu_khoa": [
+   "hàng tháng",
+   "mỗi tháng",
+   "nhận tiền hàng tháng",
+   "sinh hoạt phí"
+  ]
+ },
+ "ca_nha_vui_mung": {
+  "ten": "cả nhà vui mừng",
+  "tu_khoa": [
+   "gia đình vui",
+   "bố mẹ yên tâm",
+   "phụ huynh vui",
+   "cả nhà"
+  ]
+ },
+ "hoc_tot_thu_nhap_tang": {
+  "ten": "học tốt thu nhập tăng",
+  "tu_khoa": [
+   "thu nhập tăng",
+   "tăng dần",
+   "học tốt",
+   "tương lai tốt"
+  ]
  }
 }
