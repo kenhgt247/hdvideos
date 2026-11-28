@@ -3394,5 +3394,42 @@
    "trường phù hợp",
    "so sánh trường"
   ]
+ },
+ "chon_truong_theo_nganh": {
+  "ten": "chọn trường theo ngành",
+  "tu_khoa": [
+   "theo ngành",
+   "chọn ngành trước",
+   "ngành quyết định",
+   "chọn trường theo ngành"
+  ]
+ },
+ "dung_chay_theo_danh_tieng": {
+  "ten": "đừng chạy theo danh tiếng",
+  "tu_khoa": [
+   "danh tiếng",
+   "trường nổi tiếng",
+   "trường top",
+   "tên tuổi"
+  ]
+ },
+ "tranh_bi_hut_hoi": {
+  "ten": "tránh bị hụt hơi",
+  "tu_khoa": [
+   "hụt hơi",
+   "đuối sức",
+   "theo không nổi",
+   "quá sức"
+  ]
+ },
+ "tu_dong_hoa": {
+  "ten": "tự động hóa",
+  "tu_khoa": [
+   "tự động hóa",
+   "robot",
+   "dây chuyền",
+   "cơ điện tử",
+   "công nghiệp"
+  ]
  }
 }
