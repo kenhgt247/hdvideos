@@ -2653,6 +2653,7 @@ $('trSaveInfo').onclick = async () => {
     toast('Đã lưu thông tin trường'); await trInit(); trOpen(d.id);
   } catch (e) { toast(e.message, 5000); }
 };
+const trCl = x => String(x || '').replace(/<\/?cite[^>]*>/gi, '').replace(/\s+/g, ' ').trim();
 function trDrawNc(nc) {
   if (!nc) { $('trNcOut').innerHTML = ''; $('trNc').textContent = '🔎 Nghiên cứu và kiểm chứng'; return; }
   $('trNc').textContent = '🔄 Nghiên cứu lại (gọi AI, tốn lượt)';
@@ -2662,8 +2663,8 @@ function trDrawNc(nc) {
     const v = nc.muc[k] || {};
     const src = v.nguon && /^https?:/.test(v.nguon) ? `<a href="${esc(v.nguon)}" target="_blank" rel="noopener">${esc(v.nguon.replace(/^https?:\/\//, '').slice(0, 70))}</a>` : '';
     return `<div class="${v.kiem_chung ? '' : 'no'}"><div class="k">${v.kiem_chung ? '✅' : '⚠'} ${esc(t)}</div>
-      <div class="v">${v.gia_tri ? esc(v.gia_tri) : 'Chưa tìm được nguồn chính thức, sẽ không đưa vào video.'}</div>
-      ${v.nam_hoc || src ? `<div class="s">${v.nam_hoc ? '📅 ' + esc(v.nam_hoc) + ' · ' : ''}${src}</div>` : ''}</div>`;
+      <div class="v">${v.gia_tri ? esc(trCl(v.gia_tri)) : 'Chưa tìm được nguồn chính thức, sẽ không đưa vào video.'}</div>
+      ${v.nam_hoc || src ? `<div class="s">${v.nam_hoc ? '📅 ' + esc(trCl(v.nam_hoc)) + ' · ' : ''}${src}</div>` : ''}</div>`;
   }).join('') + '</div>';
 }
 $('trNc').onclick = async () => {

@@ -349,6 +349,7 @@ const TR_MUC = [['ten', 'Tên tiếng Việt, tiếng Anh, tên bản địa'], 
   ['phu_hop', 'Đối tượng phù hợp']];
 const TR_NGUON = { tw: ['studyintaiwan.org', 'edu.tw', 'gov.tw', 'roc-taiwan.org'], kr: ['studyinkorea.go.kr', 'go.kr', 'ac.kr', 'hikorea.go.kr'] };
 
+function trClean(x) { return String(x || '').replace(/<\/?cite[^>]*>/gi, '').replace(/<[^>]{0,40}>/g, '').replace(/\s+/g, ' ').trim(); }
 function trHost(u) { try { return new URL(/^https?:/i.test(u) ? u : 'https://' + u).hostname.replace(/^www\./, ''); } catch { return ''; } }
 function trB64(str) { const by = new TextEncoder().encode(str); let s = ''; by.forEach(x => { s += String.fromCharCode(x); }); return btoa(s); }
 async function trSave(env, path, data, message) {
@@ -561,7 +562,7 @@ async function trRoute(req, env, ctx, url, p, admin) {
     const domains = [...new Set([host, ...(host ? [host.split('.').slice(-3).join('.')] : []), ...(TR_NGUON[it.qg] || [])].filter(Boolean))];
     const user = `Trường: ${[it.ten_vi, it.ten_en, it.ten_bd].filter(Boolean).join(' / ')}\nWebsite chính thức: ${it.web || '(chưa có, hãy tự tìm)'}\nNgày hôm nay: ${today()}`;
     const out = await aiClaude(env, trResearchPrompt(it), user, true, domains,
-      { maxUses: 10, retry: 'Bạn đã tra đủ. Trả lời NGAY một khối ```json đúng mẫu, mục nào chưa có nguồn thì để trống và kiem_chung=false.' });
+      { maxUses: 10, maxTokens: 32000, retry: 'Bạn đã tra đủ. Trả lời NGAY một khối ```json đúng mẫu, mục nào chưa có nguồn thì để trống và kiem_chung=false.' });
     const jm = out.text.match(/```(?:json)?\s*([\s\S]*?)```/);
     let j = null;
     try { j = JSON.parse((jm ? jm[1] : out.text).replace(/\/\/[^\n"]*$/gm, '')); } catch { j = null; }
@@ -569,8 +570,8 @@ async function trRoute(req, env, ctx, url, p, admin) {
     const muc = {};
     for (const [k] of TR_MUC) {
       const v = j[k] || {};
-      const val = String(v.gia_tri || '').trim();
-      muc[k] = { gia_tri: val, nguon: String(v.nguon || '').trim(), nam_hoc: String(v.nam_hoc || '').trim(), kiem_chung: !!(val && v.kiem_chung) };
+      const val = trClean(v.gia_tri);
+      muc[k] = { gia_tri: val, nguon: String(v.nguon || '').trim(), nam_hoc: trClean(v.nam_hoc), kiem_chung: !!(val && v.kiem_chung) };
     }
     const rec = { ngay: today(), ten_vi: j.ten_vi || it.ten_vi, ten_en: j.ten_en || it.ten_en, ten_bd: j.ten_bd || it.ten_bd, muc, nguon: out.sources };
     await trSave(env, `truong/${id}/nghien_cuu.json`, rec, `Nghiên cứu: ${it.ten_vi || it.ten_en}`);
@@ -649,10 +650,17 @@ async function trRoute(req, env, ctx, url, p, admin) {
     const photos = opt.phong_cach === 've' ? [] : anh.map(x => x.ten);
     const sys = (await chatgptPrompt(env, lvPick(await lvAll(env), 'duhoc'))) + trScriptRules(it, opt, photos);
     const ho_so = { truong: { ten_vi: nc.ten_vi, ten_en: nc.ten_en, ten_bd: nc.ten_bd, website: it.web }, ngay_nghien_cuu: nc.ngay,
-      muc: Object.fromEntries(Object.entries(nc.muc).filter(([, v]) => v.kiem_chung && v.gia_tri)) };
+      muc: Object.fromEntries(Object.entries(nc.muc).filter(([, v]) => v.kiem_chung && v.gia_tri)
+        .map(([k, v]) => [k, { gia_tri: trClean(v.gia_tri), nam_hoc: trClean(v.nam_hoc), nguon: v.nguon }])) };
     const user = `HỒ SƠ NGHIÊN CỨU (JSON, chỉ dùng các dữ kiện này):\n${JSON.stringify(ho_so, null, 1)}\n\nVideo: Tập ${String(it.tap || 1).padStart(3, '0')} series "Mỗi ngày một trường", dài khoảng ${phut} phút.`;
     let out;
-    if (env.CLAUDE_KEY) out = await aiClaude(env, sys, user, false);
+    if (env.CLAUDE_KEY) {
+      try { out = await aiClaude(env, sys, user, false, OFFICIAL, { maxTokens: 32000 }); }
+      catch (e) {
+        if (!/max_tokens/.test(e.message) || !env.GEMINI_KEY) throw e;
+        out = { text: await aiGemini(env, sys, user), sources: [] };      // Claude nghĩ quá dài: chuyển sang Gemini
+      }
+    }
     else out = { text: await aiGemini(env, sys, user), sources: [] };
     const pr = parseAi(out.text);
     const urls = [...new Set([...(pr.srcTxt.match(/https?:\/\/[^\s)\]]+/g) || []), ...Object.values(nc.muc).map(v => v.nguon).filter(u => /^https?:/.test(u))])];
@@ -716,7 +724,7 @@ async function aiClaude(env, sys, user, search = true, domains = OFFICIAL, opt =
       const r = await aiFetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-api-key': env.CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 16000, system: sys, messages,
+        body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: opt.maxTokens || 16000, system: sys, messages,
           ...(search ? { tools: [useDomains ? tool : { type: tool.type, name: tool.name, max_uses: tool.max_uses }], ...extra } : {}) }),
       });
       const d = await r.json().catch(() => ({}));
