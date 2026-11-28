@@ -702,10 +702,10 @@ async function trDoScript(env, id, b) {
       try { out = await aiClaude(env, sys, user, false, OFFICIAL, { maxTokens: 32000 }); }
       catch (e) {
         if (!/max_tokens/.test(e.message) || !env.GEMINI_KEY) throw e;
-        out = { text: await aiGemini(env, sys, user), sources: [] };      // Claude nghĩ quá dài: chuyển sang Gemini
+        out = await aiGemini(env, sys, user);      // Claude nghĩ quá dài: chuyển sang Gemini
       }
     }
-    else out = { text: await aiGemini(env, sys, user), sources: [] };
+    else out = await aiGemini(env, sys, user);
     const pr = parseAi(out.text);
     const urls = [...new Set([...(pr.srcTxt.match(/https?:\/\/[^\s)\]]+/g) || []), ...Object.values(nc.muc).map(v => v.nguon).filter(u => /^https?:/.test(u))])];
     const rec = { ngay: today(), ...opt, script: pr.script, caption: pr.caption, nguon: urls };
