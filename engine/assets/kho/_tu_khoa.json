@@ -3507,5 +3507,45 @@
    "chọn hướng đi",
    "định hướng"
   ]
+ },
+ "chu_dong_nop_them": {
+  "ten": "chủ động nộp thêm",
+  "tu_khoa": [
+   "nộp thêm",
+   "chủ động nộp",
+   "nộp hồ sơ xin việc",
+   "xin việc"
+  ]
+ },
+ "bi_quyt_luong": {
+  "ten": "bị quỵt lương",
+  "tu_khoa": [
+   "quỵt lương",
+   "không trả lương",
+   "mất lương",
+   "ví rỗng",
+   "làm chui"
+  ]
+ },
+ "song_trong_lo_so": {
+  "ten": "sống trong lo sợ",
+  "tu_khoa": [
+   "lo sợ",
+   "bất an",
+   "sợ bị bắt",
+   "cư trú bất hợp pháp",
+   "bỏ trốn"
+  ]
+ },
+ "lam_viec_gi": {
+  "ten": "làm việc gì",
+  "tu_khoa": [
+   "làm việc gì",
+   "việc làm thêm",
+   "công việc",
+   "làm thêm gì",
+   "nhà hàng",
+   "giao hàng"
+  ]
  }
 }
