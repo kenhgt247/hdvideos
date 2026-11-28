@@ -53,7 +53,7 @@ nav button.on{color:var(--blue);font-weight:600}
 .card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(20,40,90,.06)}
 h2{font-size:17px;margin:0 0 12px}
 label.f{display:block;font-size:13px;color:var(--mut);margin:12px 0 5px;font-weight:600}
-input[type=text],input[type=tel],input[type=url],select,textarea{width:100%;font:inherit;font-size:16px;border:1.5px solid var(--line);border-radius:12px;padding:11px 12px;background:#fff;color:var(--ink)}
+input[type=text],input[type=tel],input[type=url],input[type=search],#trTap,select,textarea{width:100%;font:inherit;font-size:16px;border:1.5px solid var(--line);border-radius:12px;padding:11px 12px;background:#fff;color:var(--ink)}
 textarea{min-height:260px;line-height:1.5;resize:vertical}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
 .row{display:flex;gap:8px;flex-wrap:wrap}
@@ -2786,6 +2786,7 @@ $('trGo').onclick = () => {
   TRUONG_JOB = { id: it.id, ten: it.ten_vi || it.ten_en, tap: it.tap }; store.set('truong_job', TRUONG_JOB);
   $('script').value = sc; $('name').value = trTap(it.tap) + ' – ' + (it.ten_vi || it.ten_en).slice(0, 50);
   setMode('self'); trBanner(); afterEdit(); showTab('tao');
+  setTimeout(() => $('trBan').scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
   toast('Đã chuyển kịch bản. Chọn giọng, khổ video rồi bấm Tạo video.', 4500);
 };
 function trBanner() {
