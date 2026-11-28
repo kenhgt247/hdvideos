@@ -922,11 +922,12 @@
    "qg": "tw",
    "ten_vi": "Đại học Chân Lý",
    "ten_en": "Aletheia University",
-   "ten_bd": "",
+   "ten_bd": "真理大學",
    "viet_tat": "AU Aletheia",
    "web": "https://www.au.edu.tw",
-   "tap": 0,
-   "web_kt": false
+   "tap": 2,
+   "web_kt": true,
+   "nc": "2026-11-28"
   },
   "tw_ttu": {
    "id": "tw_ttu",
@@ -3503,5 +3504,7 @@
    "web_kt": false
   }
  },
- "phut_ai": {}
+ "phut_ai": {
+  "2026-11-28": 1
+ }
 }
