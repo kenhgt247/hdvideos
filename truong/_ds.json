@@ -4,7 +4,9 @@
   "tw_takming": {
    "id": "tw_takming",
    "tao": "2026-11-28",
-   "video": [],
+   "video": [
+    "mx03810y5ur3"
+   ],
    "qg": "tw",
    "ten_vi": "Đại học Khoa học và Công nghệ Đức Minh",
    "ten_en": "Takming University of Science and Technology",
@@ -13,7 +15,8 @@
    "tap": 1,
    "nc": "2026-11-28",
    "anh": 4,
-   "kb": "2026-11-28"
+   "kb": "2026-11-28",
+   "cho_duyet": false
   }
  },
  "phut_ai": {}
