@@ -26,5 +26,19 @@
   "ngay": "2026-11-28",
   "w": 800,
   "h": 450
+ },
+ "anh_toan_canh_khuon_vien": {
+  "ten": "ảnh toàn cảnh khuôn viên",
+  "chu_de": "khuon_vien",
+  "tu_khoa": [
+   "toàn cảnh khuôn viên"
+  ],
+  "url_anh": "https://www.au.edu.tw/var/file/0/1000/pictures/180/m/mczh-tw1500x1500_large15473_943816902847.jpg",
+  "url_trang": "https://www.au.edu.tw/p/404-1000-67631.php?Lang=zh-tw",
+  "nguon": "au.edu.tw",
+  "ban_quyen": "Ảnh từ website chính thức của trường, ghi nguồn khi đăng",
+  "ngay": "2026-11-28",
+  "w": 800,
+  "h": 450
  }
 }
