@@ -3284,5 +3284,43 @@
    "giao nhận"
   ],
   "lo": 86
+ },
+ "hoc_nhu_the_nao": {
+  "ten": "học như thế nào",
+  "tu_khoa": [
+   "học như thế nào",
+   "cách học",
+   "tư vấn cách học",
+   "chương trình học"
+  ]
+ },
+ "nam_1_tieng_hoa_va_chuyen_nganh": {
+  "ten": "năm 1 tiếng hoa và chuyên ngành",
+  "tu_khoa": [
+   "năm 1",
+   "năm nhất",
+   "tiếng hoa và chuyên ngành",
+   "vừa học tiếng vừa học ngành"
+  ]
+ },
+ "toi_da_40_gio_moi_tuan": {
+  "ten": "tối đa 40 giờ mỗi tuần",
+  "tu_khoa": [
+   "40 giờ",
+   "bốn mươi giờ",
+   "giờ làm thêm",
+   "vừa học vừa làm",
+   "làm thêm theo giờ"
+  ]
+ },
+ "nhuoc_diem": {
+  "ten": "nhược điểm",
+  "tu_khoa": [
+   "nhược điểm",
+   "áp lực",
+   "vất vả",
+   "mệt mỏi",
+   "khó khăn"
+  ]
  }
 }
