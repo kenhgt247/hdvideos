@@ -3322,5 +3322,41 @@
    "mệt mỏi",
    "khó khăn"
   ]
+ },
+ "tuoi_18_den_24": {
+  "ten": "tuổi 18 đến 24",
+  "tu_khoa": [
+   "độ tuổi",
+   "tuổi 18",
+   "18 đến 24 tuổi",
+   "điều kiện tuổi"
+  ]
+ },
+ "tieng_hoa_a1": {
+  "ten": "tiếng hoa A1",
+  "tu_khoa": [
+   "A1",
+   "tiếng hoa a1",
+   "trình độ tiếng",
+   "học tiếng hoa"
+  ]
+ },
+ "chuyen_nganh_hoc": {
+  "ten": "chuyên ngành học",
+  "tu_khoa": [
+   "chọn ngành",
+   "các ngành học",
+   "ngành học",
+   "chuyên ngành"
+  ]
+ },
+ "diem_chuyen_can": {
+  "ten": "điểm chuyên cần",
+  "tu_khoa": [
+   "chuyên cần",
+   "đi học đầy đủ",
+   "điểm danh",
+   "chăm chỉ"
+  ]
  }
 }
