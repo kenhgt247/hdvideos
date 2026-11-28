@@ -3431,5 +3431,44 @@
    "cơ điện tử",
    "công nghiệp"
   ]
+ },
+ "visa_d_2_hoac_d_10": {
+  "ten": "visa D-2 hoặc D-10",
+  "tu_khoa": [
+   "visa d2",
+   "visa d10",
+   "d-2",
+   "d-10",
+   "visa du học hàn",
+   "visa tìm việc"
+  ]
+ },
+ "nghe_trong_danh_muc": {
+  "ten": "nghề trong danh mục",
+  "tu_khoa": [
+   "danh mục nghề",
+   "nghề được phép",
+   "ngành nghề cho phép",
+   "danh sách nghề"
+  ]
+ },
+ "visa_e_7_la_gi": {
+  "ten": "visa E-7 là gì",
+  "tu_khoa": [
+   "visa e7",
+   "e-7",
+   "visa lao động chuyên môn",
+   "visa đi làm"
+  ]
+ },
+ "15_nganh_nen_uu_tien": {
+  "ten": "15 ngành nên ưu tiên",
+  "tu_khoa": [
+   "15 ngành",
+   "ngành nên chọn",
+   "ngành ưu tiên",
+   "ngành hot",
+   "bán dẫn"
+  ]
  }
 }
