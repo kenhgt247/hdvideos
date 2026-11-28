@@ -507,7 +507,7 @@ BÍ QUYẾT GIỮ NGƯỜI XEM:
         <div><label class="f" for="trEn">Tên tiếng Anh</label><input type="text" id="trEn" placeholder="Takming University of Science and Technology"></div>
         <div><label class="f" for="trBd">Tên bản địa (Trung / Hàn)</label><input type="text" id="trBd" placeholder="德明財經科技大學"></div>
       </div>
-      <label class="f" for="trWeb">Website chính thức</label><input type="url" id="trWeb" placeholder="https://www.takming.edu.tw">
+      <label class="f" for="trWeb">Website chính thức</label><input type="url" id="trWeb" placeholder="https://www.takming.edu.tw"><div class="hint" id="trWebKt"></div>
       <div id="trTrung"></div>
       <button class="btn" id="trSaveInfo" style="width:100%;margin-top:10px">Lưu thông tin trường</button>
     </div>
@@ -2581,7 +2581,7 @@ api('/api/me').then(d => {
 const TR = { bat: false, items: [], chu_de: [], muc: [], cur: null, data: null, loc: 'all' };
 let TRUONG_JOB = store.get('truong_job', null);     // {id, ten, tap}: video sắp tạo thuộc trường nào
 const TR_ST = ['Chưa nghiên cứu', 'Đã nghiên cứu', 'Đã có hình ảnh', 'Đã có kịch bản', 'Chờ duyệt', 'Đã xuất video', 'Đã đăng video', 'Cần cập nhật thông tin'];
-const trTap = n => 'Tập ' + String(n || 0).padStart(3, '0');
+const trTap = n => n ? 'Tập ' + String(n).padStart(3, '0') : 'Chưa xếp tập';
 const trFlag = qg => qg === 'kr' ? '🇰🇷' : '🇹🇼';
 const trSt = s => `<span class="tst s${Math.max(0, TR_ST.indexOf(s))}">${esc(s)}</span>`;
 async function trInit() {
@@ -2607,10 +2607,10 @@ function trDrawList() {
   $('trFilter').innerHTML = [['all', 'Tất cả'], ['tw', '🇹🇼 Đài Loan'], ['kr', '🇰🇷 Hàn Quốc']].map(([k, t]) =>
     `<button type="button" class="${k === loc ? 'on' : ''}" onclick="TR.loc='${k}';trDrawList()">${t} (${cnt[k]})</button>`).join('');
   const list = TR.items.filter(x => (loc === 'all' || x.qg === loc) &&
-    (!q || [x.ten_vi, x.ten_en, x.ten_bd, x.id].some(v => vnNorm(v).includes(q) || String(v || '').includes($('trFind').value.trim()))));
+    (!q || [x.ten_vi, x.ten_en, x.ten_bd, x.id, ...String(x.viet_tat || '').split(',')].some(v => vnNorm(v).includes(q) || String(v || '').includes($('trFind').value.trim()))));
   $('trItems').innerHTML = list.length ? list.map(x => `<div class="card tri" onclick="trOpen('${x.id}')">
       <img src="/img/truong/${x.id}/anh_logo_truong.png" onerror="this.style.visibility='hidden'" alt="">
-      <div class="tn"><b>${trTap(x.tap)} · ${esc(x.ten_vi || x.ten_en)}</b><small>${trFlag(x.qg)} ${esc([x.ten_en, x.ten_bd].filter(Boolean).join(' · '))}</small>
+      <div class="tn"><b>${x.tap ? trTap(x.tap) + ' · ' : ''}${esc(x.ten_vi || x.ten_en)}</b><small>${trFlag(x.qg)} ${esc([x.viet_tat && x.viet_tat.split(',')[0], x.ten_en, x.ten_bd].filter(Boolean).join(' · '))}</small>
       <small>Tạo ${esc(x.tao || '')} · ${x.anh || 0} ảnh · ${(x.video || []).length} video</small></div>${trSt(x.trang_thai)}</div>`).join('')
     : `<div class="empty">${TR.items.length ? 'Không có trường khớp' : 'Chưa có trường nào. Bấm ＋ Thêm trường.'}</div>`;
 }
@@ -2622,6 +2622,7 @@ function trFill(it) {
   $('trVi').value = it.ten_vi || ''; $('trEn').value = it.ten_en || ''; $('trBd').value = it.ten_bd || ''; $('trWeb').value = it.web || '';
   $('trTitle').textContent = it.id ? trTap(it.tap) + ' · ' + (it.ten_vi || it.ten_en) : 'Thêm trường mới';
   $('trSt').innerHTML = it.trang_thai ? trSt(it.trang_thai) : '';
+  $('trWebKt').textContent = it.id && it.web && !it.web_kt ? '⚠ Website điền sẵn, chưa kiểm tra. Bước Nghiên cứu sẽ xác nhận lại.' : '';
   $('trDuyet').checked = !!it.cho_duyet; $('trDang').checked = !!it.dang; $('trCapNhat').checked = !!it.can_cap_nhat;
   $('trNguonDs').textContent = it.qg === 'kr' ? 'studyinkorea.go.kr, hikorea.go.kr, các trang .go.kr' : 'studyintaiwan.org, udb.moe.edu.tw, Bộ Giáo dục, Văn phòng Kinh tế Văn hóa Đài Bắc';
   document.querySelectorAll('#trOne .trstep').forEach(c => c.classList.toggle('hide', !it.id));

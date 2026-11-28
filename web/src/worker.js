@@ -495,7 +495,7 @@ async function trRoute(req, env, ctx, url, p, admin) {
   const ds0 = await trDs(env);
   if (p === '/api/truong' && req.method === 'GET') {
     const items = Object.values(ds0.items).map(it => ({ ...it, trang_thai: trStatus(it) }))
-      .sort((a, b) => (a.tap || 0) - (b.tap || 0));
+      .sort((a, b) => (a.tap ? 0 : 1) - (b.tap ? 0 : 1) || (a.tap || 0) - (b.tap || 0) || String(a.ten_vi).localeCompare(String(b.ten_vi), 'vi'));
     return json({ bat: ds0.bat, items, chu_de: TR_CHU_DE, muc: TR_MUC });
   }
   if (p === '/api/truong/bat' && req.method === 'POST') {
@@ -526,6 +526,7 @@ async function trRoute(req, env, ctx, url, p, admin) {
     }
     const web = String(b.web || '').trim().slice(0, 200);
     const keyN = [ten_vi, ten_en, b.ten_bd].map(trNorm).filter(Boolean), host = trHost(web);
+    const curWeb = ds0.items[id] && ds0.items[id].web;
     const trung = Object.values(ds0.items).filter(x => x.id !== id && (keyN.some(k => [x.ten_vi, x.ten_en, x.ten_bd].map(trNorm).includes(k)) || (host && trHost(x.web) === host)));
     if (trung.length && !b.ep && !ds0.items[id]) return json({ trung: trung.map(x => ({ id: x.id, ten: x.ten_vi || x.ten_en, tap: x.tap, video: (x.video || []).length })) });
     const out = await trDsEdit(env, d => {
@@ -533,6 +534,7 @@ async function trRoute(req, env, ctx, url, p, admin) {
       const taps = Object.values(d.items).map(x => x.tap || 0);
       Object.assign(cur, { qg, ten_vi, ten_en, ten_bd: String(b.ten_bd || '').trim().slice(0, 80), web,
         tap: Math.max(1, parseInt(b.tap, 10) || cur.tap || (taps.length ? Math.max(...taps) + 1 : 1)) });
+      if (web !== curWeb) cur.web_kt = false;
       for (const k of ['dang', 'cho_duyet', 'can_cap_nhat']) if (b[k] !== undefined) cur[k] = !!b[k];
       d.items[id] = cur;
     }, `Trường: ${ten_vi || ten_en}`);
@@ -572,7 +574,8 @@ async function trRoute(req, env, ctx, url, p, admin) {
     }
     const rec = { ngay: today(), ten_vi: j.ten_vi || it.ten_vi, ten_en: j.ten_en || it.ten_en, ten_bd: j.ten_bd || it.ten_bd, muc, nguon: out.sources };
     await trSave(env, `truong/${id}/nghien_cuu.json`, rec, `Nghiên cứu: ${it.ten_vi || it.ten_en}`);
-    await trDsEdit(env, d => { const x = d.items[id]; if (x) { x.nc = rec.ngay; if (!x.ten_bd && rec.ten_bd) x.ten_bd = rec.ten_bd; if (!x.ten_en && rec.ten_en) x.ten_en = rec.ten_en; }
+    await trDsEdit(env, d => { const x = d.items[id]; if (x) { x.nc = rec.ngay; x.web_kt = true;
+      if (!x.tap) x.tap = Math.max(0, ...Object.values(d.items).map(y => y.tap || 0)) + 1; if (!x.ten_bd && rec.ten_bd) x.ten_bd = rec.ten_bd; if (!x.ten_en && rec.ten_en) x.ten_en = rec.ten_en; }
       d.phut_ai[today()] = (d.phut_ai[today()] || 0) + 1; }, `Nghiên cứu xong ${id}`);
     ctx.waitUntil(aiRecord(env, 'admin', 'paid').catch(() => {}));
     return json(rec);
