@@ -2770,7 +2770,7 @@ async function trPick(i) {
   } catch (e) { toast(e.message, 5000); }
 }
 function trDrawKb(kb) {
-  if (!kb) return;
+  if (!kb || typeof kb.script !== 'string' || !kb.script.trim()) return;
   $('trKbDate').textContent = 'Cập nhật ' + kb.ngay + (kb.sua_tay ? ' (đã sửa tay)' : '');
   $('trScript').value = kb.script; $('trScript').classList.remove('hide'); $('trKbTools').classList.remove('hide');
   $('trKb').textContent = '🔄 Viết lại kịch bản';
@@ -2812,7 +2812,7 @@ async function trFlags() {
 ['trDuyet', 'trDang', 'trCapNhat'].forEach(k => { $(k).onchange = trFlags; });
 $('trGo').onclick = () => {
   const sc = $('trScript').value.trim();
-  if (!sc) { toast('Chưa có kịch bản'); return; }
+  if (!sc || sc === 'undefined' || !sc.includes('||')) { toast('Chưa có kịch bản. Hãy bấm Tạo kịch bản và chờ AI viết xong.'); return; }
   const it = TR.data.item;
   if ((it.video || []).length && !confirm('Trường này đã có video. Vẫn tạo thêm?')) return;
   if ($('script').value.trim() && !confirm('Thay kịch bản đang có ở tab Tạo video?')) return;
