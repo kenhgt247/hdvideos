@@ -54,5 +54,19 @@
   "ngay": "2026-11-28",
   "w": 800,
   "h": 450
+ },
+ "anh_hoat_dong_sinh_vien": {
+  "ten": "ảnh hoạt động sinh viên",
+  "chu_de": "hoat_dong",
+  "tu_khoa": [
+   "hoạt động sinh viên"
+  ],
+  "url_anh": "https://www.au.edu.tw/var/file/0/1000/pictures/8/m/mczh-tw1000x1000_small119158_933349700953.jpg",
+  "url_trang": "https://www.au.edu.tw/",
+  "nguon": "au.edu.tw",
+  "ban_quyen": "Ảnh từ website chính thức của trường, ghi nguồn khi đăng",
+  "ngay": "2026-11-28",
+  "w": 1000,
+  "h": 563
  }
 }
