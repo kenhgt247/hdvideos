@@ -2628,6 +2628,7 @@ function trFill(it) {
   document.querySelectorAll('#trOne .trstep').forEach(c => c.classList.toggle('hide', !it.id));
 }
 async function trOpen(id) {
+  clearTimeout(trPoll); $('trNc').disabled = false; $('trKb').disabled = false; $('trKb').textContent = '✍️ Tạo kịch bản';
   $('trList').classList.add('hide'); $('trOne').classList.remove('hide'); window.scrollTo(0, 0);
   ['trNcOut', 'trCand', 'trChk', 'trCap', 'trTrung', 'trVids', 'trNcDate', 'trKbDate'].forEach(k => { $(k).innerHTML = ''; });
   $('trScript').classList.add('hide'); $('trKbTools').classList.add('hide'); $('trAnh').innerHTML = '';
@@ -2637,6 +2638,8 @@ async function trOpen(id) {
   try {
     const d = await api('/api/truong/' + id); TR.data = d;
     trFill(d.item); trDrawNc(d.nghien_cuu); trDrawAnh(d.anh); trDrawKb(d.kich_ban);
+    if (d.viec && d.viec.state === 'running') trWait(d.viec);
+    else if (d.viec && d.viec.state === 'error' && Date.now() - d.viec.t < 30 * 60e3) toast('Lần chạy trước bị lỗi: ' + d.viec.error, 7000);
     $('trVids').innerHTML = (d.item.video || []).length ? '⚠ Trường này đã có ' + d.item.video.length + ' video. Tạo thêm sẽ thành video trùng chủ đề.' : '';
   } catch (e) { toast(e.message); }
 }
@@ -2671,10 +2674,34 @@ $('trNc').onclick = async () => {
   const again = !!(TR.data && TR.data.nghien_cuu);
   if (again && !confirm('Nghiên cứu lại sẽ gọi AI tra mạng (tốn lượt). Chỉ làm khi thông tin trường có thay đổi. Tiếp tục?')) return;
   const b = $('trNc'); b.disabled = true; b.textContent = '⏳ AI đang đọc trang chính thức... (1–3 phút)';
-  try { const d = await api(`/api/truong/${TR.cur}/nghien-cuu`, { lam_lai: again }); TR.data.nghien_cuu = d; trDrawNc(d); toast(d.tu_bo_nho ? 'Dùng lại kết quả đã lưu' : 'Đã nghiên cứu xong'); trInit(); }
-  catch (e) { toast(e.message, 6000); trDrawNc(TR.data && TR.data.nghien_cuu); }
+  try {
+    const d = await api(`/api/truong/${TR.cur}/nghien-cuu`, { lam_lai: again });
+    if (d.dang_chay) { trWait({ state: 'running', kind: 'nghien_cuu', t: d.t }); return; }
+    TR.data.nghien_cuu = d; trDrawNc(d); toast(d.tu_bo_nho ? 'Dùng lại kết quả đã lưu' : 'Đã nghiên cứu xong'); trInit();
+  } catch (e) { toast(e.message, 6000); trDrawNc(TR.data && TR.data.nghien_cuu); }
   b.disabled = false;
 };
+// Việc chạy ngầm trên máy chủ: thoát trang, khoá máy vẫn chạy; mở lại trường sẽ tự hiện tiến độ / kết quả
+let trPoll = null;
+function trWait(v) {
+  clearTimeout(trPoll);
+  const nc = v.kind === 'nghien_cuu', btn = $(nc ? 'trNc' : 'trKb'), id = TR.cur;
+  if (!v || v.state !== 'running') return;
+  btn.disabled = true;
+  const sec = Math.max(0, Math.round((Date.now() - (v.t || Date.now())) / 1000));
+  btn.textContent = (nc ? '⏳ AI đang nghiên cứu' : '⏳ AI đang viết kịch bản') + ' · ' + Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+  $(nc ? 'trNcDate' : 'trKbDate').textContent = 'Chạy ngầm trên máy chủ, có thể thoát ra làm việc khác';
+  trPoll = setTimeout(async () => {
+    if (TR.cur !== id) return;
+    let s = null; try { s = await api(`/api/truong/${id}/viec`); } catch {}
+    if (TR.cur !== id) return;
+    if (s && s.state === 'running') return trWait(s);
+    btn.disabled = false;
+    if (s && s.state === 'error') { toast('Lỗi: ' + s.error, 7000); btn.textContent = nc ? '🔎 Nghiên cứu và kiểm chứng' : '✍️ Tạo kịch bản'; }
+    else toast(nc ? 'Đã nghiên cứu xong' : 'Đã có kịch bản');
+    await trInit(); trOpen(id);
+  }, 4000);
+}
 function trAddNames(list) { if (NAMES) { list.forEach(a => NAMES.add(vnNorm(a.ten))); runCheck(); } }
 function trDrawAnh(list) {
   TR.data.anh = list; trAddNames(list);
@@ -2766,7 +2793,11 @@ $('trKb').onclick = async () => {
   if (!TR.data || !TR.data.nghien_cuu) { toast('Hãy bấm "Nghiên cứu và kiểm chứng" trước'); return; }
   if ((TR.data.anh || []).length < 3 && $('trPc').value !== 've' && !confirm('Kho mới có ' + (TR.data.anh || []).length + ' ảnh thật. Vẫn viết kịch bản?')) return;
   const b = $('trKb'); b.disabled = true; b.textContent = '⏳ AI đang viết... (khoảng 1 phút)';
-  try { const d = await api(`/api/truong/${TR.cur}/kich-ban`, { phut: $('trPhut').value, phong_cach: $('trPc').value, ty_le: $('trTy').value }); trDrawKb(d); toast('Đã có kịch bản'); trInit(); }
+  try {
+    const d = await api(`/api/truong/${TR.cur}/kich-ban`, { phut: $('trPhut').value, phong_cach: $('trPc').value, ty_le: $('trTy').value });
+    if (d.dang_chay) { trWait({ state: 'running', kind: 'kich_ban', t: d.t }); return; }
+    trDrawKb(d); toast('Đã có kịch bản'); trInit();
+  }
   catch (e) { toast(e.message, 6000); b.textContent = '✍️ Tạo kịch bản'; }
   b.disabled = false;
 };

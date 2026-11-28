@@ -184,6 +184,17 @@ async function saveStats(env, id, rec) {
 export class AiProxy {
   constructor(state, env) { this.state = state; this.env = env; }
   async fetch(req) {
+    const path = new URL(req.url).pathname;
+    if (path === '/status') return Response.json((await this.state.storage.get('job')) || { state: '' });
+    if (path === '/start') {
+      const job = await req.json();
+      const cur = await this.state.storage.get('job');
+      if (cur && cur.state === 'running' && Date.now() - cur.t < 16 * 60e3) return Response.json({ state: 'running', kind: cur.kind, t: cur.t });
+      const rec = { ...job, state: 'running', t: Date.now() };
+      await this.state.storage.put('job', rec);
+      await this.state.storage.setAlarm(Date.now() + 50);
+      return Response.json({ state: 'running', kind: job.kind, t: rec.t });
+    }
     const { url, headers, body } = await req.json();
     if (!/^https:\/\/(generativelanguage\.googleapis\.com|api\.anthropic\.com)\//.test(url)) return new Response('bad', { status: 400 });
     const h = { ...headers };
@@ -191,6 +202,17 @@ export class AiProxy {
     else h['x-api-key'] = this.env.CLAUDE_KEY;
     const r = await fetch(url, { method: 'POST', headers: h, body });
     return new Response(await r.text(), { status: r.status, headers: { 'content-type': 'application/json' } });
+  }
+  async alarm() {
+    const job = await this.state.storage.get('job');
+    if (!job || job.state !== 'running') return;
+    _ENV = this.env;                                          // gọi AI qua máy trung gian ở Mỹ như mọi khi
+    try {
+      await trJobRun(_ENV, job);
+      await this.state.storage.put('job', { kind: job.kind, state: 'done', t: Date.now() });
+    } catch (e) {
+      await this.state.storage.put('job', { kind: job.kind, state: 'error', error: String(e && e.message || e).slice(0, 300), t: Date.now() });
+    }
   }
 }
 let _ENV = null;
@@ -546,9 +568,10 @@ async function trRoute(req, env, ctx, url, p, admin) {
   const id = m[1], sub = m[2] || '', it = ds0.items[id];
   if (!it) return err('Chưa có trường này trong danh sách', 404);
   if (!sub && req.method === 'GET') {
-    const [nc, kb, anh] = await Promise.all([readJson(env, `truong/${id}/nghien_cuu.json`), readJson(env, `truong/${id}/kich_ban.json`), trAnh(env, id)]);
-    return json({ item: { ...it, trang_thai: trStatus(it) }, nghien_cuu: nc.data && nc.data.muc ? nc.data : null, kich_ban: kb.data && kb.data.script ? kb.data : null, anh });
+    const [nc, kb, anh, viec] = await Promise.all([readJson(env, `truong/${id}/nghien_cuu.json`), readJson(env, `truong/${id}/kich_ban.json`), trAnh(env, id), trJobStatus(env, id)]);
+    return json({ viec, item: { ...it, trang_thai: trStatus(it) }, nghien_cuu: nc.data && nc.data.muc ? nc.data : null, kich_ban: kb.data && kb.data.script ? kb.data : null, anh });
   }
+  if (sub === '/viec' && req.method === 'GET') return json(await trJobStatus(env, id));
   if (sub === '/xoa' && req.method === 'POST') {
     await trDsEdit(env, d => { delete d.items[id]; }, `Bỏ trường ${id} khỏi danh sách`);
     return json({ ok: true });
@@ -558,28 +581,7 @@ async function trRoute(req, env, ctx, url, p, admin) {
     const cur = await readJson(env, `truong/${id}/nghien_cuu.json`);
     if (cur.data && cur.data.muc && !b.lam_lai) return json({ ...cur.data, tu_bo_nho: true });    // đã có: không gọi AI lại (đỡ tốn)
     if (!env.CLAUDE_KEY) return err('Chưa cài khoá Claude (cần để AI tự lên mạng kiểm chứng).');
-    const host = trHost(it.web);
-    const domains = [...new Set([host, ...(host ? [host.split('.').slice(-3).join('.')] : []), ...(TR_NGUON[it.qg] || [])].filter(Boolean))];
-    const user = `Trường: ${[it.ten_vi, it.ten_en, it.ten_bd].filter(Boolean).join(' / ')}\nWebsite chính thức: ${it.web || '(chưa có, hãy tự tìm)'}\nNgày hôm nay: ${today()}`;
-    const out = await aiClaude(env, trResearchPrompt(it), user, true, domains,
-      { maxUses: 10, maxTokens: 32000, retry: 'Bạn đã tra đủ. Trả lời NGAY một khối ```json đúng mẫu, mục nào chưa có nguồn thì để trống và kiem_chung=false.' });
-    const jm = out.text.match(/```(?:json)?\s*([\s\S]*?)```/);
-    let j = null;
-    try { j = JSON.parse((jm ? jm[1] : out.text).replace(/\/\/[^\n"]*$/gm, '')); } catch { j = null; }
-    if (!j) return err('AI trả về sai định dạng, bấm nghiên cứu lại.', 502);
-    const muc = {};
-    for (const [k] of TR_MUC) {
-      const v = j[k] || {};
-      const val = trClean(v.gia_tri);
-      muc[k] = { gia_tri: val, nguon: String(v.nguon || '').trim(), nam_hoc: trClean(v.nam_hoc), kiem_chung: !!(val && v.kiem_chung) };
-    }
-    const rec = { ngay: today(), ten_vi: j.ten_vi || it.ten_vi, ten_en: j.ten_en || it.ten_en, ten_bd: j.ten_bd || it.ten_bd, muc, nguon: out.sources };
-    await trSave(env, `truong/${id}/nghien_cuu.json`, rec, `Nghiên cứu: ${it.ten_vi || it.ten_en}`);
-    await trDsEdit(env, d => { const x = d.items[id]; if (x) { x.nc = rec.ngay; x.web_kt = true;
-      if (!x.tap) x.tap = Math.max(0, ...Object.values(d.items).map(y => y.tap || 0)) + 1; if (!x.ten_bd && rec.ten_bd) x.ten_bd = rec.ten_bd; if (!x.ten_en && rec.ten_en) x.ten_en = rec.ten_en; }
-      d.phut_ai[today()] = (d.phut_ai[today()] || 0) + 1; }, `Nghiên cứu xong ${id}`);
-    ctx.waitUntil(aiRecord(env, 'admin', 'paid').catch(() => {}));
-    return json(rec);
+    return trStart(env, ctx, id, 'nghien_cuu', b);
   }
   if (sub === '/tim-anh' && req.method === 'GET') {
     const [found, have] = await Promise.all([trFindImages(it.web), trAnh(env, id)]);
@@ -644,6 +646,48 @@ async function trRoute(req, env, ctx, url, p, admin) {
     const nc = (await readJson(env, `truong/${id}/nghien_cuu.json`)).data;
     if (!nc || !nc.muc) return err('Hãy bấm "Nghiên cứu và kiểm chứng" trước.');
     if (!env.CLAUDE_KEY && !env.GEMINI_KEY) return err('Chưa cài khoá AI');
+    return trStart(env, ctx, id, 'kich_ban', b);
+  }
+  if (sub === '/video' && req.method === 'POST') {            // ghi lại mã video đã tạo cho trường (để cảnh báo trùng, theo dõi trạng thái)
+    const b = await req.json();
+    if (!/^[a-z0-9]{4,20}$/.test(b.job || '')) return err('Thiếu mã video');
+    await trDsEdit(env, d => { const x = d.items[id]; if (x) { x.video = [...new Set([...(x.video || []), b.job])].slice(-20); x.cho_duyet = false; } }, `Video trường ${id}`);
+    return json({ ok: true });
+  }
+  return err('Không tìm thấy', 404);
+}
+
+async function trDoResearch(env, id, b) {
+  const it = (await trDs(env)).items[id];
+  if (!it) throw new Error('Không còn trường này');
+    const host = trHost(it.web);
+    const domains = [...new Set([host, ...(host ? [host.split('.').slice(-3).join('.')] : []), ...(TR_NGUON[it.qg] || [])].filter(Boolean))];
+    const user = `Trường: ${[it.ten_vi, it.ten_en, it.ten_bd].filter(Boolean).join(' / ')}\nWebsite chính thức: ${it.web || '(chưa có, hãy tự tìm)'}\nNgày hôm nay: ${today()}`;
+    const out = await aiClaude(env, trResearchPrompt(it), user, true, domains,
+      { maxUses: 10, maxTokens: 32000, retry: 'Bạn đã tra đủ. Trả lời NGAY một khối ```json đúng mẫu, mục nào chưa có nguồn thì để trống và kiem_chung=false.' });
+    const jm = out.text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    let j = null;
+    try { j = JSON.parse((jm ? jm[1] : out.text).replace(/\/\/[^\n"]*$/gm, '')); } catch { j = null; }
+    if (!j) throw new Error('AI trả về sai định dạng, bấm nghiên cứu lại.');
+    const muc = {};
+    for (const [k] of TR_MUC) {
+      const v = j[k] || {};
+      const val = trClean(v.gia_tri);
+      muc[k] = { gia_tri: val, nguon: String(v.nguon || '').trim(), nam_hoc: trClean(v.nam_hoc), kiem_chung: !!(val && v.kiem_chung) };
+    }
+    const rec = { ngay: today(), ten_vi: j.ten_vi || it.ten_vi, ten_en: j.ten_en || it.ten_en, ten_bd: j.ten_bd || it.ten_bd, muc, nguon: out.sources };
+    await trSave(env, `truong/${id}/nghien_cuu.json`, rec, `Nghiên cứu: ${it.ten_vi || it.ten_en}`);
+    await trDsEdit(env, d => { const x = d.items[id]; if (x) { x.nc = rec.ngay; x.web_kt = true;
+      if (!x.tap) x.tap = Math.max(0, ...Object.values(d.items).map(y => y.tap || 0)) + 1; if (!x.ten_bd && rec.ten_bd) x.ten_bd = rec.ten_bd; if (!x.ten_en && rec.ten_en) x.ten_en = rec.ten_en; }
+      d.phut_ai[today()] = (d.phut_ai[today()] || 0) + 1; }, `Nghiên cứu xong ${id}`);
+  await aiRecord(env, 'admin', 'paid').catch(() => {});
+  return rec;
+}
+
+async function trDoScript(env, id, b) {
+  const it = (await trDs(env)).items[id];
+  const nc = (await readJson(env, `truong/${id}/nghien_cuu.json`)).data;
+  if (!it || !nc || !nc.muc) throw new Error('Thiếu hồ sơ nghiên cứu');
     const phut = Math.max(1, Math.min(10, Number(b.phut) || 3));
     const opt = { phut, phong_cach: ['tron', 'that', 've'].includes(b.phong_cach) ? b.phong_cach : 'tron', ty_le: parseInt(b.ty_le, 10) || 60 };
     const anh = await trAnh(env, id);
@@ -667,16 +711,29 @@ async function trRoute(req, env, ctx, url, p, admin) {
     const rec = { ngay: today(), ...opt, script: pr.script, caption: pr.caption, nguon: urls };
     await trSave(env, `truong/${id}/kich_ban.json`, rec, `Kịch bản ${id}`);
     await trDsEdit(env, d => { if (d.items[id]) d.items[id].kb = today(); }, `Kịch bản ${id}`);
-    ctx.waitUntil(aiRecord(env, 'admin', env.CLAUDE_KEY ? 'paid' : 'free').catch(() => {}));
-    return json(rec);
+  await aiRecord(env, 'admin', env.CLAUDE_KEY ? 'paid' : 'free').catch(() => {});
+  return rec;
+}
+
+// ---- Việc chạy ngầm (nghiên cứu, viết kịch bản): giao cho Durable Object chạy bằng "alarm" (tối đa 15 phút),
+// người dùng thoát trang / khoá máy vẫn chạy tiếp; trang hỏi trạng thái qua /api/truong/<mã>/viec
+function trJobStub(env, id) { return env.AIPROXY.get(env.AIPROXY.idFromName('tr-job-' + id), { locationHint: env.AI_REGION || 'wnam' }); }
+async function trStart(env, ctx, id, kind, b) {
+  if (!env.AIPROXY) {                                       // chạy thử trên máy: làm luôn
+    try { return json(await (kind === 'nghien_cuu' ? trDoResearch : trDoScript)(env, id, b)); } catch (e) { return err(e.message, 502); }
   }
-  if (sub === '/video' && req.method === 'POST') {            // ghi lại mã video đã tạo cho trường (để cảnh báo trùng, theo dõi trạng thái)
-    const b = await req.json();
-    if (!/^[a-z0-9]{4,20}$/.test(b.job || '')) return err('Thiếu mã video');
-    await trDsEdit(env, d => { const x = d.items[id]; if (x) { x.video = [...new Set([...(x.video || []), b.job])].slice(-20); x.cho_duyet = false; } }, `Video trường ${id}`);
-    return json({ ok: true });
-  }
-  return err('Không tìm thấy', 404);
+  const r = await trJobStub(env, id).fetch('https://job/start', { method: 'POST', body: JSON.stringify({ kind, id, b }) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) return err(d.error || 'Không bắt đầu được', r.status);
+  return json({ dang_chay: true, kind, ...d });
+}
+async function trJobStatus(env, id) {
+  if (!env.AIPROXY) return { state: '' };
+  const r = await trJobStub(env, id).fetch('https://job/status');
+  return r.ok ? r.json() : { state: '' };
+}
+async function trJobRun(env, job) {
+  return (job.kind === 'nghien_cuu' ? trDoResearch : trDoScript)(env, job.id, job.b || {});
 }
 
 function parseAi(text) {
