@@ -3358,5 +3358,41 @@
    "điểm danh",
    "chăm chỉ"
   ]
+ },
+ "it_nganh": {
+  "ten": "ít ngành",
+  "tu_khoa": [
+   "ít ngành",
+   "ngành hạn chế",
+   "không nhiều ngành",
+   "ít lựa chọn ngành"
+  ]
+ },
+ "do_truong_xep": {
+  "ten": "do trường xếp",
+  "tu_khoa": [
+   "trường xếp",
+   "trường sắp xếp",
+   "phân ngành",
+   "trường chọn ngành"
+  ]
+ },
+ "hoc_thong_qua_du_an": {
+  "ten": "học thông qua dự án",
+  "tu_khoa": [
+   "dự án",
+   "học theo dự án",
+   "làm việc nhóm",
+   "thực hành"
+  ]
+ },
+ "truong_nao_phu_hop": {
+  "ten": "trường nào phù hợp",
+  "tu_khoa": [
+   "trường nào",
+   "chọn trường",
+   "trường phù hợp",
+   "so sánh trường"
+  ]
  }
 }
