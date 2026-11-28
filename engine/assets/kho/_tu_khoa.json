@@ -3470,5 +3470,42 @@
    "ngành hot",
    "bán dẫn"
   ]
+ },
+ "cong_nghe_o_to": {
+  "ten": "công nghệ ô tô",
+  "tu_khoa": [
+   "ô tô",
+   "sửa xe",
+   "cơ khí ô tô",
+   "ngành ô tô",
+   "xe điện"
+  ]
+ },
+ "nang_luong_tai_tao": {
+  "ten": "năng lượng tái tạo",
+  "tu_khoa": [
+   "năng lượng",
+   "điện mặt trời",
+   "điện gió",
+   "năng lượng xanh"
+  ]
+ },
+ "hoc_dung_nganh_lam_dung_nghe": {
+  "ten": "học đúng ngành làm đúng nghề",
+  "tu_khoa": [
+   "đúng ngành",
+   "đúng nghề",
+   "ra trường đi làm",
+   "tốt nghiệp đi làm"
+  ]
+ },
+ "dung_chi_chon_truong": {
+  "ten": "đừng chỉ chọn trường",
+  "tu_khoa": [
+   "chỉ chọn trường",
+   "mục tiêu nghề nghiệp",
+   "chọn hướng đi",
+   "định hướng"
+  ]
  }
 }
