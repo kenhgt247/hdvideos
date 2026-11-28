@@ -40,5 +40,19 @@
   "ngay": "2026-11-28",
   "w": 800,
   "h": 450
+ },
+ "anh_toa_nha": {
+  "ten": "ảnh tòa nhà",
+  "chu_de": "toa_nha",
+  "tu_khoa": [
+   "tòa nhà"
+  ],
+  "url_anh": "https://www.au.edu.tw/var/file/0/1000/pictures/180/m/mczh-tw1500x1500_large15469_144083902847.jpg",
+  "url_trang": "https://www.au.edu.tw/p/404-1000-67631.php?Lang=zh-tw",
+  "nguon": "au.edu.tw",
+  "ban_quyen": "Ảnh từ website chính thức của trường, ghi nguồn khi đăng",
+  "ngay": "2026-11-28",
+  "w": 800,
+  "h": 450
  }
 }
