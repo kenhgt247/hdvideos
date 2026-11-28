@@ -1,0 +1,69 @@
+{
+ "anh_logo_truong": {
+  "ten": "ảnh logo trường",
+  "chu_de": "logo",
+  "tu_khoa": [
+   "logo trường",
+   "takming",
+   "đức minh"
+  ],
+  "url_anh": "",
+  "url_trang": "",
+  "nguon": "Admin cung cấp",
+  "ban_quyen": "Logo chính thức của trường, chỉ dùng để nhận diện",
+  "ngay": "2026-11-28",
+  "w": 907,
+  "h": 900
+ },
+ "anh_toa_nha_trong_truong": {
+  "ten": "ảnh tòa nhà trong trường",
+  "chu_de": "toa_nha",
+  "tu_khoa": [
+   "tòa nhà",
+   "khuôn viên",
+   "cơ sở vật chất",
+   "giảng đường"
+  ],
+  "url_anh": "",
+  "url_trang": "",
+  "nguon": "Admin cung cấp",
+  "ban_quyen": "Admin xác nhận được phép dùng",
+  "ngay": "2026-11-28",
+  "w": 1170,
+  "h": 827
+ },
+ "anh_khuon_vien_truong": {
+  "ten": "ảnh khuôn viên trường",
+  "chu_de": "khuon_vien",
+  "tu_khoa": [
+   "khuôn viên",
+   "sân trường",
+   "TMUST",
+   "toàn cảnh trường"
+  ],
+  "url_anh": "",
+  "url_trang": "",
+  "nguon": "Admin cung cấp",
+  "ban_quyen": "Admin xác nhận được phép dùng",
+  "ngay": "2026-11-28",
+  "w": 1170,
+  "h": 857
+ },
+ "anh_cong_truong": {
+  "ten": "ảnh cổng trường",
+  "chu_de": "cong_truong",
+  "tu_khoa": [
+   "cổng trường",
+   "mặt tiền",
+   "vị trí trường",
+   "đường phố gần trường"
+  ],
+  "url_anh": "",
+  "url_trang": "",
+  "nguon": "Admin cung cấp",
+  "ban_quyen": "Admin xác nhận được phép dùng",
+  "ngay": "2026-11-28",
+  "w": 1170,
+  "h": 855
+ }
+}

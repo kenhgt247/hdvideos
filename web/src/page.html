@@ -25,6 +25,31 @@ nav{position:fixed;left:0;right:0;bottom:0;z-index:5;background:#fff;border-top:
 nav button{flex:1;border:0;background:none;padding:9px 0 8px;font-size:12px;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:3px}
 nav button svg{width:23px;height:23px}
 nav button.on{color:var(--blue);font-weight:600}
+.tri{display:flex;gap:12px;align-items:center;cursor:pointer}
+.tri img{width:58px;height:58px;object-fit:contain;border-radius:10px;border:1px solid var(--line);background:#fff;flex:none}
+.tri .tn{flex:1;min-width:0}
+.tri .tn b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tri .tn small{color:var(--mut);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tst{display:inline-block;font-size:12px;font-weight:600;border-radius:99px;padding:3px 10px;background:#eef2fb;color:var(--blue);white-space:nowrap}
+.tst.s0{background:#f1f1f4;color:#666}.tst.s3,.tst.s4{background:#fff4e0;color:#b56a00}.tst.s5,.tst.s6{background:#e6f6ec;color:#1b8a4b}.tst.s7{background:#fde8e8;color:#c0392b}
+.trf{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.trf button{border:1px solid var(--line);background:#fff;border-radius:99px;padding:5px 11px;font:inherit;font-size:13px}
+.trf button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.ncl{margin-top:10px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ncl>div{padding:9px 11px;border-top:1px solid var(--line);font-size:14px}
+.ncl>div:first-child{border-top:0}
+.ncl .k{font-weight:600;font-size:13px;color:var(--mut)}
+.ncl .v{margin-top:2px}
+.ncl .s{font-size:12px;margin-top:3px;color:var(--mut);word-break:break-all}
+.ncl .no .v{color:#b56a00}
+.cand{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:10px}
+.cand .c{border:1.5px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;font-size:11px;position:relative}
+.cand .c img{width:100%;height:96px;object-fit:cover;display:block;background:#f4f4f4}
+.cand .c div{padding:4px 6px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cand .c button{position:absolute;right:5px;top:5px;border:0;border-radius:99px;background:var(--green);color:#fff;font-weight:700;padding:3px 9px}
+.trban{background:#eef2fb;border:1.5px solid var(--blue);border-radius:12px;padding:9px 12px;margin-bottom:10px;font-size:14px;display:flex;gap:8px;align-items:center}
+.trban b{flex:1}
+.warn{background:#fff4e0;border:1px solid #f0c27a;border-radius:10px;padding:9px 11px;font-size:14px;color:#7a4a00}
 .card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(20,40,90,.06)}
 h2{font-size:17px;margin:0 0 12px}
 label.f{display:block;font-size:13px;color:var(--mut);margin:12px 0 5px;font-weight:600}
@@ -299,6 +324,7 @@ details.opt>summary{font-weight:700;padding:12px 0;cursor:pointer;color:var(--bl
       <button class="btn sm red" id="bClear">Xoá</button>
       <button class="btn sm hide" id="bRestoreDraft" type="button">↶ Dùng lại kịch bản vừa gửi</button>
     </div>
+    <div class="trban hide" id="trBan"><span>🏫</span><b id="trBanT"></b><button class="btn sm" type="button" id="trBanX">✕</button></div>
     <textarea id="script" placeholder="Mỗi dòng là một cảnh.&#10;Chữ trên màn hình / dòng 2 || lời đọc đầy đủ&#10;- gạch đầu dòng&#10;[vẽ: tên hình]"></textarea>
     <div class="ins">
       <button class="btn sm" id="iList" type="button">＋ Liệt kê</button>
@@ -457,8 +483,90 @@ BÍ QUYẾT GIỮ NGƯỜI XEM:
   </div>
 </section>
 
+<!-- ===== MỖI NGÀY MỘT TRƯỜNG (chỉ quản lý) ===== -->
+<section id="tab-truong" class="hide">
+  <div id="trList">
+    <div class="card">
+      <div class="hd"><h2>🏫 Mỗi ngày một trường</h2><button class="btn sm" id="trAdd">＋ Thêm trường</button></div>
+      <div class="hint">Series video giới thiệu từng trường Đài Loan, Hàn Quốc. AI chỉ dùng thông tin <b>có nguồn chính thức</b>; mỗi trường có kho ảnh thật riêng.</div>
+      <input type="search" id="trFind" placeholder="Tìm trường: tiếng Việt, Anh, Trung hoặc Hàn" style="margin-top:10px">
+      <div class="trf" id="trFilter"></div>
+    </div>
+    <div id="trItems"><div class="empty">Đang tải...</div></div>
+  </div>
+  <div id="trOne" class="hide">
+    <button class="btn sm" id="trBack" style="margin-bottom:10px">← Danh sách trường</button>
+    <div class="card">
+      <div class="hd"><h2 id="trTitle">Trường mới</h2><span class="tst" id="trSt"></span></div>
+      <div class="row">
+        <div><label class="f" for="trQg">Quốc gia</label><select id="trQg"><option value="tw">🇹🇼 Đài Loan</option><option value="kr">🇰🇷 Hàn Quốc</option></select></div>
+        <div><label class="f" for="trTap">Số tập</label><input type="number" id="trTap" min="1" max="999"></div>
+      </div>
+      <label class="f" for="trVi">Tên tiếng Việt</label><input type="text" id="trVi" placeholder="Ví dụ: Đại học Khoa học Kỹ thuật Đức Minh">
+      <div class="row">
+        <div><label class="f" for="trEn">Tên tiếng Anh</label><input type="text" id="trEn" placeholder="Takming University of Science and Technology"></div>
+        <div><label class="f" for="trBd">Tên bản địa (Trung / Hàn)</label><input type="text" id="trBd" placeholder="德明財經科技大學"></div>
+      </div>
+      <label class="f" for="trWeb">Website chính thức</label><input type="url" id="trWeb" placeholder="https://www.takming.edu.tw">
+      <div id="trTrung"></div>
+      <button class="btn" id="trSaveInfo" style="width:100%;margin-top:10px">Lưu thông tin trường</button>
+    </div>
+
+    <div class="card trstep">
+      <div class="hd"><h2>① Nghiên cứu và kiểm chứng</h2><span id="trNcDate" class="hint"></span></div>
+      <div class="hint">AI lên mạng đọc <b>website trường</b> và trang chính thức (<span id="trNguonDs"></span>). Mục nào không có nguồn sẽ ghi <b>⚠ chưa kiểm chứng</b> và không đưa vào kịch bản. Kết quả được lưu lại, lần sau không gọi AI nữa.</div>
+      <div class="tools"><button class="btn main" id="trNc" style="margin-top:8px">🔎 Nghiên cứu và kiểm chứng</button></div>
+      <div id="trNcOut"></div>
+    </div>
+
+    <div class="card trstep">
+      <div class="hd"><h2>② Ảnh của trường <span id="trAnhN" style="color:var(--mut);font-weight:400"></span></h2></div>
+      <div class="hint">Ưu tiên ảnh trên <b>website chính thức</b> (có ghi nguồn) hoặc ảnh trường gửi cho trung tâm. Không dùng ảnh AI giả làm ảnh trường, không xoá watermark.</div>
+      <div class="grid" id="trAnh" style="margin-top:10px"></div>
+      <div class="row" style="margin-top:10px">
+        <div><label class="f" for="trCd">Chủ đề ảnh</label><select id="trCd"></select></div>
+        <div style="display:flex;align-items:flex-end;gap:6px"><button class="btn" id="trUp" style="flex:1">⬆ Tải ảnh lên</button></div>
+      </div>
+      <input type="file" id="trFile" accept="image/*" multiple class="hide">
+      <button class="btn" id="trFind2" style="width:100%;margin-top:8px">🖼 Tìm hình ảnh trên website trường</button>
+      <div id="trCand"></div>
+    </div>
+
+    <div class="card trstep">
+      <div class="hd"><h2>③ Kịch bản</h2><span id="trKbDate" class="hint"></span></div>
+      <div class="row">
+        <div><label class="f" for="trPhut">Thời lượng</label><select id="trPhut"><option value="1">1 phút</option><option value="2">2 phút</option><option value="3" selected>3 phút</option><option value="5">5 phút</option><option value="x">Tùy chỉnh...</option></select></div>
+        <div><label class="f" for="trPc">Phong cách</label><select id="trPc"><option value="tron">Ảnh thật + vẽ tay</option><option value="that">Ưu tiên ảnh thật</option><option value="ve">Chỉ vẽ tay</option></select></div>
+      </div>
+      <div id="trTyBox"><label class="f" for="trTy">Tỉ lệ cảnh dùng ảnh thật: <b id="trTyV">60%</b></label><input type="range" id="trTy" min="20" max="90" step="10" value="60" style="width:100%"></div>
+      <button class="btn main" id="trKb" style="margin-top:8px">✍️ Tạo kịch bản</button>
+      <textarea id="trScript" class="hide" style="min-height:300px;margin-top:10px"></textarea>
+      <div id="trChk" class="hint"></div>
+      <div id="trCap"></div>
+      <div class="tools hide" id="trKbTools"><button class="btn sm" id="trKbSave">💾 Lưu bản đã sửa</button></div>
+    </div>
+
+    <div class="card trstep">
+      <h2>④ Tạo video</h2>
+      <div class="hint">Kịch bản được chuyển sang tab <b>Tạo video</b> (chế độ Tự viết) để chọn giọng đọc, khổ video rồi bấm Tạo. Video sẽ dùng kho ảnh của riêng trường này.</div>
+      <button class="btn main" id="trGo" style="margin-top:8px;background:var(--green)">🎬 Tạo video</button>
+      <div id="trVids" class="hint"></div>
+      <div class="row" style="margin-top:8px">
+        <label class="chk"><input type="checkbox" id="trDuyet"> Chờ duyệt</label>
+        <label class="chk"><input type="checkbox" id="trDang"> Đã đăng video</label>
+        <label class="chk"><input type="checkbox" id="trCapNhat"> Cần cập nhật thông tin</label>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ===== CÀI ĐẶT ===== -->
 <section id="tab-cai" class="hide">
+  <div class="card adm" id="trCfgCard">
+    <h2>🏫 Mỗi ngày một trường</h2>
+    <div class="hint">Mục làm video giới thiệu từng trường Đài Loan, Hàn Quốc. Chỉ tài khoản quản lý nhìn thấy và dùng được.</div>
+    <label class="chk"><input type="checkbox" id="trBat"> Bật mục "Mỗi ngày một trường"</label>
+  </div>
   <div class="card adm" id="aiCfgCard">
     <h2>🤖 AI viết kịch bản</h2>
     <div id="aiKeys" class="hint"></div>
@@ -534,6 +642,7 @@ BÍ QUYẾT GIỮ NGƯỜI XEM:
   <button data-t="tao" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Tạo video</button>
   <button data-t="video"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z"/></svg>Video</button>
   <button data-t="kho"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>Kho hình</button>
+  <button data-t="truong" id="navTruong" class="hide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg>Trường</button>
   <button data-t="cai" id="navCai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Cài đặt</button>
 </nav>
 <div id="toast"></div>
@@ -581,6 +690,7 @@ function showTab(t) {
   if (t === 'video') loadList();
   if (t === 'kho') { loadKho(); loadMiss(); }
   if (t === 'cai') { loadNv(); loadMedia(); loadPa(); }
+  if (t === 'truong') trDrawList();
 }
 
 // ---------- form
@@ -1598,7 +1708,8 @@ function jobBody(preview) {
     hotline: $('hotline').value, auto: $('auto').checked, logo: $('logo').checked, by: $('by').value,
     clone, music: $('music').value, music_vol: $('music_vol').value, pen: $('pen').value,
     bg: $('bg').value || 'trang', fmt: $('fmt').value || 'doc', trans: $('trans').value || 'xen', tsnd: $('tsnd').value || 'giay', subs: $('subs').value === 'noibat' ? 'noibat' : !!$('subs').value, sfx: $('sfx').checked, punch: $('punch').checked, emph: $('emph').checked, pop: $('pop').checked, stroke: $('stroke').checked, preview: !!preview,
-    reveal: $('reveal').value || 'net', hook: $('hook').checked, cam: $('cam').checked, tpl: TPL_USED || '' };
+    reveal: $('reveal').value || 'net', hook: $('hook').checked, cam: $('cam').checked, tpl: TPL_USED || '',
+    truong: (typeof TRUONG_JOB !== 'undefined' && TRUONG_JOB) ? TRUONG_JOB.id : '' };
 }
 $('bGo').onclick = async () => {
   const script = $('script').value.trim();
@@ -1667,7 +1778,9 @@ async function makeVideo() {
     for (const bd of bodies) {
       const d = await api('/api/jobs', bd);
       const jobs = store.get('jobs', []); jobs.unshift({ id: d.id, name: bd.name, t: Date.now() }); store.set('jobs', jobs.slice(0, 40));
+      if (bd.truong) api(`/api/truong/${bd.truong}/video`, { job: d.id }).catch(() => {});
     }
+    if (TRUONG_JOB) { TRUONG_JOB = null; store.set('truong_job', null); trBanner(); }
     // Chỉ dọn bản nháp sau khi mọi lệnh dựng (kể cả A/B) được máy chủ chấp nhận.
     // Nếu người dùng đã bắt đầu chỉnh nội dung khác trong lúc gửi, giữ nguyên nội dung mới.
     store.set('last_submitted_draft', { ...submittedDraft, name });
@@ -2461,9 +2574,226 @@ $('lvNew').onclick = async () => {
 loadLv();
 
 api('/api/me').then(d => {
-  document.body.classList.toggle('admin', !!d.admin); drawLvForm();
+  document.body.classList.toggle('admin', !!d.admin); drawLvForm(); trInit();
   $('roleTxt').textContent = d.admin ? 'Bạn đang dùng quyền QUẢN LÝ (xoá ảnh, xoá video, nhạc, giọng, sửa nhân vật chung, logo).' : 'Bạn đang dùng quyền nhân viên. Muốn xoá ảnh/video, sửa nhân vật chung hay logo, hãy đăng xuất rồi đăng nhập bằng mật khẩu quản lý.';
 }).catch(() => {});
+// ---------- MỖI NGÀY MỘT TRƯỜNG (chỉ quản lý; máy chủ cũng kiểm tra quyền)
+const TR = { bat: false, items: [], chu_de: [], muc: [], cur: null, data: null, loc: 'all' };
+let TRUONG_JOB = store.get('truong_job', null);     // {id, ten, tap}: video sắp tạo thuộc trường nào
+const TR_ST = ['Chưa nghiên cứu', 'Đã nghiên cứu', 'Đã có hình ảnh', 'Đã có kịch bản', 'Chờ duyệt', 'Đã xuất video', 'Đã đăng video', 'Cần cập nhật thông tin'];
+const trTap = n => 'Tập ' + String(n || 0).padStart(3, '0');
+const trFlag = qg => qg === 'kr' ? '🇰🇷' : '🇹🇼';
+const trSt = s => `<span class="tst s${Math.max(0, TR_ST.indexOf(s))}">${esc(s)}</span>`;
+async function trInit() {
+  if (!document.body.classList.contains('admin') || LV !== 'duhoc') { $('navTruong').classList.add('hide'); return; }
+  try {
+    const d = await api('/api/truong');
+    Object.assign(TR, { bat: d.bat, items: d.items, chu_de: d.chu_de, muc: d.muc });
+    $('trBat').checked = d.bat;
+    $('navTruong').classList.toggle('hide', !d.bat);
+    $('trCd').innerHTML = d.chu_de.map(([k, t]) => `<option value="${k}">${esc(t)}</option>`).join('');
+    if (curTab === 'truong') trDrawList();
+    if (TRUONG_JOB) api('/api/truong/' + TRUONG_JOB.id).then(x => setTimeout(() => trAddNames(x.anh), 1500)).catch(() => {});
+  } catch (e) { /* nhân viên hoặc lỗi: không hiện */ }
+}
+$('trBat').onchange = async () => {
+  try { await api('/api/truong/bat', { bat: $('trBat').checked }); toast($('trBat').checked ? 'Đã bật. Mục "Trường" hiện ở thanh dưới.' : 'Đã tắt mục Mỗi ngày một trường'); trInit(); }
+  catch (e) { toast(e.message); $('trBat').checked = !$('trBat').checked; }
+};
+function trDrawList() {
+  $('trList').classList.remove('hide'); $('trOne').classList.add('hide');
+  const q = vnNorm($('trFind').value), loc = TR.loc;
+  const cnt = { all: TR.items.length, tw: TR.items.filter(x => x.qg === 'tw').length, kr: TR.items.filter(x => x.qg === 'kr').length };
+  $('trFilter').innerHTML = [['all', 'Tất cả'], ['tw', '🇹🇼 Đài Loan'], ['kr', '🇰🇷 Hàn Quốc']].map(([k, t]) =>
+    `<button type="button" class="${k === loc ? 'on' : ''}" onclick="TR.loc='${k}';trDrawList()">${t} (${cnt[k]})</button>`).join('');
+  const list = TR.items.filter(x => (loc === 'all' || x.qg === loc) &&
+    (!q || [x.ten_vi, x.ten_en, x.ten_bd, x.id].some(v => vnNorm(v).includes(q) || String(v || '').includes($('trFind').value.trim()))));
+  $('trItems').innerHTML = list.length ? list.map(x => `<div class="card tri" onclick="trOpen('${x.id}')">
+      <img src="/img/truong/${x.id}/anh_logo_truong.png" onerror="this.style.visibility='hidden'" alt="">
+      <div class="tn"><b>${trTap(x.tap)} · ${esc(x.ten_vi || x.ten_en)}</b><small>${trFlag(x.qg)} ${esc([x.ten_en, x.ten_bd].filter(Boolean).join(' · '))}</small>
+      <small>Tạo ${esc(x.tao || '')} · ${x.anh || 0} ảnh · ${(x.video || []).length} video</small></div>${trSt(x.trang_thai)}</div>`).join('')
+    : `<div class="empty">${TR.items.length ? 'Không có trường khớp' : 'Chưa có trường nào. Bấm ＋ Thêm trường.'}</div>`;
+}
+$('trFind').oninput = trDrawList;
+$('trAdd').onclick = () => trOpen(null);
+$('trBack').onclick = () => { TR.cur = null; trInit().then(trDrawList); };
+function trFill(it) {
+  $('trQg').value = it.qg || 'tw'; $('trTap').value = it.tap || (Math.max(0, ...TR.items.map(x => x.tap || 0)) + 1);
+  $('trVi').value = it.ten_vi || ''; $('trEn').value = it.ten_en || ''; $('trBd').value = it.ten_bd || ''; $('trWeb').value = it.web || '';
+  $('trTitle').textContent = it.id ? trTap(it.tap) + ' · ' + (it.ten_vi || it.ten_en) : 'Thêm trường mới';
+  $('trSt').innerHTML = it.trang_thai ? trSt(it.trang_thai) : '';
+  $('trDuyet').checked = !!it.cho_duyet; $('trDang').checked = !!it.dang; $('trCapNhat').checked = !!it.can_cap_nhat;
+  $('trNguonDs').textContent = it.qg === 'kr' ? 'studyinkorea.go.kr, hikorea.go.kr, các trang .go.kr' : 'studyintaiwan.org, udb.moe.edu.tw, Bộ Giáo dục, Văn phòng Kinh tế Văn hóa Đài Bắc';
+  document.querySelectorAll('#trOne .trstep').forEach(c => c.classList.toggle('hide', !it.id));
+}
+async function trOpen(id) {
+  $('trList').classList.add('hide'); $('trOne').classList.remove('hide'); window.scrollTo(0, 0);
+  ['trNcOut', 'trCand', 'trChk', 'trCap', 'trTrung', 'trVids', 'trNcDate', 'trKbDate'].forEach(k => { $(k).innerHTML = ''; });
+  $('trScript').classList.add('hide'); $('trKbTools').classList.add('hide'); $('trAnh').innerHTML = '';
+  TR.cur = id; TR.data = null;
+  if (!id) { trFill({}); return; }
+  trFill(TR.items.find(x => x.id === id) || { id });
+  try {
+    const d = await api('/api/truong/' + id); TR.data = d;
+    trFill(d.item); trDrawNc(d.nghien_cuu); trDrawAnh(d.anh); trDrawKb(d.kich_ban);
+    $('trVids').innerHTML = (d.item.video || []).length ? '⚠ Trường này đã có ' + d.item.video.length + ' video. Tạo thêm sẽ thành video trùng chủ đề.' : '';
+  } catch (e) { toast(e.message); }
+}
+$('trSaveInfo').onclick = async () => {
+  const b = { id: TR.cur || '', qg: $('trQg').value, tap: $('trTap').value, ten_vi: $('trVi').value, ten_en: $('trEn').value, ten_bd: $('trBd').value, web: $('trWeb').value };
+  try {
+    let d = await api('/api/truong', b);
+    if (d.trung) {
+      $('trTrung').innerHTML = `<div class="warn" style="margin-top:8px">⚠ Trường này có vẻ đã có trong danh sách: ${d.trung.map(x => `<b>${trTap(x.tap)} ${esc(x.ten)}</b>${x.video ? ' (đã có ' + x.video + ' video)' : ''}`).join(', ')}.
+        <button class="btn sm" type="button" id="trEp">Vẫn thêm</button></div>`;
+      $('trEp').onclick = async () => { d = await api('/api/truong', { ...b, ep: true }); $('trTrung').innerHTML = ''; toast('Đã lưu'); await trInit(); trOpen(d.id); };
+      return;
+    }
+    toast('Đã lưu thông tin trường'); await trInit(); trOpen(d.id);
+  } catch (e) { toast(e.message, 5000); }
+};
+function trDrawNc(nc) {
+  if (!nc) { $('trNcOut').innerHTML = ''; $('trNc').textContent = '🔎 Nghiên cứu và kiểm chứng'; return; }
+  $('trNc').textContent = '🔄 Nghiên cứu lại (gọi AI, tốn lượt)';
+  $('trNcDate').textContent = 'Cập nhật ' + nc.ngay;
+  const ok = TR.muc.filter(([k]) => nc.muc[k] && nc.muc[k].kiem_chung).length;
+  $('trNcOut').innerHTML = `<div class="hint" style="margin-top:8px"><b>${ok}/${TR.muc.length}</b> mục đã kiểm chứng.</div><div class="ncl">` + TR.muc.map(([k, t]) => {
+    const v = nc.muc[k] || {};
+    const src = v.nguon && /^https?:/.test(v.nguon) ? `<a href="${esc(v.nguon)}" target="_blank" rel="noopener">${esc(v.nguon.replace(/^https?:\/\//, '').slice(0, 70))}</a>` : '';
+    return `<div class="${v.kiem_chung ? '' : 'no'}"><div class="k">${v.kiem_chung ? '✅' : '⚠'} ${esc(t)}</div>
+      <div class="v">${v.gia_tri ? esc(v.gia_tri) : 'Chưa tìm được nguồn chính thức, sẽ không đưa vào video.'}</div>
+      ${v.nam_hoc || src ? `<div class="s">${v.nam_hoc ? '📅 ' + esc(v.nam_hoc) + ' · ' : ''}${src}</div>` : ''}</div>`;
+  }).join('') + '</div>';
+}
+$('trNc').onclick = async () => {
+  const again = !!(TR.data && TR.data.nghien_cuu);
+  if (again && !confirm('Nghiên cứu lại sẽ gọi AI tra mạng (tốn lượt). Chỉ làm khi thông tin trường có thay đổi. Tiếp tục?')) return;
+  const b = $('trNc'); b.disabled = true; b.textContent = '⏳ AI đang đọc trang chính thức... (1–3 phút)';
+  try { const d = await api(`/api/truong/${TR.cur}/nghien-cuu`, { lam_lai: again }); TR.data.nghien_cuu = d; trDrawNc(d); toast(d.tu_bo_nho ? 'Dùng lại kết quả đã lưu' : 'Đã nghiên cứu xong'); trInit(); }
+  catch (e) { toast(e.message, 6000); trDrawNc(TR.data && TR.data.nghien_cuu); }
+  b.disabled = false;
+};
+function trAddNames(list) { if (NAMES) { list.forEach(a => NAMES.add(vnNorm(a.ten))); runCheck(); } }
+function trDrawAnh(list) {
+  TR.data.anh = list; trAddNames(list);
+  $('trAnhN').textContent = '(' + list.length + ')';
+  $('trAnh').innerHTML = list.length ? list.map(a => `<div class="it"><img loading="lazy" src="${a.url}?v=${a.ngay || ''}"><div>${esc(a.ten)}</div>
+      <div class="tg">${esc(a.nguon || '')}</div><button class="x" onclick="trDelAnh('${a.file}')">✕</button></div>`).join('')
+    : '<div class="empty">Chưa có ảnh. Tải ảnh lên hoặc tìm trên website trường.</div>';
+}
+async function trReloadAnh() { const d = await api('/api/truong/' + TR.cur); trDrawAnh(d.anh); TR.data.item = d.item; $('trSt').innerHTML = trSt(d.item.trang_thai); }
+async function trDelAnh(f) {
+  if (!confirm('Bỏ ảnh này khỏi kho của trường?')) return;
+  try { await api(`/api/truong/${TR.cur}/anh/${f}/xoa`, {}); toast('Đã bỏ ảnh'); trReloadAnh(); } catch (e) { toast(e.message); }
+}
+// Đọc ảnh -> JPG (ảnh chụp) hoặc PNG (logo), cỡ tối đa 1600px, trả kèm kích thước
+function trReadImg(src, logo) {
+  return new Promise((ok, bad) => {
+    const img = new Image(); img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+      const g = c.getContext('2d'); if (!logo) { g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); }
+      g.drawImage(img, 0, 0, c.width, c.height);
+      const du = logo ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', 0.88);
+      ok({ data: du.split(',')[1], type: logo ? 'png' : 'jpg', w: img.naturalWidth, h: img.naturalHeight });
+    };
+    img.onerror = () => bad(new Error('Không đọc được ảnh'));
+    img.src = src;
+  });
+}
+$('trUp').onclick = () => $('trFile').click();
+$('trFile').onchange = async e => {
+  const cd = $('trCd').value, files = [...e.target.files]; e.target.value = '';
+  for (const f of files) {
+    try { const u = URL.createObjectURL(f); const im = await trReadImg(u, cd === 'logo'); URL.revokeObjectURL(u);
+      if (Math.max(im.w, im.h) < 500 && cd !== 'logo') { toast('Ảnh ' + f.name + ' nhỏ quá (dưới 500px), bỏ qua'); continue; }
+      toast('Đang tải ' + f.name + '...'); await api(`/api/truong/${TR.cur}/anh`, { ...im, chu_de: cd, nguon: 'Admin tải lên' });
+    } catch (er) { toast(er.message, 5000); }
+  }
+  trReloadAnh();
+};
+$('trFind2').onclick = async () => {
+  const b = $('trFind2'); b.disabled = true; b.textContent = '⏳ Đang đọc website trường...';
+  try {
+    const d = await api(`/api/truong/${TR.cur}/tim-anh`);
+    TR.cand = d.items;
+    $('trCand').innerHTML = (d.items.length ? `<div class="hint" style="margin-top:8px">Đã đọc ${d.pages.length} trang. Chọn chủ đề ở ô trên rồi bấm <b>＋</b> vào ảnh đúng của trường. Ảnh nhỏ, mờ tự ẩn.</div>` :
+      '<div class="empty">Không tìm thấy ảnh trên website. Hãy tải ảnh lên.</div>') +
+      `<div class="cand">${d.items.map((c, i) => `<div class="c" id="tc${i}"><img loading="lazy" src="/api/truong/proxy?u=${encodeURIComponent(c.url)}" onload="trCandOk(this,${i})" onerror="this.parentNode.remove()">
+        <div title="${esc(c.url)}">${c.logo ? '🏷 ' : ''}${esc(c.alt || c.url.split('/').pop())}</div><button type="button" onclick="trPick(${i})">＋</button></div>`).join('')}</div>`;
+  } catch (e) { toast(e.message, 5000); }
+  b.disabled = false; b.textContent = '🖼 Tìm hình ảnh trên website trường';
+};
+function trCandOk(img, i) {        // lọc ảnh nhỏ / ảnh trang trí
+  const c = TR.cand[i]; c.w = img.naturalWidth; c.h = img.naturalHeight;
+  if ((c.w < 400 || c.h < 250) && !c.logo) img.parentNode.remove();
+  else img.nextElementSibling.textContent = (c.logo ? '🏷 ' : '') + c.w + '×' + c.h + ' ' + (c.alt || '');
+}
+async function trPick(i) {
+  const c = TR.cand[i], cd = c.logo && $('trCd').value === 'cong_truong' ? 'logo' : $('trCd').value;
+  try {
+    toast('Đang lưu ảnh...');
+    const im = await trReadImg('/api/truong/proxy?u=' + encodeURIComponent(c.url), cd === 'logo');
+    await api(`/api/truong/${TR.cur}/anh`, { ...im, chu_de: cd, url: c.url, trang: c.trang });
+    const el = $('tc' + i); if (el) el.remove();
+    toast('Đã thêm vào kho: ' + $('trCd').selectedOptions[0].textContent); trReloadAnh();
+  } catch (e) { toast(e.message, 5000); }
+}
+function trDrawKb(kb) {
+  if (!kb) return;
+  $('trKbDate').textContent = 'Cập nhật ' + kb.ngay + (kb.sua_tay ? ' (đã sửa tay)' : '');
+  $('trScript').value = kb.script; $('trScript').classList.remove('hide'); $('trKbTools').classList.remove('hide');
+  $('trKb').textContent = '🔄 Viết lại kịch bản';
+  $('trCap').innerHTML = (kb.caption ? `<label class="f">Caption</label><textarea id="trCapT" style="min-height:90px">${esc(kb.caption)}</textarea>` : '') +
+    (kb.nguon && kb.nguon.length ? `<div class="hint"><b>Nguồn kiểm chứng:</b><br>${kb.nguon.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>`).join('<br>')}</div>` : '');
+  trCheck();
+}
+function trCheck() {
+  const r = checkScript($('trScript').value);
+  $('trChk').innerHTML = `${r.nScene} cảnh · khoảng ${Math.round(r.secs / 60 * 10) / 10} phút · ` +
+    (r.E.length ? `<b style="color:#c0392b">${r.E.length} lỗi</b>: ${r.E.slice(0, 3).map(esc).join(' ')}` : '✅ không lỗi định dạng') +
+    (r.W.length ? `<br>${r.W.slice(0, 4).map(esc).join('<br>')}` : '');
+}
+$('trScript').oninput = trCheck;
+$('trPhut').onchange = () => { if ($('trPhut').value === 'x') { const n = prompt('Bao nhiêu phút? (1–10)', '4'); const v = Math.max(1, Math.min(10, parseInt(n, 10) || 3));
+  const o = document.createElement('option'); o.value = v; o.textContent = v + ' phút'; $('trPhut').insertBefore(o, $('trPhut').lastElementChild); $('trPhut').value = v; } };
+$('trPc').onchange = () => $('trTyBox').classList.toggle('hide', $('trPc').value !== 'tron');
+$('trTy').oninput = () => { $('trTyV').textContent = $('trTy').value + '%'; };
+$('trKb').onclick = async () => {
+  if (!TR.data || !TR.data.nghien_cuu) { toast('Hãy bấm "Nghiên cứu và kiểm chứng" trước'); return; }
+  if ((TR.data.anh || []).length < 3 && $('trPc').value !== 've' && !confirm('Kho mới có ' + (TR.data.anh || []).length + ' ảnh thật. Vẫn viết kịch bản?')) return;
+  const b = $('trKb'); b.disabled = true; b.textContent = '⏳ AI đang viết... (khoảng 1 phút)';
+  try { const d = await api(`/api/truong/${TR.cur}/kich-ban`, { phut: $('trPhut').value, phong_cach: $('trPc').value, ty_le: $('trTy').value }); trDrawKb(d); toast('Đã có kịch bản'); trInit(); }
+  catch (e) { toast(e.message, 6000); b.textContent = '✍️ Tạo kịch bản'; }
+  b.disabled = false;
+};
+$('trKbSave').onclick = async () => {
+  try { const d = await api(`/api/truong/${TR.cur}/kich-ban`, { luu: true, script: $('trScript').value, caption: $('trCapT') ? $('trCapT').value : '' }); trDrawKb(d); toast('Đã lưu kịch bản'); }
+  catch (e) { toast(e.message); }
+};
+async function trFlags() {
+  try { await api('/api/truong', { id: TR.cur, qg: $('trQg').value, tap: $('trTap').value, ten_vi: $('trVi').value, ten_en: $('trEn').value, ten_bd: $('trBd').value, web: $('trWeb').value,
+    cho_duyet: $('trDuyet').checked, dang: $('trDang').checked, can_cap_nhat: $('trCapNhat').checked }); toast('Đã cập nhật trạng thái'); await trInit(); trOpen(TR.cur); } catch (e) { toast(e.message); }
+}
+['trDuyet', 'trDang', 'trCapNhat'].forEach(k => { $(k).onchange = trFlags; });
+$('trGo').onclick = () => {
+  const sc = $('trScript').value.trim();
+  if (!sc) { toast('Chưa có kịch bản'); return; }
+  const it = TR.data.item;
+  if ((it.video || []).length && !confirm('Trường này đã có video. Vẫn tạo thêm?')) return;
+  if ($('script').value.trim() && !confirm('Thay kịch bản đang có ở tab Tạo video?')) return;
+  TRUONG_JOB = { id: it.id, ten: it.ten_vi || it.ten_en, tap: it.tap }; store.set('truong_job', TRUONG_JOB);
+  $('script').value = sc; $('name').value = trTap(it.tap) + ' – ' + (it.ten_vi || it.ten_en).slice(0, 50);
+  setMode('self'); trBanner(); afterEdit(); showTab('tao');
+  toast('Đã chuyển kịch bản. Chọn giọng, khổ video rồi bấm Tạo video.', 4500);
+};
+function trBanner() {
+  $('trBan').classList.toggle('hide', !TRUONG_JOB);
+  if (TRUONG_JOB) $('trBanT').textContent = trTap(TRUONG_JOB.tap) + ' · ' + TRUONG_JOB.ten + ' (dùng kho ảnh của trường)';
+}
+$('trBanX').onclick = () => { TRUONG_JOB = null; store.set('truong_job', null); trBanner(); };
+trBanner();
 // lấy danh sách giọng VieNeu (nếu đã từng dựng)
 api('/api/list').then(d => { if (d.voices && d.voices.length) { store.set('voices', d.voices); fillVoices(d.voices); } }).catch(() => {});
 </script>

@@ -76,6 +76,11 @@ def main():
     E.PEN_TEXT = None
     E.KHO_LV = None
     E.CHAR_LV = None
+    # Mỗi ngày một trường: dùng kho ảnh thật của trường này (ưu tiên trước kho chung)
+    tr = re.sub(r'[^a-z0-9_]', '', job.get('truong') or '')
+    trd = os.path.join(HERE, 'engine', 'assets', 'truong', tr) if tr else ''
+    E.KHO_TRUONG = trd if tr and os.path.isdir(trd) else None
+    info['truong'] = tr
     if lv != 'duhoc' and os.path.isdir(os.path.join(HERE, 'engine', 'assets', 'lv', lv, 'nhanvat')):
         E.CHAR_LV = os.path.join(HERE, 'engine', 'assets', 'lv', lv, 'nhanvat')
     if lv != 'duhoc' and lvc:

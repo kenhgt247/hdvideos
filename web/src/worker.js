@@ -330,6 +330,344 @@ async function getTranscript(env, link) {
   if (text.length < 20) throw new Error('Video này gần như không có lời nói.');
   return { text: text.slice(0, 12000), lang: d.lang || '' };
 }
+// =====================================================================
+// MỖI NGÀY MỘT TRƯỜNG (chỉ quản lý): nghiên cứu có nguồn, kho ảnh thật riêng từng trường, kịch bản, tạo video
+// Dữ liệu: truong/_ds.json (danh sách + bật/tắt), truong/<mã>/nghien_cuu.json, truong/<mã>/kich_ban.json
+// Ảnh: engine/assets/truong/<mã>/*.jpg|png + _anh.json (nguồn, quyền dùng, ngày, kích thước)
+// =====================================================================
+const TR_DS = 'truong/_ds.json';
+const TR_ID = /^(tw|kr)_[a-z0-9_]{2,40}$/;
+const TR_CHU_DE = [['logo', 'logo trường'], ['cong_truong', 'cổng trường'], ['khuon_vien', 'toàn cảnh khuôn viên'], ['toa_nha', 'tòa nhà'],
+  ['ban_do', 'bản đồ vị trí'], ['thu_vien', 'thư viện'], ['phong_hoc', 'phòng học'], ['phong_thuc_hanh', 'phòng thực hành'],
+  ['phong_thi_nghiem', 'phòng thí nghiệm'], ['ky_tuc_xa', 'ký túc xá'], ['nha_an', 'nhà ăn'], ['hoat_dong', 'hoạt động sinh viên'],
+  ['tot_nghiep', 'lễ tốt nghiệp'], ['xung_quanh', 'khu vực xung quanh trường'], ['giao_thong', 'giao thông gần trường']];
+const TR_MUC = [['ten', 'Tên tiếng Việt, tiếng Anh, tên bản địa'], ['thanh_lap', 'Năm thành lập và lịch sử'], ['loai_hinh', 'Công lập hay tư thục'],
+  ['vi_tri', 'Vị trí, địa chỉ, cơ sở đào tạo'], ['giao_thong', 'Giao thông'], ['the_manh', 'Thế mạnh đào tạo'], ['nganh', 'Ngành nổi bật'],
+  ['co_so', 'Cơ sở vật chất'], ['chuong_trinh_qt', 'Chương trình cho sinh viên quốc tế'], ['tuyen_sinh', 'Điều kiện tuyển sinh'],
+  ['ngoai_ngu', 'Yêu cầu ngoại ngữ'], ['hoc_phi', 'Học phí'], ['hoc_bong', 'Học bổng và trợ cấp'], ['ky_tuc_xa', 'Ký túc xá'],
+  ['sinh_hoat', 'Chi phí sinh hoạt'], ['viec_lam', 'Thực tập và việc làm'], ['uu_diem', 'Ưu điểm'], ['han_che', 'Hạn chế'],
+  ['phu_hop', 'Đối tượng phù hợp']];
+const TR_NGUON = { tw: ['studyintaiwan.org', 'edu.tw', 'gov.tw', 'roc-taiwan.org'], kr: ['studyinkorea.go.kr', 'go.kr', 'ac.kr', 'hikorea.go.kr'] };
+
+function trHost(u) { try { return new URL(/^https?:/i.test(u) ? u : 'https://' + u).hostname.replace(/^www\./, ''); } catch { return ''; } }
+function trB64(str) { const by = new TextEncoder().encode(str); let s = ''; by.forEach(x => { s += String.fromCharCode(x); }); return btoa(s); }
+async function trSave(env, path, data, message) {
+  for (let i = 0; i < 3; i++) {
+    const cur = await ghJson(env, `/contents/${path}`);
+    const body = { message, content: trB64(JSON.stringify(data, null, 1) + '\n'), branch: 'main' };
+    if (cur && cur.sha) body.sha = cur.sha;
+    const r = await gh(env, `/contents/${path}`, { method: 'PUT', body: JSON.stringify(body) });
+    if (r.ok) return;
+    if (r.status !== 409 && r.status !== 422) throw new Error('Không lưu được (GitHub ' + r.status + ')');
+  }
+  throw new Error('Không lưu được, thử lại');
+}
+async function trDs(env) {
+  const { data } = await readJson(env, TR_DS);
+  return { bat: !!data.bat, items: data.items && typeof data.items === 'object' ? data.items : {}, phut_ai: data.phut_ai || {} };
+}
+async function trDsEdit(env, fn, message) {
+  for (let i = 0; i < 3; i++) {
+    const { data, sha } = await readJson(env, TR_DS);
+    const d = { bat: !!data.bat, items: data.items || {}, phut_ai: data.phut_ai || {} };
+    const out = fn(d) || d;
+    const body = { message, content: trB64(JSON.stringify(out, null, 1) + '\n'), branch: 'main' };
+    if (sha) body.sha = sha;
+    const r = await gh(env, `/contents/${TR_DS}`, { method: 'PUT', body: JSON.stringify(body) });
+    if (r.ok) return out;
+  }
+  throw new Error('Không lưu được danh sách trường, thử lại');
+}
+function trNorm(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[đĐ]/g, 'd').toLowerCase().replace(/[^a-z0-9㐀-鿿가-힯]+/g, ' ').trim(); }
+function trStatus(it) {
+  if (it.dang) return 'Đã đăng video';
+  if (it.can_cap_nhat) return 'Cần cập nhật thông tin';
+  if ((it.video || []).length) return 'Đã xuất video';
+  if (it.cho_duyet) return 'Chờ duyệt';
+  if (it.kb) return 'Đã có kịch bản';
+  if ((it.anh || 0) >= 3) return 'Đã có hình ảnh';
+  if (it.nc) return 'Đã nghiên cứu';
+  return 'Chưa nghiên cứu';
+}
+async function trAnh(env, id) {
+  const [files, meta] = await Promise.all([listDir(env, `engine/assets/truong/${id}`), readJson(env, `engine/assets/truong/${id}/_anh.json`)]);
+  const m = meta.data || {};
+  return files.filter(f => /\.(jpg|png)$/.test(f.name) && !f.name.startsWith('_')).map(f => {
+    const k = f.name.replace(/\.(jpg|png)$/, '');
+    return { file: f.name, url: `/img/truong/${id}/${f.name}`, ...(m[k] || { ten: k.replace(/_/g, ' ') }) };
+  });
+}
+// Tìm ảnh trên website chính thức: đọc trang chủ (theo cả chuyển hướng meta refresh) + vài trang giới thiệu/quốc tế
+async function trFindImages(web) {
+  const host = trHost(web);
+  if (!host) throw new Error('Chưa có website chính thức của trường');
+  const seen = new Set(), out = [], pages = [];
+  const get = async u => {
+    const r = await fetch(u, { headers: { 'user-agent': 'Mozilla/5.0 (HDVideos; tra anh truong)', accept: 'text/html' }, redirect: 'follow' });
+    if (!r.ok || !/html/i.test(r.headers.get('content-type') || '')) return null;
+    return { url: r.url, html: (await r.text()).slice(0, 600000) };
+  };
+  const abs = (u, base) => { try { return new URL(u.replace(/&amp;/g, '&'), base).href; } catch { return ''; } };
+  const queue = [/^https?:/i.test(web) ? web : 'https://' + web];
+  for (let n = 0; queue.length && n < 6; n++) {
+    const u = queue.shift();
+    if (seen.has(u)) continue;
+    seen.add(u);
+    let pg = null;
+    try { pg = await get(u); } catch { pg = null; }
+    if (!pg) continue;
+    const refresh = pg.html.match(/http-equiv=["']?refresh["']?[^>]*content=["'][^"']*url=([^"'>\s]+)/i);
+    if (refresh) { queue.unshift(abs(refresh[1], pg.url)); n--; continue; }
+    pages.push(pg.url);
+    const og = pg.html.match(/property=["']og:image["'][^>]*content=["']([^"']+)/i);
+    if (og) out.push({ url: abs(og[1], pg.url), alt: 'ảnh đại diện trang', trang: pg.url });
+    for (const mm of pg.html.matchAll(/<img\b[^>]*>/gi)) {
+      const tag = mm[0];
+      const src = (tag.match(/\s(?:data-src|src)=["']([^"']+)/i) || [])[1];
+      if (!src || /^data:/i.test(src)) continue;
+      const alt = ((tag.match(/\salt=["']([^"']*)/i) || [])[1] || '').trim();
+      out.push({ url: abs(src, pg.url), alt, trang: pg.url });
+    }
+    for (const mm of pg.html.matchAll(/<link\b[^>]*rel=["'][^"']*icon[^"']*["'][^>]*>/gi)) {
+      const h = (mm[0].match(/href=["']([^"']+)/i) || [])[1];
+      if (h) out.push({ url: abs(h, pg.url), alt: 'biểu tượng', trang: pg.url });
+    }
+    if (n < 2) {                                   // thêm vài trang con cùng trường: giới thiệu, quốc tế, khuôn viên
+      for (const mm of pg.html.matchAll(/<a\b[^>]*href=["']([^"'#]+)["'][^>]*>([\s\S]{0,80}?)<\/a>/gi)) {
+        const h = abs(mm[1], pg.url), txt = mm[2].replace(/<[^>]+>/g, '');
+        if (!h.startsWith('http') || !trHost(h).endsWith(host.split('.').slice(-3).join('.'))) continue;
+        if (/about|intro|campus|plan|international|oia|簡介|關於|校園|環境|國際|소개|캠퍼스|국제/i.test(h + ' ' + txt) && queue.length < 8) queue.push(h);
+      }
+    }
+  }
+  const okExt = /\.(jpe?g|png|webp)(\?|$)/i;
+  const bad = /sprite|icon-|\/icons?\/|blank|spacer|pixel|loading|arrow|btn|button|banner_ad|qrcode|qr_|facebook|line\.|youtube|instagram|twitter|share/i;
+  const res = [], urls = new Set();
+  for (const c of out) {
+    if (!c.url.startsWith('http') || urls.has(c.url)) continue;
+    if (!okExt.test(c.url) && !/og:|ảnh đại diện|logo/i.test(c.alt + c.url)) continue;
+    if (bad.test(c.url) && !/logo/i.test(c.url)) continue;
+    urls.add(c.url);
+    res.push({ ...c, logo: /logo/i.test(c.url + ' ' + c.alt) });
+  }
+  return { pages, items: res.slice(0, 60) };
+}
+function trResearchPrompt(it, ds) {
+  const fields = TR_MUC.map(([k, t]) => `"${k}": {"gia_tri": "...", "nguon": "URL chính thức", "nam_hoc": "năm học/kỳ nhập học áp dụng (nếu có)", "kiem_chung": true}   // ${t}`).join('\n');
+  return `Bạn là chuyên viên nghiên cứu của trung tâm Du Học Hải Dương. Nhiệm vụ: tra cứu THÔNG TIN THẬT về một trường đại học ${it.qg === 'kr' ? 'Hàn Quốc' : 'Đài Loan'} để làm video giới thiệu.
+
+QUY TẮC BẮT BUỘC:
+- Chỉ dùng thông tin bạn ĐÃ THẤY trên website chính thức của trường hoặc trang chính phủ/tổ chức chính thức (${(TR_NGUON[it.qg] || []).join(', ')}). Ghi URL nguồn cho từng mục.
+- Không tìm thấy nguồn chính thức thì để "gia_tri": "" và "kiem_chung": false. TUYỆT ĐỐI không bịa, không đoán.
+- Học phí, học bổng, điều kiện tuyển sinh phải ghi rõ năm học, kỳ nhập học và chương trình áp dụng (vào "nam_hoc").
+- Tiền giữ đúng đơn vị gốc (NT$ / KRW). Viết tiếng Việt, ngắn gọn, đủ ý (mỗi mục tối đa khoảng 60 chữ).
+- "uu_diem", "han_che", "phu_hop": nhận xét khách quan dựa trên dữ kiện đã kiểm chứng ở các mục khác (nguon có thể để trống, kiem_chung = true nếu suy ra từ dữ kiện có nguồn). Không tự xếp hạng trường.
+
+Trả lời DUY NHẤT một khối \`\`\`json chứa:
+{
+"ten_vi": "...", "ten_en": "...", "ten_bd": "tên chữ Hán/Hàn",
+${fields}
+}`;
+}
+function trScriptRules(it, opt, photos) {
+  const ty = opt.phong_cach === 've' ? 0 : opt.phong_cach === 'that' ? 80 : Math.max(0, Math.min(100, opt.ty_le || 60));
+  const scenes = Math.round(opt.phut * 7);
+  return `
+
+====================================================
+CHẾ ĐỘ "MỖI NGÀY MỘT TRƯỜNG" (ĐÈ LÊN MỌI DÒNG Ở TRÊN)
+====================================================
+Phần mềm gọi tự động. Viết NGAY kịch bản video giới thiệu trường, dài khoảng ${opt.phut} phút: khoảng ${Math.max(6, scenes - 3)}–${scenes + 3} dòng cảnh, lời đọc tổng khoảng ${Math.round(opt.phut * 140)} chữ.
+- Giữ đúng định dạng: "Chữ màn hình / Dòng thứ hai || Lời đọc", mỗi dòng một cảnh.
+- CHỈ dùng dữ kiện trong HỒ SƠ NGHIÊN CỨU (mục có kiem_chung = true). Mục trống hoặc chưa kiểm chứng thì bỏ qua, không bịa, không đoán.
+- Học phí, học bổng, điều kiện: nói rõ năm học/kỳ nhập học/chương trình áp dụng. Không cam kết đỗ visa, không cam kết có việc làm, không tự xếp hạng trường, không quảng cáo quá mức.
+- Bố cục (chọn ý hay, không cần đủ): mở đầu thu hút → tên trường → lịch sử → vị trí, giao thông → thế mạnh, ngành nổi bật → cơ sở vật chất → các hệ cho sinh viên quốc tế → điều kiện → học phí, học bổng → ký túc xá, sinh hoạt → thực tập, việc làm → ưu điểm và hạn chế → ai phù hợp → mời theo dõi series "Mỗi ngày một trường" của Du Học Hải Dương.
+- Dòng đầu: "Tập ${String(it.tap || 1).padStart(3, '0')}" + tên trường ngắn gọn, gây tò mò.
+- ẢNH THẬT CỦA TRƯỜNG (chỉ dùng đúng tên trong danh sách, viết [vẽ: tên ảnh]): ${photos.length ? photos.join(', ') : '(chưa có)'}.
+  Khoảng ${ty}% số cảnh dùng ảnh thật: giới thiệu trường → logo/cổng trường; vị trí → bản đồ/khu vực; cơ sở vật chất → ảnh tương ứng. Một ảnh thật có thể dùng lại nhưng không dùng 2 cảnh liền nhau.
+  Các cảnh còn lại (học phí, học bổng, điều kiện, hồ sơ, ưu nhược điểm) dùng hình vẽ tay trong danh sách kho.
+- Trả lời đúng 3 phần: (1) MỘT khối \`\`\` chỉ chứa kịch bản, (2) CAPTION (2–3 dòng + 4–5 hashtag, có #MoiNgayMotTruong #DuHocHaiDuong), (3) NGUỒN: liệt kê các URL nguồn đã dùng từ hồ sơ.`;
+}
+
+async function trRoute(req, env, ctx, url, p, admin) {
+  if (!p.startsWith('/api/truong') && !p.startsWith('/img/truong/')) return null;
+  if (!admin) return err(ADMIN_ONLY, 403);
+  const ds0 = await trDs(env);
+  if (p === '/api/truong' && req.method === 'GET') {
+    const items = Object.values(ds0.items).map(it => ({ ...it, trang_thai: trStatus(it) }))
+      .sort((a, b) => (a.tap || 0) - (b.tap || 0));
+    return json({ bat: ds0.bat, items, chu_de: TR_CHU_DE, muc: TR_MUC });
+  }
+  if (p === '/api/truong/bat' && req.method === 'POST') {
+    const b = await req.json();
+    await trDsEdit(env, d => { d.bat = !!b.bat; }, b.bat ? 'Bật Mỗi ngày một trường' : 'Tắt Mỗi ngày một trường');
+    return json({ ok: true, bat: !!b.bat });
+  }
+  if (!ds0.bat) return err('Mục "Mỗi ngày một trường" đang tắt. Bật trong Cài đặt.', 403);
+  let m = p.match(/^\/img\/truong\/((?:tw|kr)_[a-z0-9_]+)\/([a-z0-9_]+\.(?:jpg|png))$/);
+  if (m) return rawFile(env, `engine/assets/truong/${m[1]}/${m[2]}`, m[2].endsWith('.png') ? 'image/png' : 'image/jpeg');
+  if (p === '/api/truong/proxy') {                 // xem trước ảnh tìm được (tránh trang trường chặn nhúng ảnh)
+    const u = url.searchParams.get('u') || '';
+    if (!/^https?:\/\//i.test(u)) return err('Link ảnh không hợp lệ');
+    const r = await fetch(u, { headers: { 'user-agent': 'Mozilla/5.0 (HDVideos)', referer: new URL(u).origin + '/' } });
+    if (!r.ok || !/^image\//.test(r.headers.get('content-type') || '')) return err('Không tải được ảnh', 404);
+    return new Response(r.body, { headers: { 'content-type': r.headers.get('content-type'), 'cache-control': 'private, max-age=3600' } });
+  }
+  if (p === '/api/truong' && req.method === 'POST') {          // thêm / sửa thông tin cơ bản của trường
+    const b = await req.json();
+    const qg = b.qg === 'kr' ? 'kr' : 'tw';
+    const ten_vi = String(b.ten_vi || '').trim().slice(0, 120), ten_en = String(b.ten_en || '').trim().slice(0, 160);
+    if (!ten_vi && !ten_en) return err('Hãy nhập tên trường');
+    let id = String(b.id || '');
+    if (!TR_ID.test(id)) {
+      const w = slug(ten_en || ten_vi).split('_').filter(x => x && !['university', 'of', 'science', 'and', 'technology', 'the', 'dai', 'hoc', 'truong', 'khoa', 'cong', 'nghe'].includes(x));
+      id = qg + '_' + ((w.join('_') || slug(ten_en || ten_vi)).slice(0, 30) || 'truong');
+      if (id.length < 5) id += '_' + Date.now().toString(36).slice(-3);
+    }
+    const web = String(b.web || '').trim().slice(0, 200);
+    const keyN = [ten_vi, ten_en, b.ten_bd].map(trNorm).filter(Boolean), host = trHost(web);
+    const trung = Object.values(ds0.items).filter(x => x.id !== id && (keyN.some(k => [x.ten_vi, x.ten_en, x.ten_bd].map(trNorm).includes(k)) || (host && trHost(x.web) === host)));
+    if (trung.length && !b.ep && !ds0.items[id]) return json({ trung: trung.map(x => ({ id: x.id, ten: x.ten_vi || x.ten_en, tap: x.tap, video: (x.video || []).length })) });
+    const out = await trDsEdit(env, d => {
+      const cur = d.items[id] || { id, tao: today(), video: [] };
+      const taps = Object.values(d.items).map(x => x.tap || 0);
+      Object.assign(cur, { qg, ten_vi, ten_en, ten_bd: String(b.ten_bd || '').trim().slice(0, 80), web,
+        tap: Math.max(1, parseInt(b.tap, 10) || cur.tap || (taps.length ? Math.max(...taps) + 1 : 1)) });
+      for (const k of ['dang', 'cho_duyet', 'can_cap_nhat']) if (b[k] !== undefined) cur[k] = !!b[k];
+      d.items[id] = cur;
+    }, `Trường: ${ten_vi || ten_en}`);
+    return json({ ok: true, id, item: out.items[id] });
+  }
+  m = p.match(/^\/api\/truong\/((?:tw|kr)_[a-z0-9_]+)(\/.*)?$/);
+  if (!m) return err('Không tìm thấy', 404);
+  const id = m[1], sub = m[2] || '', it = ds0.items[id];
+  if (!it) return err('Chưa có trường này trong danh sách', 404);
+  if (!sub && req.method === 'GET') {
+    const [nc, kb, anh] = await Promise.all([readJson(env, `truong/${id}/nghien_cuu.json`), readJson(env, `truong/${id}/kich_ban.json`), trAnh(env, id)]);
+    return json({ item: { ...it, trang_thai: trStatus(it) }, nghien_cuu: nc.data && nc.data.muc ? nc.data : null, kich_ban: kb.data && kb.data.script ? kb.data : null, anh });
+  }
+  if (sub === '/xoa' && req.method === 'POST') {
+    await trDsEdit(env, d => { delete d.items[id]; }, `Bỏ trường ${id} khỏi danh sách`);
+    return json({ ok: true });
+  }
+  if (sub === '/nghien-cuu' && req.method === 'POST') {
+    const b = await req.json().catch(() => ({}));
+    const cur = await readJson(env, `truong/${id}/nghien_cuu.json`);
+    if (cur.data && cur.data.muc && !b.lam_lai) return json({ ...cur.data, tu_bo_nho: true });    // đã có: không gọi AI lại (đỡ tốn)
+    if (!env.CLAUDE_KEY) return err('Chưa cài khoá Claude (cần để AI tự lên mạng kiểm chứng).');
+    const host = trHost(it.web);
+    const domains = [...new Set([host, ...(host ? [host.split('.').slice(-3).join('.')] : []), ...(TR_NGUON[it.qg] || [])].filter(Boolean))];
+    const user = `Trường: ${[it.ten_vi, it.ten_en, it.ten_bd].filter(Boolean).join(' / ')}\nWebsite chính thức: ${it.web || '(chưa có, hãy tự tìm)'}\nNgày hôm nay: ${today()}`;
+    const out = await aiClaude(env, trResearchPrompt(it), user, true, domains,
+      { maxUses: 10, retry: 'Bạn đã tra đủ. Trả lời NGAY một khối ```json đúng mẫu, mục nào chưa có nguồn thì để trống và kiem_chung=false.' });
+    const jm = out.text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    let j = null;
+    try { j = JSON.parse((jm ? jm[1] : out.text).replace(/\/\/[^\n"]*$/gm, '')); } catch { j = null; }
+    if (!j) return err('AI trả về sai định dạng, bấm nghiên cứu lại.', 502);
+    const muc = {};
+    for (const [k] of TR_MUC) {
+      const v = j[k] || {};
+      const val = String(v.gia_tri || '').trim();
+      muc[k] = { gia_tri: val, nguon: String(v.nguon || '').trim(), nam_hoc: String(v.nam_hoc || '').trim(), kiem_chung: !!(val && v.kiem_chung) };
+    }
+    const rec = { ngay: today(), ten_vi: j.ten_vi || it.ten_vi, ten_en: j.ten_en || it.ten_en, ten_bd: j.ten_bd || it.ten_bd, muc, nguon: out.sources };
+    await trSave(env, `truong/${id}/nghien_cuu.json`, rec, `Nghiên cứu: ${it.ten_vi || it.ten_en}`);
+    await trDsEdit(env, d => { const x = d.items[id]; if (x) { x.nc = rec.ngay; if (!x.ten_bd && rec.ten_bd) x.ten_bd = rec.ten_bd; if (!x.ten_en && rec.ten_en) x.ten_en = rec.ten_en; }
+      d.phut_ai[today()] = (d.phut_ai[today()] || 0) + 1; }, `Nghiên cứu xong ${id}`);
+    ctx.waitUntil(aiRecord(env, 'admin', 'paid').catch(() => {}));
+    return json(rec);
+  }
+  if (sub === '/tim-anh' && req.method === 'GET') {
+    const [found, have] = await Promise.all([trFindImages(it.web), trAnh(env, id)]);
+    const got = new Set(have.map(x => x.url_anh).filter(Boolean));
+    return json({ pages: found.pages, items: found.items.filter(x => !got.has(x.url)) });
+  }
+  if (sub === '/anh' && req.method === 'POST') {             // lưu 1 ảnh vào kho của trường (từ link tìm được hoặc tải lên)
+    const b = await req.json();
+    const cd = TR_CHU_DE.find(x => x[0] === b.chu_de) || ['khac', String(b.chu_de || 'ảnh').slice(0, 40)];
+    let data = b.data || '', type = /png/.test(b.type || '') ? 'png' : 'jpg';
+    if (!data && b.url) {
+      if (!/^https?:\/\//i.test(b.url)) return err('Link ảnh không hợp lệ');
+      const r = await fetch(b.url, { headers: { 'user-agent': 'Mozilla/5.0 (HDVideos)', referer: new URL(b.url).origin + '/' } });
+      const ct = r.headers.get('content-type') || '';
+      if (!r.ok || !/^image\/(jpeg|png|webp)/.test(ct)) return err('Không tải được ảnh (hoặc không phải ảnh JPG/PNG)');
+      const buf = new Uint8Array(await r.arrayBuffer());
+      if (buf.length < 12000 && cd[0] !== 'logo') return err('Ảnh quá nhỏ, chất lượng thấp');
+      if (buf.length > 6e6) return err('Ảnh quá lớn (trên 6 MB)');
+      if (/webp/.test(ct)) return err('Ảnh dạng WEBP: hãy tải về rồi bấm "Tải ảnh lên" (máy sẽ tự đổi sang JPG).');
+      let s = ''; for (let i = 0; i < buf.length; i += 0x8000) s += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+      data = btoa(s); type = /png/.test(ct) ? 'png' : 'jpg';
+    }
+    if (!data) return err('Thiếu ảnh');
+    const { data: meta } = await readJson(env, `engine/assets/truong/${id}/_anh.json`);
+    const base = 'anh_' + slug(cd[1]);
+    let k = base, n = 2;
+    while (meta[k]) k = base + '_' + (n++);
+    // logo giữ .png (hiện như hình vẽ); ảnh chụp lưu .jpg -> máy dựng hiện kiểu ảnh thật (khung, phóng nhẹ)
+    if (cd[0] !== 'logo' && type === 'png' && !b.data) return err('Ảnh PNG: hãy tải về rồi bấm "Tải ảnh lên" (máy sẽ đổi sang JPG).');
+    const file = k + '.' + (cd[0] === 'logo' ? type : 'jpg');
+    await putFile(env, `engine/assets/truong/${id}/${file}`, data, `Ảnh trường ${id}: ${cd[1]}`);
+    meta[k] = { ten: 'ảnh ' + cd[1] + (k === base ? '' : ' ' + (n - 1)), chu_de: cd[0], tu_khoa: [cd[1]].concat((b.tu_khoa || []).slice(0, 6)),
+      url_anh: b.url || '', url_trang: String(b.trang || '').slice(0, 300), nguon: b.url ? trHost(b.url) : (b.nguon || 'Admin tải lên'),
+      ban_quyen: String(b.ban_quyen || (b.url ? 'Ảnh từ website chính thức của trường, ghi nguồn khi đăng' : 'Admin xác nhận được phép dùng')).slice(0, 200),
+      ngay: today(), w: parseInt(b.w, 10) || 0, h: parseInt(b.h, 10) || 0 };
+    await trSave(env, `engine/assets/truong/${id}/_anh.json`, meta, `Ảnh trường ${id}: thông tin ${k}`);
+    const cnt = (await trAnh(env, id)).length;
+    await trDsEdit(env, d => { if (d.items[id]) d.items[id].anh = cnt; }, `Ảnh trường ${id}`);
+    return json({ ok: true, file, ten: meta[k].ten });
+  }
+  m = sub.match(/^\/anh\/([a-z0-9_]+\.(?:jpg|png))\/xoa$/);
+  if (m && req.method === 'POST') {
+    const path = `engine/assets/truong/${id}/${m[1]}`;
+    const cur = await ghJson(env, `/contents/${path}`);
+    if (cur) await gh(env, `/contents/${path}`, { method: 'DELETE', body: JSON.stringify({ message: `Bỏ ảnh ${m[1]}`, sha: cur.sha, branch: 'main' }) });
+    const { data: meta } = await readJson(env, `engine/assets/truong/${id}/_anh.json`);
+    delete meta[m[1].replace(/\.(jpg|png)$/, '')];
+    await trSave(env, `engine/assets/truong/${id}/_anh.json`, meta, `Bỏ ảnh ${m[1]}`);
+    const cnt = (await trAnh(env, id)).length;
+    await trDsEdit(env, d => { if (d.items[id]) d.items[id].anh = cnt; }, `Ảnh trường ${id}`);
+    return json({ ok: true });
+  }
+  if (sub === '/kich-ban' && req.method === 'POST') {
+    const b = await req.json();
+    if (typeof b.script === 'string' && b.luu) {               // admin sửa tay rồi lưu
+      const cur = (await readJson(env, `truong/${id}/kich_ban.json`)).data || {};
+      const rec = { ...cur, script: b.script.slice(0, 20000), caption: String(b.caption ?? cur.caption ?? '').slice(0, 3000), ngay: today(), sua_tay: true };
+      await trSave(env, `truong/${id}/kich_ban.json`, rec, `Sửa kịch bản ${id}`);
+      await trDsEdit(env, d => { if (d.items[id]) d.items[id].kb = today(); }, `Kịch bản ${id}`);
+      return json(rec);
+    }
+    const nc = (await readJson(env, `truong/${id}/nghien_cuu.json`)).data;
+    if (!nc || !nc.muc) return err('Hãy bấm "Nghiên cứu và kiểm chứng" trước.');
+    if (!env.CLAUDE_KEY && !env.GEMINI_KEY) return err('Chưa cài khoá AI');
+    const phut = Math.max(1, Math.min(10, Number(b.phut) || 3));
+    const opt = { phut, phong_cach: ['tron', 'that', 've'].includes(b.phong_cach) ? b.phong_cach : 'tron', ty_le: parseInt(b.ty_le, 10) || 60 };
+    const anh = await trAnh(env, id);
+    const photos = opt.phong_cach === 've' ? [] : anh.map(x => x.ten);
+    const sys = (await chatgptPrompt(env, lvPick(await lvAll(env), 'duhoc'))) + trScriptRules(it, opt, photos);
+    const ho_so = { truong: { ten_vi: nc.ten_vi, ten_en: nc.ten_en, ten_bd: nc.ten_bd, website: it.web }, ngay_nghien_cuu: nc.ngay,
+      muc: Object.fromEntries(Object.entries(nc.muc).filter(([, v]) => v.kiem_chung && v.gia_tri)) };
+    const user = `HỒ SƠ NGHIÊN CỨU (JSON, chỉ dùng các dữ kiện này):\n${JSON.stringify(ho_so, null, 1)}\n\nVideo: Tập ${String(it.tap || 1).padStart(3, '0')} series "Mỗi ngày một trường", dài khoảng ${phut} phút.`;
+    let out;
+    if (env.CLAUDE_KEY) out = await aiClaude(env, sys, user, false);
+    else out = { text: await aiGemini(env, sys, user), sources: [] };
+    const pr = parseAi(out.text);
+    const urls = [...new Set([...(pr.srcTxt.match(/https?:\/\/[^\s)\]]+/g) || []), ...Object.values(nc.muc).map(v => v.nguon).filter(u => /^https?:/.test(u))])];
+    const rec = { ngay: today(), ...opt, script: pr.script, caption: pr.caption, nguon: urls };
+    await trSave(env, `truong/${id}/kich_ban.json`, rec, `Kịch bản ${id}`);
+    await trDsEdit(env, d => { if (d.items[id]) d.items[id].kb = today(); }, `Kịch bản ${id}`);
+    ctx.waitUntil(aiRecord(env, 'admin', env.CLAUDE_KEY ? 'paid' : 'free').catch(() => {}));
+    return json(rec);
+  }
+  if (sub === '/video' && req.method === 'POST') {            // ghi lại mã video đã tạo cho trường (để cảnh báo trùng, theo dõi trạng thái)
+    const b = await req.json();
+    if (!/^[a-z0-9]{4,20}$/.test(b.job || '')) return err('Thiếu mã video');
+    await trDsEdit(env, d => { const x = d.items[id]; if (x) { x.video = [...new Set([...(x.video || []), b.job])].slice(-20); x.cho_duyet = false; } }, `Video trường ${id}`);
+    return json({ ok: true });
+  }
+  return err('Không tìm thấy', 404);
+}
+
 function parseAi(text) {
   const m = text.match(/```[a-zA-Z]*\n?([\s\S]*?)```/);
   const script = (m ? m[1] : text).trim();
@@ -366,8 +704,8 @@ async function aiGemini(env, sys, user) {
   }
   throw new Error(last);
 }
-async function aiClaude(env, sys, user, search = true, domains = OFFICIAL) {
-  const tool = { type: 'web_search_20250305', name: 'web_search', max_uses: 4, ...(domains ? { allowed_domains: domains } : {}) };
+async function aiClaude(env, sys, user, search = true, domains = OFFICIAL, opt = {}) {
+  const tool = { type: 'web_search_20250305', name: 'web_search', max_uses: opt.maxUses || 4, ...(domains ? { allowed_domains: domains } : {}) };
   let useDomains = !!domains, stop = '', diag = [];
   const blocks = [];                                   // toàn bộ nội dung trợ lý (kể cả các lượt tạm dừng)
   const call = async (messages, extra = {}) => {
@@ -401,7 +739,7 @@ async function aiClaude(env, sys, user, search = true, domains = OFFICIAL) {
   let text = textOf(blocks);
   if (search && !/```/.test(text)) {                   // tra xong nhưng chưa viết: bảo viết ngay, không tra thêm
     const d = await call([{ role: 'user', content: user }, { role: 'assistant', content: blocks },
-      { role: 'user', content: 'Bạn đã tra đủ. Hãy viết NGAY kịch bản theo đúng PHẦN C (khối ``` kịch bản, CAPTION, NGUỒN), không tìm thêm.' }],
+      { role: 'user', content: opt.retry || 'Bạn đã tra đủ. Hãy viết NGAY kịch bản theo đúng PHẦN C (khối ``` kịch bản, CAPTION, NGUỒN), không tìm thêm.' }],
       { tool_choice: { type: 'none' } });
     blocks.push(...(d.content || []));
     diag.push('retry:' + (d.stop_reason || ''));
@@ -656,6 +994,7 @@ export default {
         const lvj = await lvOf(env, url, b);
         const job = {
           lv: lvj.id,
+          truong: admin && /^(tw|kr)_[a-z0-9_]{2,40}$/.test(b.truong || '') ? b.truong : '',
           name: (b.name || '').slice(0, 80), script, voice: b.voice || 'vieneu_nam', vieneu_voice: b.vieneu_voice || '',
           character: b.character || 'auto', label: (b.label || '').slice(0, 30), hotline: (b.hotline || '').slice(0, 40),
           auto: b.auto !== false, logo: b.logo !== false, rate: Math.max(-30, Math.min(30, parseInt(b.rate || 0, 10) || 0)),
@@ -689,6 +1028,7 @@ export default {
       }
       let m = p.match(/^\/api\/jobs\/([a-z0-9]+)$/);
       if (m) return json(await jobStatus(env, m[1]));
+      { const tr = await trRoute(req, env, ctx, url, p, admin); if (tr) return tr; }
       if (p === '/api/list') {
         const L = await listVideos(env), q = url.searchParams.get('lv') || 'duhoc';
         L.items = L.items.filter(x => (x.lv || 'duhoc') === q);

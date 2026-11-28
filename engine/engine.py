@@ -422,6 +422,70 @@ class CharItem:
         return (self.x + w * (0.5 + 0.3 * math.sin(t * 9)), self.y + h * (0.45 + 0.2 * math.cos(t * 7)))
 
 
+class PhotoItem(CharItem):
+    """Ảnh THẬT (ảnh trường): không vẽ nét/tô màu. Khung viền như ảnh dán lên bảng, hiện dần kèm
+    phóng/lia nhẹ (Ken Burns). Chỉ phóng đều hai chiều nên ảnh không bao giờ bị méo."""
+    _pcache = {}
+
+    def __init__(self, path, cx, feet_y, height):
+        key = (path, int(height))
+        if key not in PhotoItem._pcache:
+            src = Image.open(path).convert('RGB')
+            B = max(6, int(height * 0.022))                  # viền trắng
+            ih = int(height) - 2 * B
+            iw = max(40, int(src.width * ih / src.height))
+            src = src.resize((int(iw * 1.12), int(ih * 1.12)), Image.LANCZOS)   # dư 12% để lia/phóng
+            PhotoItem._pcache[key] = (src, iw, ih, B)
+        self.src, self.iw, self.ih, self.B = PhotoItem._pcache[key]
+        W0, H0 = self.iw + 2 * self.B, self.ih + 2 * self.B
+        self.im = self._frame(1.0)
+        self.x = int(cx - W0 / 2)
+        self.y = int(feet_y - H0)
+        self.sp = self.bp = None
+        self.lines = None
+        self.dur = 1.5
+        self.LE = 1.0
+        self.nohand = True
+
+    def _frame(self, z):
+        """Ảnh trong khung; z = độ phóng nội dung (1.0 = cỡ cuối)."""
+        B, iw, ih = self.B, self.iw, self.ih
+        sw, sh = self.src.size
+        cw, ch = sw / (1.12 * z), sh / (1.12 * z)         # vùng cắt cùng tỉ lệ khung -> không méo
+        ox, oy = (sw - cw) * 0.5, (sh - ch) * 0.42
+        inner = self.src.crop((int(ox), int(oy), int(ox + cw), int(oy + ch))).resize((iw, ih), Image.BILINEAR)
+        out = Image.new('RGBA', (iw + 2 * B, ih + 2 * B), (0, 0, 0, 0))
+        d = ImageDraw.Draw(out)
+        d.rounded_rectangle((0, 0, out.width - 1, out.height - 1), B * 2, fill=(255, 255, 255, 255),
+                            outline=(40, 40, 46, 255), width=max(3, B // 3))
+        m = Image.new('L', (iw, ih), 0)
+        ImageDraw.Draw(m).rounded_rectangle((0, 0, iw - 1, ih - 1), B, fill=255)
+        out.paste(inner, (B, B), m)
+        return out
+
+    def draw(self, f, r):
+        if r <= 0:
+            return
+        if r >= 1:
+            f.paste(self.im, (self.x, self.y), self.im)
+            return
+        e = eio(clamp(r))
+        fr = self._frame(1.0 + 0.10 * (1 - e))             # nội dung lùi dần từ cận về toàn cảnh
+        k = 0.93 + 0.07 * e                                 # cả khung lớn dần (đều hai chiều)
+        w, h = max(1, int(fr.width * k)), max(1, int(fr.height * k))
+        fr = with_alpha(fr.resize((w, h), Image.BILINEAR), clamp(r * 2.2))
+        cx, cy = self.x + self.im.width / 2, self.y + self.im.height / 2
+        f.paste(fr, (int(cx - w / 2), int(cy - h / 2)), fr)
+
+    def pos(self, r, t):
+        return (self.x + self.im.width / 2, self.y + self.im.height / 2)
+
+
+def is_photo(path):
+    """Ảnh thật = file .jpg (kho ảnh trường lưu ảnh chụp dạng .jpg; logo, hình vẽ dạng .png)."""
+    return path.lower().endswith(('.jpg', '.jpeg'))
+
+
 NV_DIR = os.path.join(ASSETS, 'nhanvat')
 
 
@@ -801,6 +865,7 @@ KHO_GENERIC = {'du hoc', 'han quoc', 'dai loan', 'hoc sinh', 'sinh vien', 'viet 
 KHO_STOP = {'va', 'cua', 'o', 'tai', 'voi', 'cho', 'la', 'cac', 'nhung', 'mot', 'trong', 'tren', 'duoi', 'anh', 'chi'}
 
 
+KHO_TRUONG = None   # thư mục ảnh thật của trường đang làm video (assets/truong/<mã>): ưu tiên trước kho chung
 KHO_LV = None   # thư mục kho riêng của lĩnh vực khác (vd assets/kho_ngoi); None = kho du học như cũ
 
 
@@ -816,19 +881,22 @@ def _kho_chung():
 def kho_index():
     """{tên chuẩn hóa: đường dẫn} của các ảnh trong Kho hình (lĩnh vực khác: kho riêng + hình dùng chung)."""
     try:
-        mt = (KHO_LV, os.path.getmtime(KHO_DIR), os.path.getmtime(KHO_LV) if KHO_LV and os.path.isdir(KHO_LV) else 0)
+        mt = (KHO_LV, KHO_TRUONG, os.path.getmtime(KHO_DIR), os.path.getmtime(KHO_LV) if KHO_LV and os.path.isdir(KHO_LV) else 0,
+              os.path.getmtime(KHO_TRUONG) if KHO_TRUONG and os.path.isdir(KHO_TRUONG) else 0)
     except OSError:
         return {}
     if _kho['mtime'] != mt:
         idx = {}
         chung = _kho_chung() if KHO_LV else None
-        dirs = [KHO_DIR] + ([KHO_LV] if KHO_LV and os.path.isdir(KHO_LV) else [])
+        dirs = [KHO_DIR] + ([KHO_LV] if KHO_LV and os.path.isdir(KHO_LV) else []) + \
+            ([KHO_TRUONG] if KHO_TRUONG and os.path.isdir(KHO_TRUONG) else [])
         for d in dirs:
             for f in sorted(os.listdir(d)):
-                if f.lower().endswith('.png') and not f.startswith('_'):
+                ext = os.path.splitext(f)[1].lower()
+                if (ext == '.png' or (d == KHO_TRUONG and ext in ('.jpg', '.jpeg'))) and not f.startswith('_'):
                     if d == KHO_DIR and chung is not None and f not in chung:
                         continue
-                    idx[norm(re.sub(r'[_\-]+', ' ', f[:-4]))] = os.path.join(d, f)
+                    idx[norm(re.sub(r'[_\-]+', ' ', os.path.splitext(f)[0]))] = os.path.join(d, f)
         _kho.update(mtime=mt, idx=idx)
     return _kho['idx']
 
@@ -842,7 +910,8 @@ KHO_TUKHOA = os.path.join(KHO_DIR, '_tu_khoa.json')   # {ten_file_khong_duoi: {"
 
 def kho_meta():
     out = {}
-    for p in [KHO_TUKHOA] + ([os.path.join(KHO_LV, '_tu_khoa.json')] if KHO_LV else []):
+    for p in [KHO_TUKHOA] + ([os.path.join(KHO_LV, '_tu_khoa.json')] if KHO_LV else []) + \
+            ([os.path.join(KHO_TRUONG, '_anh.json')] if KHO_TRUONG else []):
         try:
             with open(p, encoding='utf-8') as f:
                 out.update(json.load(f))
@@ -1022,6 +1091,12 @@ def kho_item(name, cx, cy, h):
     with Image.open(path) as im:
         w0, h0 = im.size
     maxw = LMAXW * 0.95
+    if is_photo(path):                                   # ảnh thật: cho to hơn hình vẽ một chút
+        hh = min(h * 1.15, maxw * 1.02 * h0 / w0)
+        it = PhotoItem(path, cx, cy + hh / 2, hh)
+        it.kname = name
+        it.emph = None
+        return [it]
     hh = min(h, maxw * h0 / w0)
     it = CharItem(path, cx, cy + hh / 2, hh)
     it.dur = 2.8 if it.bp is not None else 2.4 if it.sp is not None else 1.4

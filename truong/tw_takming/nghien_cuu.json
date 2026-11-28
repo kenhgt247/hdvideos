@@ -1,0 +1,148 @@
+{
+ "ngay": "2026-11-28",
+ "ten_vi": "Đại học Khoa học và Công nghệ Đức Minh",
+ "ten_en": "Takming University of Science and Technology",
+ "ten_bd": "德明財經科技大學",
+ "muc": {
+  "ten": {
+   "gia_tri": "Đại học Khoa học và Công nghệ Đức Minh (Takming University of Science and Technology, TMUST), tên Trung: 德明財經科技大學",
+   "nguon": "https://www.takming.edu.tw/schtm/default.asp",
+   "nam_hoc": "",
+   "kiem_chung": true
+  },
+  "thanh_lap": {
+   "gia_tri": "Thành lập năm 1965 tại Đài Bắc (khóa đầu nhập học 12/11/1965). Năm 1974 thành trường chuyên khoa thương mại, năm 2000 lên Học viện kỹ thuật, ngày 1/8/2007 được Bộ Giáo dục cho đổi thành Đại học Khoa học và Công nghệ Đức Minh.",
+   "nguon": "https://www.takming.edu.tw/schtm/about.asp",
+   "nam_hoc": "",
+   "kiem_chung": true
+  },
+  "loai_hinh": {
+   "gia_tri": "Trường tư thục, do Hội đồng quản trị (董事會) điều hành.",
+   "nguon": "https://www.takming.edu.tw/schtm/about.asp",
+   "nam_hoc": "",
+   "kiem_chung": true
+  },
+  "vi_tri": {
+   "gia_tri": "Số 56, đoạn 1, đường Hoàn Sơn, quận Nội Hồ, thành phố Đài Bắc.",
+   "nguon": "https://www.takming.edu.tw/schtm/default.asp",
+   "nam_hoc": "",
+   "kiem_chung": true
+  },
+  "giao_thong": {
+   "gia_tri": "Tàu điện ngầm tuyến Văn Hồ (tuyến nâu) tới ga Tây Hồ (Xihu), ra cửa số 1, rẽ phải vào đường Hoàn Sơn, đi bộ khoảng 5 phút.",
+   "nguon": "https://edoc.nycu.edu.tw/OpenData/IncomingAttachment/110361",
+   "nam_hoc": "",
+   "kiem_chung": true
+  },
+  "the_manh": {
+   "gia_tri": "Trường tự giới thiệu là đại học khoa học kỹ thuật tài chính kinh tế đầu tiên của Đài Loan. Có Học viện Tài chính, Học viện Quản lý, Học viện Thông tin và Học viện AI.",
+   "nguon": "https://www.takming.edu.tw/schtm/about.asp",
+   "nam_hoc": "",
+   "kiem_chung": true
+  },
+  "nganh": {
+   "gia_tri": "Ngành mở cho sinh viên quốc tế: Quản lý thông tin, Công nghệ thông tin, Quản lý marketing (hệ dự bị quốc tế); Quản lý phân phối, Tài chính thuế, Tài chính ngân hàng (lớp Tân Hướng Nam).",
+   "nguon": "https://oia.takming.edu.tw/p/404-1036-14798.php?Lang=zh-tw",
+   "nam_hoc": "Năm học 115 (2026–2027)",
+   "kiem_chung": true
+  },
+  "co_so": {
+   "gia_tri": "",
+   "nguon": "",
+   "nam_hoc": "",
+   "kiem_chung": false
+  },
+  "chuong_trinh_qt": {
+   "gia_tri": "Có 6 nhóm: sinh viên quốc tế thông thường, Hệ dự bị quốc tế (國際專修部), lớp chuyên cho sinh viên nước ngoài, lớp Tân Hướng Nam hợp tác doanh nghiệp, Hoa kiều/Hồng Kông/Ma Cao, lớp thanh niên Hoa kiều.",
+   "nguon": "https://oia.takming.edu.tw/p/426-1036-8.php?Lang=zh-tw",
+   "nam_hoc": "",
+   "kiem_chung": true
+  },
+  "tuyen_sinh": {
+   "gia_tri": "Tốt nghiệp THPT hoặc tương đương; sổ tiết kiệm đứng tên học sinh tối thiểu 3.000 USD (cấp trong 3 tháng) hoặc thư học bổng toàn phần; xét hồ sơ và phỏng vấn. Lớp Tân Hướng Nam kỳ xuân: nộp hồ sơ 21/9–26/10/2026, nhập học 22/2/2027.",
+   "nguon": "https://oia.takming.edu.tw/p/404-1036-14798.php?Lang=zh-tw",
+   "nam_hoc": "Lớp Tân Hướng Nam, kỳ xuân 2/2027",
+   "kiem_chung": true
+  },
+  "ngoai_ngu": {
+   "gia_tri": "Hệ dự bị quốc tế: nhận học sinh chưa biết tiếng Hoa; trước khi vào năm nhất phải đạt TOCFL A2, trước năm hai đạt B1. Lớp Tân Hướng Nam: nên có A1, cuối năm nhất phải đạt A2, không đạt sẽ bị buộc thôi học.",
+   "nguon": "https://oia.takming.edu.tw/p/404-1036-14883.php?Lang=zh-tw",
+   "nam_hoc": "Năm học 115 (2026–2027)",
+   "kiem_chung": true
+  },
+  "hoc_phi": {
+   "gia_tri": "Lớp Tân Hướng Nam: học kỳ đầu 22.660 Đài tệ; từ học kỳ 2 năm nhất đến năm 4 là 45.320 Đài tệ mỗi kỳ (chưa gồm ký túc xá và chi phí khác).",
+   "nguon": "https://oia.takming.edu.tw/p/404-1036-14798.php?Lang=zh-tw",
+   "nam_hoc": "Lớp Tân Hướng Nam, nhập học 2/2027",
+   "kiem_chung": true
+  },
+  "hoc_bong": {
+   "gia_tri": "Học bổng Thâm Đức Minh Tâm cho tân sinh viên có người thân là cựu sinh viên hoặc anh chị em cùng học; học bổng sinh viên xuất sắc mỗi lớp 1–3 suất (điểm trung bình và hạnh kiểm từ 80 trở lên).",
+   "nguon": "https://oia.takming.edu.tw/p/404-1036-14798.php?Lang=zh-tw",
+   "nam_hoc": "Năm học 115",
+   "kiem_chung": true
+  },
+  "ky_tuc_xa": {
+   "gia_tri": "",
+   "nguon": "",
+   "nam_hoc": "",
+   "kiem_chung": false
+  },
+  "sinh_hoat": {
+   "gia_tri": "",
+   "nguon": "",
+   "nam_hoc": "",
+   "kiem_chung": false
+  },
+  "viec_lam": {
+   "gia_tri": "Lớp Tân Hướng Nam kết hợp học với thực tập tại doanh nghiệp đối tác ngoài trường; trang tuyển sinh chưa công bố thời gian thực tập và mức lương.",
+   "nguon": "https://oia.takming.edu.tw/p/404-1036-14798.php?Lang=zh-tw",
+   "nam_hoc": "",
+   "kiem_chung": true
+  },
+  "uu_diem": {
+   "gia_tri": "Nằm ở Đài Bắc, gần ga tàu điện; nhiều hệ cho sinh viên quốc tế, có hệ nhận học sinh chưa biết tiếng Hoa; học phí học kỳ đầu chỉ bằng một nửa các kỳ sau.",
+   "nguon": "",
+   "nam_hoc": "",
+   "kiem_chung": true
+  },
+  "han_che": {
+   "gia_tri": "Học chủ yếu bằng tiếng Hoa và có mốc TOCFL bắt buộc, không đạt có thể bị buộc thôi học; ngành tập trung vào kinh tế, quản lý, công nghệ thông tin; trang tuyển sinh chưa công bố ký túc xá và chi phí sinh hoạt.",
+   "nguon": "",
+   "nam_hoc": "",
+   "kiem_chung": true
+  },
+  "phu_hop": {
+   "gia_tri": "Học sinh tốt nghiệp THPT muốn học kinh tế, tài chính, quản lý hoặc công nghệ thông tin tại Đài Bắc, sẵn sàng học tiếng Hoa nghiêm túc và chứng minh được tài chính.",
+   "nguon": "",
+   "nam_hoc": "",
+   "kiem_chung": true
+  }
+ },
+ "nguon": [
+  {
+   "url": "https://www.takming.edu.tw/schtm/default.asp",
+   "title": "Trang chủ Takming"
+  },
+  {
+   "url": "https://www.takming.edu.tw/schtm/about.asp",
+   "title": "Giới thiệu trường"
+  },
+  {
+   "url": "https://oia.takming.edu.tw/p/426-1036-8.php?Lang=zh-tw",
+   "title": "Phòng Hợp tác quốc tế"
+  },
+  {
+   "url": "https://oia.takming.edu.tw/p/404-1036-14798.php?Lang=zh-tw",
+   "title": "Lớp Tân Hướng Nam"
+  },
+  {
+   "url": "https://oia.takming.edu.tw/p/404-1036-14883.php?Lang=zh-tw",
+   "title": "Hệ dự bị quốc tế"
+  },
+  {
+   "url": "https://edoc.nycu.edu.tw/OpenData/IncomingAttachment/110361",
+   "title": "Thông tin giao thông của trường"
+  }
+ ]
+}
